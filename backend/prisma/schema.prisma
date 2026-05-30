@@ -1,13 +1,533 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================================================
+// NHÓM 1: NGƯỜI DÙNG & PHÂN QUYỀN
+// ============================================================================
+
+model User {
+  id                BigInt    @id @default(autoincrement())
+  fullName          String    @map("full_name") @db.VarChar(255)
+  email             String    @unique @db.VarChar(255)
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamp
+  password          String    @db.VarChar(255)
+  phone             String?   @unique @db.VarChar(20)
+  avatarUrl         String?   @map("avatar_url") @db.Text
+  address           String?   @db.Text
+  ward              String?   @db.VarChar(100)
+  district          String?   @db.VarChar(100)
+  city              String?   @db.VarChar(100)
+  latitude          Decimal?  @db.Decimal(10, 8)
+  longitude         Decimal?  @db.Decimal(11, 8)
+  loyaltyPoints     Int       @default(0) @map("loyalty_points")
+  isActive          Boolean   @default(true) @map("is_active")
+  rememberToken     String?   @map("remember_token") @db.VarChar(100)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Quan hệ 2 chiều (Reciprocal Relations)
+  partnerProfile    PartnerProfile?
+  bookings          Booking[]
+  userPromotions    UserPromotion[]
+  matchPosts        MatchPost[]
+  matchParticipants MatchParticipant[]
+  chatRoomMembers   ChatRoomMember[]
+  messages          Message[]
+  disputes          Dispute[]
+  notifications     Notification[]
+  reviews           Review[]
+
+  @@index([latitude, longitude], name: "idx_users_location")
+  @@map("users")
+}
+
+model Admin {
+  id              BigInt    @id @default(autoincrement())
+  username        String    @unique @db.VarChar(50)
+  email           String    @unique @db.VarChar(255)
+  password        String    @db.VarChar(255)
+  fullName        String?   @map("full_name") @db.VarChar(255)
+  role            String    @default("MODERATOR") @db.VarChar(20)
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLogin       DateTime? @map("last_login") @db.Timestamp
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Quan hệ 2 chiều
+  approvedPartners PartnerProfile[]
+  processedPayouts PartnerPayout[]
+  resolvedDisputes Dispute[]
+
+  @@map("admins")
+}
+
+model PartnerProfile {
+  id                  BigInt    @id @default(autoincrement())
+  userId              BigInt    @unique @map("user_id")
+  businessName        String    @map("business_name") @db.VarChar(255)
+  taxCode             String?   @map("tax_code") @db.VarChar(50)
+  businessLicenseUrl  String?   @map("business_license_url") @db.Text
+  commissionRate      Decimal   @default(10.00) @map("commission_rate") @db.Decimal(5, 2)
+  balance             Decimal   @default(0.00) @map("balance") @db.Decimal(15, 2)
+  status              String    @default("PENDING") @db.VarChar(20)
+  approvedBy          BigInt?   @map("approved_by")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Khai báo quan hệ
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approver          Admin?    @relation(fields: [approvedBy], references: [id], onDelete: SetNull)
+  locations         Location[]
+  payouts           PartnerPayout[]
+  disputes          Dispute[]
+  promotions        Promotion[]
+
+  @@map("partner_profiles")
+}
+
+// ============================================================================
+// NHÓM 2: ĐỊA GIỚI & CƠ SỞ KINH DOANH
+// ============================================================================
+
+model LocationProvince {
+  id            BigInt    @id @default(autoincrement())
+  provinceCode  String    @unique @map("province_code") @db.VarChar(2)
+  name          String    @db.VarChar(255)
+  shortName     String    @map("short_name") @db.VarChar(255)
+  code          String    @unique @db.VarChar(5)
+  placeType     String    @map("place_type") @db.VarChar(255)
+  country       String    @default("VN") @db.VarChar(10)
+  slug          String?   @db.VarChar(255)
+  image         String?   @db.VarChar(255)
+
+  wards         LocationWard[]
+
+  @@map("location_provinces")
+}
+
+model LocationWard {
+  id            BigInt    @id @default(autoincrement())
+  wardCode      String    @unique @map("ward_code") @db.VarChar(6)
+  name          String    @db.VarChar(255)
+  provinceCode  String    @map("province_code") @db.VarChar(2)
+
+  province      LocationProvince @relation(fields: [provinceCode], references: [provinceCode], onDelete: Cascade)
+
+  @@map("location_wards")
+}
+
+model Location {
+  id            BigInt    @id @default(autoincrement())
+  partnerId     BigInt    @map("partner_id")
+  name          String    @db.VarChar(255)
+  address       String    @db.Text
+  ward          String?   @db.VarChar(100)
+  district      String?   @db.VarChar(100)
+  city          String?   @db.VarChar(100)
+  latitude      Decimal?  @db.Decimal(10, 8)
+  longitude     Decimal?  @db.Decimal(11, 8)
+  contactPhone  String?   @map("contact_phone") @db.VarChar(20)
+  isActive      Boolean   @default(true) @map("is_active")
+  isPrimary     Boolean   @default(false) @map("is_primary")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  partner       PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  services      Service[]
+  products      Product[]
+  locationAmenities LocationAmenity[]
+
+  @@index([city, district], name: "idx_locations_city_district")
+  @@index([latitude, longitude], name: "idx_locations_geo")
+  @@map("locations")
+}
+
+model Category {
+  id          BigInt    @id @default(autoincrement())
+  name        String    @unique @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  icon        String    @default("fa-medal") @db.VarChar(255)
+  colorBg     String    @default("bg-emerald-100") @map("color_bg") @db.VarChar(255)
+  colorText   String    @default("text-emerald-600") @map("color_text") @db.VarChar(255)
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+
+  @@map("categories")
+}
+
+model Service {
+  id                BigInt    @id @default(autoincrement())
+  locationId        BigInt    @map("location_id")
+  name              String    @db.VarChar(255)
+  category          String    @db.VarChar(30)
+  subType           String?   @map("sub_type") @db.VarChar(50)
+  description       String?   @db.Text
+  basePricePerHour  Decimal   @map("base_price_per_hour") @db.Decimal(12, 2)
+  imageUrls         Json?     @map("image_urls")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  location          Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  timeSlots         TimeSlot[]
+  slotOverrides     SlotOverride[]
+  bookings          Booking[]
+  matchPosts        MatchPost[]
+  reviews           Review[]
+
+  @@index([category], name: "idx_services_category")
+  @@map("services")
+}
+
+model Amenity {
+  id      BigInt    @id @default(autoincrement())
+  name    String    @unique @db.VarChar(255)
+  icon    String?   @db.VarChar(255)
+
+  locationAmenities LocationAmenity[]
+
+  @@map("amenities")
+}
+
+model LocationAmenity {
+  locationId BigInt @map("location_id")
+  amenityId  BigInt @map("amenity_id")
+
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([locationId, amenityId])
+  @@map("location_amenities")
+}
+
+model Product {
+  id          BigInt    @id @default(autoincrement())
+  locationId  BigInt    @map("location_id")
+  name        String    @db.VarChar(255)
+  category    String    @default("DRINK") @db.VarChar(50)
+  description String?   @db.Text
+  price       Decimal   @db.Decimal(12, 2)
+  imageUrl    String?   @map("image_url") @db.Text
+  isAvailable Boolean   @default(true) @map("is_available")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  bookingDetails BookingDetail[]
+
+  @@map("products")
+}
+
+// ============================================================================
+// NHÓM 3: LỊCH TRÌNH & BẢNG GIÁ
+// ============================================================================
+
+model TimeSlot {
+  id            BigInt    @id @default(autoincrement())
+  serviceId     BigInt    @map("service_id")
+  dayOfWeek     Int       @map("day_of_week") @db.SmallInt
+  startTime     DateTime  @map("start_time") @db.Time
+  endTime       DateTime  @map("end_time") @db.Time
+  priceModifier Decimal   @default(1.00) @map("price_modifier") @db.Decimal(3, 2)
+  isAvailable   Boolean   @default(true) @map("is_available")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, dayOfWeek, startTime])
+  @@map("time_slots")
+}
+
+model SlotOverride {
+  id            BigInt    @id @default(autoincrement())
+  serviceId     BigInt    @map("service_id")
+  overrideDate  DateTime  @map("override_date") @db.Date
+  startTime     DateTime? @map("start_time") @db.Time
+  endTime       DateTime? @map("end_time") @db.Time
+  priceModifier Decimal   @default(1.00) @map("price_modifier") @db.Decimal(3, 2)
+  isClosed      Boolean   @default(false) @map("is_closed")
+  reason        String?   @db.VarChar(255)
+
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, overrideDate, startTime])
+  @@map("slot_overrides")
+}
+
+// ============================================================================
+// NHÓM 4: ĐẶT SÂN & THANH TOÁN
+// ============================================================================
+
+model Booking {
+  id                  BigInt    @id @default(autoincrement())
+  bookingCode        String    @unique @map("booking_code") @db.VarChar(20)
+  userId              BigInt    @map("user_id")
+  serviceId           BigInt    @map("service_id")
+  promoId             BigInt?   @map("promo_id")
+  bookingDate         DateTime  @map("booking_date") @db.Date
+  startTime           DateTime  @map("start_time") @db.Time
+  endTime             DateTime  @map("end_time") @db.Time
+  basePrice           Decimal   @map("base_price") @db.Decimal(12, 2)
+  discountAmount      Decimal   @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
+  finalPrice          Decimal   @map("final_price") @db.Decimal(12, 2)
+  status              String    @default("PENDING") @db.VarChar(20)
+  paymentStatus       String    @default("UNPAID") @map("payment_status") @db.VarChar(20)
+  cancellationReason  String?   @map("cancellation_reason") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service             Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  promotion           Promotion? @relation(fields: [promoId], references: [id], onDelete: SetNull)
+  bookingDetails      BookingDetail[]
+  payments            Payment[]
+  matchPosts          MatchPost[]
+  reviews             Review?
+  disputes            Dispute[]
+
+  @@index([bookingDate])
+  @@index([startTime])
+  @@map("bookings")
+}
+
+model BookingDetail {
+  id          BigInt    @id @default(autoincrement())
+  bookingId   BigInt    @map("booking_id")
+  productId   BigInt    @map("product_id")
+  quantity    Int       @default(1)
+  price       Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("booking_details")
+}
+
+model Payment {
+  id              BigInt    @id @default(autoincrement())
+  bookingId       BigInt    @map("booking_id")
+  transactionId   String?   @map("transaction_id") @db.VarChar(255)
+  amount          Decimal   @db.Decimal(12, 2)
+  paymentMethod   String?   @map("payment_method") @db.VarChar(20)
+  paymentType     String    @map("payment_type") @db.VarChar(20)
+  status          String    @default("PENDING") @db.VarChar(20)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Promotion {
+  id                BigInt    @id @default(autoincrement())
+  partnerId         BigInt?   @map("partner_id")
+  code              String    @unique @db.VarChar(50)
+  description       String?   @db.Text
+  discountPercent   Decimal   @default(0.00) @map("discount_percent") @db.Decimal(5, 2)
+  maxDiscountAmount Decimal?  @map("max_discount_amount") @db.Decimal(12, 2)
+  minOrderValue     Decimal   @default(0.00) @map("min_order_value") @db.Decimal(12, 2)
+  startDate         DateTime  @map("start_date") @db.Timestamp
+  endDate           DateTime  @map("end_date") @db.Timestamp
+  usageLimit        Int       @default(0) @map("usage_limit")
+  usedCount         Int       @default(0) @map("used_count")
+
+  partner           PartnerProfile? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+  userPromotions    UserPromotion[]
+
+  @@index([startDate, endDate], name: "idx_promotions_dates")
+  @@map("promotions")
+}
+
+model UserPromotion {
+  id          BigInt    @id @default(autoincrement())
+  userId      BigInt    @map("user_id")
+  promotionId BigInt    @map("promotion_id")
+  usedAt      DateTime  @default(now()) @map("used_at") @db.Timestamp
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("user_promotions")
+}
+
+// ============================================================================
+// NHÓM 5: GHÉP ĐỘI & CỘNG ĐỒNG (MATCHMAKING)
+// ============================================================================
+
+model MatchPost {
+  id              BigInt    @id @default(autoincrement())
+  userId          BigInt    @map("user_id")
+  serviceId       BigInt    @map("service_id")
+  bookingId       BigInt?   @map("booking_id")
+  title           String    @db.VarChar(255)
+  description     String?   @db.Text
+  playDate        DateTime  @map("play_date") @db.Date
+  startTime       DateTime  @map("start_time") @db.Time
+  endTime         DateTime  @map("end_time") @db.Time
+  skillLevel      String    @default("ANY") @map("skill_level") @db.VarChar(20)
+  maxPlayers      Int       @map("max_players")
+  currentPlayers  Int       @default(1) @map("current_players")
+  status          String    @default("OPEN") @db.VarChar(20)
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service         Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  participants    MatchParticipant[]
+  chatRoom        ChatRoom?
+
+  @@index([playDate, status], name: "idx_match_posts_date_status")
+  @@map("match_posts")
+}
+
+model MatchParticipant {
+  id            BigInt    @id @default(autoincrement())
+  matchPostId   BigInt    @map("match_post_id")
+  userId        BigInt    @map("user_id")
+  status        String    @default("PENDING") @db.VarChar(20)
+  note          String?   @db.Text
+
+  matchPost     MatchPost @relation(fields: [matchPostId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchPostId, userId])
+  @@map("match_participants")
+}
+
+// ============================================================================
+// NHÓM 6: CHAT & GIAO TIẾP THỜI GIAN THỰC
+// ============================================================================
+
+model ChatRoom {
+  id          BigInt    @id @default(autoincrement())
+  type        String    @default("INDIVIDUAL") @db.VarChar(20)
+  matchPostId BigInt?   @unique @map("match_post_id")
+  name        String?   @db.VarChar(255)
+
+  matchPost   MatchPost? @relation(fields: [matchPostId], references: [id], onDelete: Cascade)
+  members     ChatRoomMember[]
+  messages    Message[]
+
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id          BigInt    @id @default(autoincrement())
+  chatRoomId  BigInt    @map("chat_room_id")
+  userId      BigInt    @map("user_id")
+  lastReadAt  DateTime? @map("last_read_at") @db.Timestamp
+
+  chatRoom    ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatRoomId, userId])
+  @@map("chat_room_members")
+}
+
+model Message {
+  id            BigInt    @id @default(autoincrement())
+  chatRoomId    BigInt    @map("chat_room_id")
+  senderId      BigInt    @map("sender_id")
+  messageText   String    @map("message_text") @db.Text
+  type          String    @default("TEXT") @db.VarChar(20)
+  attachments   Json?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  chatRoom      ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender        User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatRoomId, createdAt], name: "idx_messages_room_time")
+  @@map("messages")
+}
+
+// ============================================================================
+// NHÓM 7: HỖ TRỢ & TÀI CHÍNH
+// ============================================================================
+
+model Dispute {
+  id              BigInt    @id @default(autoincrement())
+  bookingId       BigInt    @map("booking_id")
+  raisedBy        BigInt    @map("raised_by")
+  againstPartner  BigInt    @map("against_partner")
+  category        String    @db.VarChar(30)
+  description     String    @db.Text
+  evidenceUrls    Json?     @map("evidence_urls")
+  status          String    @default("OPEN") @db.VarChar(20)
+  resolution      String?   @db.Text
+  resolvedBy      BigInt?   @map("resolved_by")
+  resolvedAt      DateTime? @map("resolved_at") @db.Timestamp
+
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  plaintiff       User      @relation(fields: [raisedBy], references: [id], onDelete: Cascade)
+  partner         PartnerProfile @relation(fields: [againstPartner], references: [id], onDelete: Cascade)
+  resolver        Admin?    @relation(fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@map("disputes")
+}
+
+model PartnerPayout {
+  id                  BigInt    @id @default(autoincrement())
+  partnerId           BigInt    @map("partner_id")
+  amount              Decimal   @db.Decimal(15, 2)
+  commissionDeducted  Decimal   @map("commission_deducted") @db.Decimal(15, 2)
+  netAmount           Decimal   @map("net_amount") @db.Decimal(15, 2)
+  periodStart         DateTime? @map("period_start") @db.Date
+  periodEnd           DateTime? @map("period_end") @db.Date
+  bankAccount         String?   @map("bank_account") @db.VarChar(50)
+  bankName            String?   @map("bank_name") @db.VarChar(100)
+  status              String    @default("PENDING") @db.VarChar(20)
+  processedBy         BigInt?   @map("processed_by")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  partner             PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  processor           Admin?         @relation(fields: [processedBy], references: [id], onDelete: SetNull)
+
+  @@map("partner_payouts")
+}
+
+model Notification {
+  id          BigInt    @id @default(autoincrement())
+  userId      BigInt    @map("user_id")
+  title       String    @db.VarChar(255)
+  message     String    @db.Text
+  type        String    @db.VarChar(20)
+  relatedId   BigInt?   @map("related_id")
+  isRead      Boolean   @default(false) @map("is_read")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model Review {
+  id            BigInt    @id @default(autoincrement())
+  bookingId     BigInt    @unique @map("booking_id")
+  userId        BigInt    @map("user_id")
+  serviceId     BigInt    @map("service_id")
+  rating        Int       @db.SmallInt
+  comment       String?   @db.Text
+  images        Json?
+  partnerReply  String?   @map("partner_reply") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([rating])
+  @@map("reviews")
 }
