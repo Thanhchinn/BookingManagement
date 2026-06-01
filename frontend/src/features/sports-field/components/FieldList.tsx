@@ -2,15 +2,15 @@ import React from 'react';
 import { FieldCard } from './FieldCard';
 import type { SportField } from './FieldCard';
 
-// Dữ liệu mẫu (sau này sẽ được gọi từ API)
-const MOCK_FIELDS: SportField[] = [
+// Dữ liệu mẫu (sau này sẽ được gọi từ API) - Được export để dùng cho bộ lọc ở Home
+export const MOCK_FIELDS: SportField[] = [
   {
     id: '1',
     title: 'Sân Cầu Lông Trong Nhà ProZone',
     location: 'Quận Bình Thạnh, TP. HCM',
     price: '120.000đ - 180.000đ',
     rating: 4.9,
-    image: '🏸',
+    image: '/badminton_court.png',
     sport: 'Cầu Lông'
   },
   {
@@ -19,7 +19,7 @@ const MOCK_FIELDS: SportField[] = [
     location: 'Quận 2, TP. Thủ Đức',
     price: '300.000đ - 450.000đ',
     rating: 4.8,
-    image: '⚽',
+    image: '/football_stadium.png',
     sport: 'Bóng Đá'
   },
   {
@@ -28,17 +28,65 @@ const MOCK_FIELDS: SportField[] = [
     location: 'Quận 7, TP. HCM',
     price: '200.000đ - 350.000đ',
     rating: 4.9,
-    image: '🎾',
+    image: '/tennis_court.png',
+    sport: 'Tennis'
+  },
+  {
+    id: '4',
+    title: 'Sân Bóng Đá Mini Cầu Đỏ',
+    location: 'Quận Bình Thạnh, TP. HCM',
+    price: '250.000đ - 400.000đ',
+    rating: 4.7,
+    image: '/football_stadium.png',
+    sport: 'Bóng Đá'
+  },
+  {
+    id: '5',
+    title: 'Sân Cầu Lông Rồng Vàng',
+    location: 'Quận 2, TP. Thủ Đức',
+    price: '100.000đ - 150.000đ',
+    rating: 4.6,
+    image: '/badminton_court.png',
+    sport: 'Cầu Lông'
+  },
+  {
+    id: '6',
+    title: 'Sân Tennis Phú Mỹ Hưng',
+    location: 'Quận 7, TP. HCM',
+    price: '220.000đ - 380.000đ',
+    rating: 4.8,
+    image: '/tennis_court.png',
     sport: 'Tennis'
   }
 ];
 
-export const FieldList: React.FC = () => {
+interface FieldListProps {
+  fields?: SportField[];
+}
+
+export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS }) => {
+  if (fields.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-slate-800 border-dashed text-slate-400 space-y-4">
+        <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center text-3xl">
+          🔍
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-lg font-bold text-slate-300">Không tìm thấy sân phù hợp</p>
+          <p className="text-sm text-slate-500 max-w-md">
+            Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh lại các bộ lọc (Địa điểm, Bộ môn) để tìm được sân ưng ý nhé!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {MOCK_FIELDS.map(court => (
+      {fields.map(court => (
         <FieldCard key={court.id} court={court} />
       ))}
     </div>
   );
 };
+

@@ -1,4 +1,24 @@
+
 @import "tailwindcss";
+
+@theme {
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-450: var(--slate-450);
+  --color-slate-455: var(--slate-455);
+  --color-slate-460: var(--slate-460);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-750: var(--slate-750);
+  --color-slate-800: var(--slate-800);
+  --color-slate-850: var(--slate-850);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+}
 
 :root {
   --text: #6b6375;
@@ -13,6 +33,82 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
+  /* Bảng màu slate động cho Dark/Light mode */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-450: #94a3b8;
+  --slate-455: #94a3b8;
+  --slate-460: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-750: #1e293b;
+  --slate-800: #1e293b;
+  --slate-850: #0f172a;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+}
+
+/* Ghi đè Light mode khi root có lớp .light */
+:root.light {
+  --slate-50: #0f172a;
+  --slate-100: #0f172a;
+  --slate-200: #1e293b;
+  --slate-300: #334155;
+  --slate-400: #475569;
+  --slate-450: #475569;
+  --slate-455: #475569;
+  --slate-460: #475569;
+  --slate-500: #64748b;
+  --slate-600: #94a3b8;
+  --slate-700: #cbd5e1;
+  --slate-750: #cbd5e1;
+  --slate-800: #cbd5e1;
+  --slate-850: #f1f5f9;
+  --slate-900: #ffffff;
+  --slate-950: #f8fafc;
+}
+
+/* Hiệu ứng chuyển động mượt mà cho toàn trang (Smooth transitions & animations) */
+*, ::before, ::after {
+  transition-property: background-color, border-color, text-color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom fadeInUp entry animation for page elements */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-350 {
+  animation-delay: 350ms;
+}
+
+
+:root {
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -110,4 +206,44 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* Sửa lỗi chữ trắng trên nền trắng trong Chế độ Sáng */
+:root.light .text-white:not(button):not(a):not(.bg-emerald-600):not(.bg-emerald-700):not(.bg-amber-500):not(.bg-amber-600):not(button *):not(a *) {
+  color: #0f172a !important;
+}
+
+/* Đảm bảo toàn bộ tiêu đề h1, h2, h3, h4 luôn hiển thị rõ ràng với màu tối trong Light Mode */
+:root.light h1,
+:root.light h2,
+:root.light h3,
+:root.light h4,
+:root.light h5,
+:root.light h6 {
+  color: #0f172a !important;
+}
+
+/* Thêm lớp màu chữ phụ (slate-400, slate-500) dễ đọc trong light mode */
+:root.light .text-slate-400,
+:root.light .text-slate-500,
+:root.light .text-slate-450,
+:root.light .text-slate-455,
+:root.light .text-slate-460 {
+  color: #475569 !important;
+}
+
+/* Thiết lập màu sắc và kiểu dáng cho Swiper Pagination */
+.swiper-pagination-bullet {
+  background: var(--slate-400) !important;
+  opacity: 0.4 !important;
+  width: 8px !important;
+  height: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #10b981 !important; /* emerald 500 */
+  opacity: 1 !important;
+  width: 24px !important; /* dạng thanh dài cực hiện đại */
+  border-radius: 4px !important;
 }

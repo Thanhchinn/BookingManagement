@@ -20,9 +20,20 @@ interface FieldCardProps {
 export const FieldCard: React.FC<FieldCardProps> = ({ court }) => {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 text-left flex flex-col group">
-      {/* Ảnh đại diện giả lập bằng Emoji lớn */}
-      <div className="h-44 bg-slate-950 flex items-center justify-center text-6xl group-hover:scale-105 transition-transform duration-300 select-none">
-        {court.image}
+      {/* Ảnh đại diện thực tế hoặc giả lập bằng Emoji lớn */}
+      <div className="h-44 bg-slate-950 flex items-center justify-center overflow-hidden select-none relative">
+        {court.image.startsWith('/') ? (
+          <img 
+            src={court.image} 
+            alt={court.title} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <span className="text-6xl group-hover:scale-105 transition-transform duration-300 block">
+            {court.image}
+          </span>
+        )}
+        <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-transparent transition-all duration-300"></div>
       </div>
       
       {/* Nội dung chi tiết của sân */}

@@ -7,10 +7,13 @@ import { CourtDetails } from './pages/client/CourtDetails';
 import { BookingSuccess } from './pages/client/BookingSuccess';
 import { Matchmaking } from './pages/client/Matchmaking';
 import { CommunityChat } from './pages/client/CommunityChat';
+import { Search } from './pages/client/Search';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { PartnerLayout } from './pages/partner/PartnerLayout';
 import { PartnerLoginPage } from './pages/partner/PartnerLoginPage';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import './App.css';
 
 function App() {
@@ -18,10 +21,17 @@ function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   
   // Trạng thái trang client phụ
-  const [currentPage, setCurrentPage] = useState<'home' | 'auth' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'auth' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat' | 'search'>('home');
   // Chế độ đăng nhập hay đăng ký của client
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
+  // Trạng thái bộ lọc tìm kiếm toàn cục
+  const [searchFilters, setSearchFilters] = useState({
+    query: '',
+    address: 'all',
+    category: 'all'
+  });
+
   // Trạng thái đăng nhập Client (Khách hàng)
   const [userName, setUserName] = useState<string | null>(null);
 
@@ -36,6 +46,13 @@ function App() {
 
   // Lắng nghe sự thay đổi URL khi người dùng bấm nút Quay lại/Tiến tới (Back/Forward) của trình duyệt
   useEffect(() => {
+    // Khởi tạo thư viện AOS (Animate On Scroll)
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true
+    });
+
     const handleLocationChange = () => {
       setCurrentPath(window.location.pathname);
     };
@@ -50,7 +67,7 @@ function App() {
   };
 
   const handleNavigate = (
-    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat', 
+    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat' | 'search', 
     mode?: 'login' | 'register'
   ) => {
     if (page === 'admin') {
@@ -143,6 +160,20 @@ function App() {
           onNavigate={handleNavigate} 
           userName={userName || undefined} 
           onLogout={handleClientLogout} 
+          searchFilters={searchFilters}
+          onSearch={(filters) => {
+            setSearchFilters(filters);
+            setCurrentPage('search');
+          }}
+        />
+      )}
+      {currentPage === 'search' && (
+        <Search
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
+          searchFilters={searchFilters}
+          onUpdateFilters={setSearchFilters}
         />
       )}
       {currentPage === 'auth' && (

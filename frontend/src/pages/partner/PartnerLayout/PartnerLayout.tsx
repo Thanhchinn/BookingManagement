@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PartnerDashboard } from '../PartnerDashboard';
 import { FieldManagement } from '../FieldManagement';
 import { CustomerBookingManagement } from '../CustomerBookingManagement';
@@ -14,7 +14,9 @@ import {
   ChevronRight, 
   LogOut,
   ShoppingBag,
-  Tag
+  Tag,
+  Sun,
+  Moon
 } from 'lucide-react';
 import '../../../features/admin/styles/admin-table.css';
 
@@ -24,6 +26,26 @@ interface PartnerLayoutProps {
 }
 
 export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLogout }) => {
+  // Trạng thái Theme (Sáng / Tối)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   // Tab hiện tại của Đối tác
   const [currentTab, setCurrentTab] = useState('dashboard');
 
@@ -260,6 +282,19 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Theme Toggle Button for Partners */}
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-xl hover:bg-slate-850/60 text-slate-400 hover:text-amber-500 transition-all duration-200 cursor-pointer border-0 bg-transparent flex items-center justify-center shrink-0"
+              title="Đổi giao diện Sáng/Tối"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-4.5 h-4.5 text-slate-400" />
+              ) : (
+                <Sun className="w-4.5 h-4.5 text-amber-500" />
+              )}
+            </button>
+            
             <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" title="Hệ thống trực tuyến"></span>
             <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider hidden sm:inline">Trực tuyến</span>
           </div>
