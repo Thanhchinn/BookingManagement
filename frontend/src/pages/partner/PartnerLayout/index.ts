@@ -1,0 +1,1 @@
+export { PartnerLayout } from './PartnerLayout';

@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 // Import các trang theo đúng cấu trúc tối ưu chuẩn Senior
 import { Home } from './pages/client/Home';
 import { AuthPage } from './pages/client/AuthPage';
+import { MyBookings } from './pages/client/MyBookings';
+import { CourtDetails } from './pages/client/CourtDetails';
+import { BookingSuccess } from './pages/client/BookingSuccess';
+import { Matchmaking } from './pages/client/Matchmaking';
+import { CommunityChat } from './pages/client/CommunityChat';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { PartnerLayout } from './pages/partner/PartnerLayout';
@@ -12,8 +17,8 @@ function App() {
   // 1. QUẢN LÝ ĐƯỜNG DẪN URL TRÊN TRÌNH DUYỆT (NATIVE PATH ROUTING)
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   
-  // Trạng thái trang client phụ ('home' hoặc 'auth')
-  const [currentPage, setCurrentPage] = useState<'home' | 'auth'>('home');
+  // Trạng thái trang client phụ
+  const [currentPage, setCurrentPage] = useState<'home' | 'auth' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat'>('home');
   // Chế độ đăng nhập hay đăng ký của client
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
@@ -25,6 +30,9 @@ function App() {
 
   // Trạng thái đăng nhập Partner (Chủ sân)
   const [partnerName, setPartnerName] = useState<string | null>(null);
+
+  // Lưu trữ tạm dữ liệu đặt vé thành công
+  const [bookingSuccessData, setBookingSuccessData] = useState<any>(null);
 
   // Lắng nghe sự thay đổi URL khi người dùng bấm nút Quay lại/Tiến tới (Back/Forward) của trình duyệt
   useEffect(() => {
@@ -41,13 +49,16 @@ function App() {
     setCurrentPath(path);
   };
 
-  const handleNavigate = (page: 'home' | 'auth' | 'admin' | 'partner', mode?: 'login' | 'register') => {
+  const handleNavigate = (
+    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat', 
+    mode?: 'login' | 'register'
+  ) => {
     if (page === 'admin') {
       navigateTo('/admin');
     } else if (page === 'partner') {
       navigateTo('/partner');
     } else {
-      setCurrentPage(page);
+      setCurrentPage(page as any);
       if (mode) setAuthMode(mode);
       navigateTo('/');
     }
@@ -71,6 +82,7 @@ function App() {
 
   const handleClientLogout = () => {
     setUserName(null);
+    setCurrentPage('home');
   };
 
   // Kiểm tra xem URL hiện tại có thuộc về khu vực Admin hay không
@@ -126,17 +138,55 @@ function App() {
   // Mặc định hiển thị trang phía Client
   return (
     <>
-      {currentPage === 'home' ? (
+      {currentPage === 'home' && (
         <Home 
           onNavigate={handleNavigate} 
           userName={userName || undefined} 
           onLogout={handleClientLogout} 
         />
-      ) : (
+      )}
+      {currentPage === 'auth' && (
         <AuthPage 
           initialMode={authMode} 
           onBackToHome={() => setCurrentPage('home')}
           onLoginSuccess={handleClientLoginSuccess}
+        />
+      )}
+      {currentPage === 'my-bookings' && (
+        <MyBookings 
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
+        />
+      )}
+      {currentPage === 'field-details' && (
+        <CourtDetails 
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
+          onSetBookingSuccessData={setBookingSuccessData}
+        />
+      )}
+      {currentPage === 'booking-success' && (
+        <BookingSuccess 
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
+          bookingSuccessData={bookingSuccessData}
+        />
+      )}
+      {currentPage === 'matchmaking' && (
+        <Matchmaking 
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
+        />
+      )}
+      {currentPage === 'chat' && (
+        <CommunityChat 
+          onNavigate={handleNavigate}
+          userName={userName || undefined}
+          onLogout={handleClientLogout}
         />
       )}
     </>

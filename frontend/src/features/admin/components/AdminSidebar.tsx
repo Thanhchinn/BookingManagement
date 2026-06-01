@@ -9,7 +9,9 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  X 
+  X,
+  Scale,
+  Coins
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -38,6 +40,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
     { id: 'users', name: 'Quản lý người dùng', icon: Users },
     { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
+    { id: 'disputes', name: 'Giải quyết khiếu nại', icon: Scale },
+    { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
     { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },
   ];
 

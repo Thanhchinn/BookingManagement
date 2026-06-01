@@ -5,7 +5,7 @@ import { Menu, X } from 'lucide-react';
 // KHAI BÁO COMPONENT NAVBAR (THANH ĐIỀU HƯỚNG TRÊN CÙNG)
 // ============================================================================
 interface NavbarProps {
-  onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner', authMode?: 'login' | 'register') => void;
+  onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat', authMode?: 'login' | 'register') => void;
   userName?: string;
   onLogout?: () => void;
 }
@@ -56,18 +56,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           >
             Đặt Sân Thể Thao
           </button>
-          <a 
-            href="#my-bookings" 
-            className="hover:text-slate-900 transition duration-150"
+          
+          <button 
+            onClick={() => onNavigate?.('my-bookings')}
+            className="hover:text-slate-900 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-600"
           >
             Lịch Hẹn Của Tôi
-          </a>
-          <a 
-            href="#rules" 
-            className="hover:text-slate-900 transition duration-150"
+          </button>
+
+          <button 
+            onClick={() => onNavigate?.('matchmaking')}
+            className="hover:text-slate-900 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-600"
           >
-            Quy Định Đặt Sân
-          </a>
+            Cộng Đồng Ghép Đội
+          </button>
+
+          <button 
+            onClick={() => onNavigate?.('chat')}
+            className="hover:text-slate-900 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-600"
+          >
+            Tin Nhắn
+          </button>
+
           <button 
             onClick={() => onNavigate?.('partner')}
             className="hover:text-slate-900 transition duration-150 flex items-center gap-1 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-600"
@@ -156,20 +166,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           >
             Đặt Sân Thể Thao
           </button>
-          <a 
-            href="#my-bookings" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-slate-600 hover:text-slate-900 font-bold text-sm"
+          
+          <button 
+            onClick={() => {
+              onNavigate?.('my-bookings');
+              setIsMobileMenuOpen(false);
+            }}
+            className="text-slate-600 hover:text-slate-900 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
             Lịch Hẹn Của Tôi
-          </a>
-          <a 
-            href="#rules" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-slate-600 hover:text-slate-900 font-bold text-sm"
+          </button>
+
+          <button 
+            onClick={() => {
+              onNavigate?.('matchmaking');
+              setIsMobileMenuOpen(false);
+            }}
+            className="text-slate-600 hover:text-slate-900 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Quy Định Đặt Sân
-          </a>
+            Cộng Đồng Ghép Đội
+          </button>
+
+          <button 
+            onClick={() => {
+              onNavigate?.('chat');
+              setIsMobileMenuOpen(false);
+            }}
+            className="text-slate-600 hover:text-slate-900 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
+          >
+            Tin Nhắn
+          </button>
+
           <button 
             onClick={() => {
               onNavigate?.('partner');

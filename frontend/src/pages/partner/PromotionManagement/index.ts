@@ -1,0 +1,1 @@
+export { PromotionManagement } from './PromotionManagement';
