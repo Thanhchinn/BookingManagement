@@ -1,0 +1,20 @@
+{
+  "common": {
+    "sportsZone": "SportZone",
+    "live": "Live",
+    "partner": "Partner",
+    "welcome": "Xin chào",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "admin": "Quản Trị",
+    "themeToggle": "Đổi giao diện Sáng/Tối"
+  },
+  "nav": {
+    "booking": "Đặt Sân Thể Thao",
+    "myBookings": "Lịch Hẹn Của Tôi",
+    "matchmaking": "Cộng Đồng Ghép Đội",
+    "messages": "Tin Nhắn",
+    "partnerPortal": "Dành Cho Chủ Sân"
+  }
+}

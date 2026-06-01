@@ -1,0 +1,20 @@
+{
+  "common": {
+    "sportsZone": "SportZone",
+    "live": "Live",
+    "partner": "Partner",
+    "welcome": "Welcome",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "admin": "Admin",
+    "themeToggle": "Toggle Light/Dark Theme"
+  },
+  "nav": {
+    "booking": "Book Sports Fields",
+    "myBookings": "My Bookings",
+    "matchmaking": "Matchmaking",
+    "messages": "Messages",
+    "partnerPortal": "Partner Portal"
+  }
+}

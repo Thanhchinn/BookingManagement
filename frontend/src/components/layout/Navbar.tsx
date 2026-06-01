@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Sun, Moon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // ============================================================================
 // KHAI BÁO COMPONENT NAVBAR (THANH ĐIỀU HƯỚNG TRÊN CÙNG)
@@ -11,6 +12,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }) => {
+  const { t, i18n } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
@@ -29,6 +31,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   return (
@@ -55,11 +61,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             🏆
           </div>
           <div>
-            <span className="text-lg font-black text-slate-100 tracking-tight">SportZone</span>
+            <span className="text-lg font-black text-slate-100 tracking-tight">{t('common.sportsZone')}</span>
             {/* Nhãn Real-time nhấp nháy báo trạng thái trực tuyến */}
             <span className="ml-2 inline-flex items-center text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-500/20">
               <span className="w-1.5 h-1.5 mr-1 bg-emerald-500 rounded-full inline-block animate-ping"></span>
-              Live
+              {t('common.live')}
             </span>
           </div>
         </div>
@@ -72,37 +78,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             onClick={() => onNavigate?.('home')}
             className="text-emerald-400 hover:text-emerald-500 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm"
           >
-            Đặt Sân Thể Thao
+            {t('nav.booking')}
           </button>
           
           <button 
             onClick={() => onNavigate?.('my-bookings')}
             className="hover:text-slate-100 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
           >
-            Lịch Hẹn Của Tôi
+            {t('nav.myBookings')}
           </button>
 
           <button 
             onClick={() => onNavigate?.('matchmaking')}
             className="hover:text-slate-100 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
           >
-            Cộng Đồng Ghép Đội
+            {t('nav.matchmaking')}
           </button>
 
           <button 
             onClick={() => onNavigate?.('chat')}
             className="hover:text-slate-100 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
           >
-            Tin Nhắn
+            {t('nav.messages')}
           </button>
 
           <button 
             onClick={() => onNavigate?.('partner')}
             className="hover:text-slate-100 transition duration-150 flex items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
           >
-            Dành Cho Chủ Sân
+            {t('nav.partnerPortal')}
             <span className="bg-slate-850 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold border border-slate-800">
-              Partner
+              {t('common.partner')}
             </span>
           </button>
         </div>
@@ -112,11 +118,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             ========================================== */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
+          {/* Bộ Chọn Ngôn Ngữ Song Ngữ (Bilingual Selector Pill) */}
+          <div className="flex items-center bg-slate-850/80 rounded-xl p-0.5 border border-slate-800 shrink-0">
+            <button
+              onClick={() => changeLanguage('vi')}
+              className={`px-2 py-1 text-[10px] sm:text-xs font-bold rounded-lg cursor-pointer transition-all duration-200 border-0 flex items-center justify-center ${
+                i18n.language.startsWith('vi')
+                  ? 'bg-emerald-500 text-white shadow-sm font-extrabold'
+                  : 'text-slate-400 hover:text-slate-200 bg-transparent'
+              }`}
+              title="Tiếng Việt"
+            >
+              VI
+            </button>
+            <button
+              onClick={() => changeLanguage('en')}
+              className={`px-2 py-1 text-[10px] sm:text-xs font-bold rounded-lg cursor-pointer transition-all duration-200 border-0 flex items-center justify-center ${
+                i18n.language.startsWith('en')
+                  ? 'bg-emerald-500 text-white shadow-sm font-extrabold'
+                  : 'text-slate-400 hover:text-slate-200 bg-transparent'
+              }`}
+              title="English"
+            >
+              EN
+            </button>
+          </div>
+
           {/* Nút Đổi màu giao diện (Theme Toggle) */}
           <button
             onClick={toggleTheme}
             className="p-2.5 rounded-xl hover:bg-slate-850/60 text-slate-400 hover:text-emerald-400 transition-all duration-200 cursor-pointer border-0 bg-transparent flex items-center justify-center shrink-0"
-            title="Đổi giao diện Sáng/Tối"
+            title={t('common.themeToggle')}
           >
             {theme === 'light' ? (
               <Moon className="w-4.5 h-4.5 text-slate-400" />
@@ -137,11 +169,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                     }}
                     className="text-[11px] sm:text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-2.5 sm:px-3.5 py-2 rounded-xl transition duration-150 shadow-md shadow-emerald-600/10 cursor-pointer border-0 flex items-center gap-1"
                   >
-                    ⚙️ Quản Trị
+                    ⚙️ {t('common.admin')}
                   </button>
                 )}
                 <span className="hidden sm:inline text-xs text-slate-400 font-medium">
-                  Xin chào, <strong className="text-slate-100 font-bold">{userName}</strong>
+                  {t('common.welcome')}, <strong className="text-slate-100 font-bold">{userName}</strong>
                 </span>
                 <button 
                   onClick={() => {
@@ -150,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                   }}
                   className="text-xs font-bold text-red-400 hover:text-red-500 px-2 sm:px-3 py-2 rounded-xl hover:bg-red-500/10 transition duration-150 cursor-pointer bg-transparent border-0"
                 >
-                  Đăng xuất
+                  {t('common.logout')}
                 </button>
               </div>
             ) : (
@@ -159,13 +191,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                   onClick={() => onNavigate?.('auth', 'login')}
                   className="text-xs font-bold text-slate-300 hover:text-slate-100 px-2.5 sm:px-3.5 py-2.5 rounded-xl hover:bg-slate-850/60 transition duration-150 cursor-pointer bg-transparent border-0"
                 >
-                  Đăng nhập
+                  {t('common.login')}
                 </button>
                 <button 
                   onClick={() => onNavigate?.('auth', 'register')}
                   className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-3 sm:px-4.5 py-2.5 rounded-xl transition-all duration-150 shadow-md shadow-emerald-600/10 cursor-pointer border-0"
                 >
-                  Đăng ký
+                  {t('common.register')}
                 </button>
               </div>
             )}
@@ -195,7 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             }}
             className="text-emerald-400 hover:text-emerald-500 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Đặt Sân Thể Thao
+            {t('nav.booking')}
           </button>
           
           <button 
@@ -205,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             }}
             className="text-slate-300 hover:text-slate-100 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Lịch Hẹn Của Tôi
+            {t('nav.myBookings')}
           </button>
 
           <button 
@@ -215,7 +247,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             }}
             className="text-slate-300 hover:text-slate-100 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Cộng Đồng Ghép Đội
+            {t('nav.matchmaking')}
           </button>
 
           <button 
@@ -225,7 +257,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             }}
             className="text-slate-300 hover:text-slate-100 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Tin Nhắn
+            {t('nav.messages')}
           </button>
 
           <button 
@@ -235,9 +267,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             }}
             className="text-slate-300 hover:text-slate-100 font-bold text-sm flex items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0 text-left"
           >
-            Dành Cho Chủ Sân
+            {t('nav.partnerPortal')}
             <span className="bg-slate-850 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold border border-slate-800">
-              Partner
+              {t('common.partner')}
             </span>
           </button>
         </div>
@@ -246,3 +278,4 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
     </nav>
   );
 };
+
