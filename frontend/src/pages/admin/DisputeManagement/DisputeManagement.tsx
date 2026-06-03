@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   ChevronRight,
-  ShieldAlert,
   User,
   Building,
   Image as ImageIcon,
@@ -119,15 +118,6 @@ export const DisputeManagement: React.FC = () => {
   return (
     <div className="space-y-6 text-left relative font-sans text-slate-100">
       
-      {/* Tiêu đề */}
-      <div>
-        <h3 className="text-xl font-black text-white m-0 tracking-tight flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-emerald-500" />
-          Giải Quyết Khiếu Nại & Tranh Chấp (Disputes Moderation)
-        </h3>
-        <p className="text-xs text-slate-400 m-0">Kiểm duyệt hồ sơ tranh chấp mâu thuẫn giữa khách hàng đặt sân và cơ sở đối tác kinh doanh bãi thảm</p>
-      </div>
-
       {/* Tabs lọc */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         {(['ALL', 'OPEN', 'INVESTIGATING', 'RESOLVED'] as const).map(filter => {

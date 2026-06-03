@@ -13,7 +13,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -25,19 +25,34 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
 
     setIsLoading(true);
 
-    // Giả lập kết nối API Đăng nhập lên NestJS Backend mất 1.2 giây
-    setTimeout(() => {
-      setIsLoading(false);
-      if (email === 'admin@gmail.com') {
-        setError('Tài khoản này là Quản trị viên. Vui lòng đăng nhập tại cổng riêng của Admin (đường dẫn: /admin)!');
-      } else if (email.includes('@')) {
-        // Giả lập tài khoản khách hàng thông thường
-        const nameFromEmail = email.split('@')[0];
-        onSuccess(nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1));
-      } else {
-        setError('Tài khoản hoặc mật khẩu không chính xác.');
+    try {
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Email hoặc mật khẩu không chính xác.');
       }
-    }, 1200);
+
+      // Lưu trữ token và thông tin người dùng vào localStorage
+      localStorage.setItem('user_token', data.access_token);
+      localStorage.setItem('user_info', JSON.stringify(data.user));
+
+      onSuccess(data.user.fullName);
+    } catch (err: any) {
+      setError(err.message || 'Không thể đăng nhập. Vui lòng kiểm tra lại thông tin.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,7 +76,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
           id="email"
           label="Địa chỉ Email"
           type="email"
-          placeholder="admin@gmail.com hoặc email của bạn..."
+          placeholder="Nhập địa chỉ email của bạn..."
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -78,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
           <InputField
             id="password"
             type="password"
-            placeholder="Mật khẩu của bạn (ví dụ: admin123)..."
+            placeholder="Nhập mật khẩu của bạn..."
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

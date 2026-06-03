@@ -5,12 +5,6 @@ export const Analytics: React.FC = () => {
   return (
     <div className="space-y-8">
       
-      {/* Tiêu đề trang Thống kê */}
-      <div className="text-left">
-        <h3 className="text-lg font-black text-white m-0 tracking-tight">Thống Kê Hoạt Động Doanh Nghiệp</h3>
-        <p className="text-xs text-slate-500 m-0">Biểu đồ tỉ lệ đặt sân, doanh thu phân bổ và ngày hoạt động cao điểm</p>
-      </div>
-
       {/* Grid: Trái là Biểu đồ cột, Phải là Báo cáo số liệu */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         

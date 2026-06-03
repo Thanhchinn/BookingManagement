@@ -172,12 +172,12 @@ h2 {
 }
 
 h1 {
-  font-size: 56px;
+  font-size: 36px;
   letter-spacing: -1.68px;
-  margin: 32px 0;
+  /* margin: 32px 0; */
   @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    font-size: 24px;
+    /* margin: 20px 0; */
   }
 }
 h2 {
@@ -246,4 +246,24 @@ code {
   opacity: 1 !important;
   width: 24px !important; /* dạng thanh dài cực hiện đại */
   border-radius: 4px !important;
+}
+
+/* --- OVERRIDES FOR BROWSER AUTOFILL IN DARK THEME --- */
+/* We want to make sure autofilled fields keep a premium dark background and white text color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #020617 inset !important; /* bg-slate-950 color */
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* For lighter background inputs if any (using class filter) */
+input.bg-white:-webkit-autofill,
+input.bg-slate-50:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
 }

@@ -19,6 +19,7 @@ import {
   Moon
 } from 'lucide-react';
 import '../../../features/admin/styles/admin-table.css';
+import { toast } from 'sonner';
 
 interface PartnerLayoutProps {
   partnerName: string;
@@ -26,6 +27,41 @@ interface PartnerLayoutProps {
 }
 
 export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLogout }) => {
+  // Polling liên tục kiểm tra tài khoản đối tác có bị khóa (SUSPENDED) bởi Admin không
+  useEffect(() => {
+    const savedUserInfo = localStorage.getItem('user_info');
+    if (!savedUserInfo) return;
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(savedUserInfo);
+    } catch {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Nếu hồ sơ đối tác bị xóa hoặc chuyển sang trạng thái khác ACTIVE (VD: SUSPENDED, PENDING)
+          if (!data || data.status?.toUpperCase() !== 'ACTIVE') {
+            clearInterval(interval);
+            onLogout();
+            toast.error('Tài khoản đối tác của bạn đã bị khóa hoặc ngừng kích hoạt bởi Admin!', {
+              description: 'Vui lòng liên hệ quản trị viên để biết thêm chi tiết.',
+              duration: 5000,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi kiểm tra trạng thái đối tác:', err);
+      }
+    }, 3000); // Check status every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [onLogout]);
+
   // Trạng thái Theme (Sáng / Tối)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');

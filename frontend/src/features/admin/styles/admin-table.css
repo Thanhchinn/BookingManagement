@@ -39,8 +39,15 @@
 
 /* Ô tiêu đề cột */
 .admin-table-th {
-  padding: 1rem 1.5rem; /* py-4 px-6 */
+  padding: 0.75rem 0.875rem; /* py-3 px-3.5 on mobile */
   font-weight: 800;
+  white-space: nowrap; /* Prevent vertical wrapping of headers! */
+}
+
+@media (min-width: 640px) {
+  .admin-table-th {
+    padding: 1rem 1.5rem; /* py-4 px-6 on desktop */
+  }
 }
 
 /* 4. THÂN BẢNG (TBODY) */
@@ -64,9 +71,16 @@
 
 /* 5. Ô DỮ LIỆU BẢNG (TD) */
 .admin-table-td {
-  padding: 1rem 1.5rem; /* py-4 px-6 */
+  padding: 0.75rem 0.875rem; /* py-3 px-3.5 on mobile */
   font-weight: 500;
   vertical-align: middle;
+  white-space: nowrap; /* Prevent vertical wrapping by default on mobile! */
+}
+
+@media (min-width: 640px) {
+  .admin-table-td {
+    padding: 1rem 1.5rem; /* py-4 px-6 on desktop */
+  }
 }
 
 /* Dành cho các chữ in đậm nổi bật (ví dụ: tên bộ môn, tên khách hàng) */
@@ -79,6 +93,14 @@
 .admin-table-td-muted {
   color: var(--color-slate-400, #94a3b8);
   line-height: 1.625;
+  white-space: normal !important; /* Allow long description text to wrap */
+  min-width: 220px; /* Ensure column has enough room and doesn't get squeezed too narrow! */
+}
+
+/* Dành cho các cột chứa chuỗi văn bản dài muốn xuống dòng có kiểm soát (không bị co dính chữ) */
+.admin-table-wrap {
+  white-space: normal !important;
+  min-width: 200px; /* Độ rộng tối thiểu an toàn để tránh ép chữ */
 }
 
 /* 6. HUY HIỆU TRẠNG THÁI TRONG BẢNG (BADGES) */

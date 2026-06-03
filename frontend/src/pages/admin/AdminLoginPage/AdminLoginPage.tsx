@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
 import { Lock, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AdminLoginPageProps {
   onLoginSuccess: (adminName: string) => void;
@@ -12,32 +13,63 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
   onLoginSuccess, 
   onBackToClient 
 }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleAdminSubmit = (e: React.FormEvent) => {
+  const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (!email.trim() || !password.trim()) {
+    // Kiểm tra dữ liệu đầu vào
+    if (!username.trim() || !password.trim()) {
       setError('Vui lòng điền đầy đủ thông tin quản trị viên.');
       return;
     }
 
     setIsLoading(true);
 
-    // Giả lập kết nối API Đăng nhập quản trị viên tối mật
-    setTimeout(() => {
-      setIsLoading(false);
-      if (email === 'admin@gmail.com' && password === 'admin123') {
-        onLoginSuccess('Super Admin');
-      } else {
-        setError('Sai thông tin đăng nhập hoặc bạn không có quyền truy cập vùng quản trị.');
+    try {
+      const response = await fetch('http://localhost:3000/auth/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Nhận thông báo lỗi từ ValidationPipe hoặc UnauthorizedException của Backend
+        const errorMessage = Array.isArray(data.message) ? data.message[0] : data.message;
+        throw new Error(errorMessage || 'Sai tài khoản hoặc mật khẩu.');
       }
-    }, 1200);
+
+      // Lưu Token và Thông tin Admin vào localStorage
+      localStorage.setItem('admin_token', data.access_token);
+      localStorage.setItem('admin_profile', JSON.stringify(data.admin));
+
+      // Thông báo đăng nhập thành công bằng Toast
+      toast.success('Đăng nhập quản trị thành công!', {
+        description: `Chào mừng ${data.admin.fullName} quay trở lại hệ thống.`,
+        duration: 4000,
+      });
+
+      // Kích hoạt callback đăng nhập thành công truyền tên Admin lên App.tsx
+      onLoginSuccess(data.admin.fullName);
+    } catch (err: any) {
+      const msg = err.message || 'Kết nối tới máy chủ thất bại.';
+      setError(msg);
+      // Thông báo lỗi bằng Toast
+      toast.error('Đăng nhập thất bại', {
+        description: msg,
+        duration: 4000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,7 +103,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
 
         {/* Thông báo lỗi */}
         {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold flex items-center gap-2 animate-pulse">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -80,13 +112,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
         {/* Biểu mẫu đăng nhập Admin */}
         <form onSubmit={handleAdminSubmit} className="space-y-5">
           <InputField
-            id="admin-email"
-            label="Email Quản Trị"
-            type="email"
-            placeholder="admin@gmail.com..."
+            id="admin-username"
+            label="Tên Đăng Nhập"
+            type="text"
+            placeholder="Nhập tên đăng nhập quản trị..."
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="bg-slate-950 border-slate-805 text-white focus:border-emerald-500"
           />
 

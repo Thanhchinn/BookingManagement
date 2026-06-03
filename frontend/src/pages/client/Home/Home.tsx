@@ -193,7 +193,7 @@ export const Home: React.FC<HomeProps> = ({
         <CategoryList selectedCategory={homeCategory} onSelectCategory={setHomeCategory} />
 
         {/* Gọi danh sách sân đấu */}
-        <FieldList fields={homeFilteredFields} />
+        <FieldList fields={homeFilteredFields} onNavigate={onNavigate} />
       </section>
 
       {/* 5. SECTION: QUY TRÌNH ĐẶT SÂN (SIMPLE PROCESS) */}

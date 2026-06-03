@@ -7,7 +7,8 @@ import {
   Search, 
   Phone, 
   Video, 
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 import type { ChatMessage, ChatRoom } from '../../../types';
 
@@ -71,6 +72,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
   const [activeRoomId, setActiveRoomId] = useState<string>('1');
   const [inputText, setInputText] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -121,6 +123,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId);
     setRooms(prev => prev.map(r => r.id === roomId ? { ...r, unreadCount: 0 } : r));
+    setIsMobileChatOpen(true);
   };
 
   // Lọc phòng chat
@@ -140,7 +143,9 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex-grow flex shadow-2xl relative">
           
           {/* CỘT TRÁI: DANH SÁCH PHÒNG CHAT */}
-          <aside className="w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-900 shrink-0">
+          <aside className={`w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-900 shrink-0 ${
+            isMobileChatOpen ? 'hidden md:flex' : 'flex'
+          }`}>
             {/* Header tìm kiếm */}
             <div className="p-4 border-b border-slate-800/80 space-y-3.5 text-left">
               <div>
@@ -211,11 +216,21 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
 
           {/* CỘT PHẢI: KHU VỰC TRÒ CHUYỆN CHI TIẾT */}
           {activeRoom ? (
-            <main className="flex-grow flex flex-col h-full bg-slate-950/40 relative">
+            <main className={`flex-grow flex flex-col h-full bg-slate-950/40 relative ${
+              isMobileChatOpen ? 'flex' : 'hidden md:flex'
+            }`}>
               
               {/* Header Phòng chat */}
               <header className="h-16 border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between bg-slate-900/40 backdrop-blur-xs">
                 <div className="flex items-center gap-3 text-left">
+                  {/* Nút quay lại trên Mobile */}
+                  <button
+                    onClick={() => setIsMobileChatOpen(false)}
+                    className="md:hidden p-2 -ml-2 text-slate-400 hover:text-white bg-transparent border-0 cursor-pointer flex items-center justify-center shrink-0"
+                    title="Quay lại danh sách"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
                   <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-lg select-none">
                     {activeRoom.avatar}
                   </div>
@@ -310,7 +325,9 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
 
             </main>
           ) : (
-            <div className="flex-grow flex flex-col justify-center items-center text-slate-500 space-y-3">
+            <div className={`flex-grow flex flex-col justify-center items-center text-slate-500 space-y-3 ${
+              isMobileChatOpen ? 'flex' : 'hidden md:flex'
+            }`}>
               <MessageSquare className="w-16 h-16 stroke-[1.2] text-slate-700" />
               <p className="text-xs">Chọn phòng chat ở cột bên trái để bắt đầu cuộc trò chuyện.</p>
             </div>

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { 
+  Menu, X, Sun, Moon, 
+  User, Settings, Key, Calendar, Heart, Building, LogOut, ChevronDown, ChevronUp 
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 // ============================================================================
 // KHAI BÁO COMPONENT NAVBAR (THANH ĐIỀU HƯỚNG TRÊN CÙNG)
@@ -14,6 +18,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }) => {
   const { t, i18n } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
@@ -35,6 +40,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
+    toast.info(lng === 'vi' ? 'Đã chuyển sang Tiếng Việt!' : 'Switched to English successfully!', {
+      icon: '🌐',
+      duration: 2000,
+    });
   };
 
   return (
@@ -80,13 +89,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           >
             {t('nav.booking')}
           </button>
-          
-          <button 
-            onClick={() => onNavigate?.('my-bookings')}
-            className="hover:text-slate-100 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
-          >
-            {t('nav.myBookings')}
-          </button>
 
           <button 
             onClick={() => onNavigate?.('matchmaking')}
@@ -100,16 +102,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             className="hover:text-slate-100 transition duration-150 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
           >
             {t('nav.messages')}
-          </button>
-
-          <button 
-            onClick={() => onNavigate?.('partner')}
-            className="hover:text-slate-100 transition duration-150 flex items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0 font-bold text-sm text-slate-300"
-          >
-            {t('nav.partnerPortal')}
-            <span className="bg-slate-850 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold border border-slate-800">
-              {t('common.partner')}
-            </span>
           </button>
         </div>
 
@@ -160,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           {/* Nút Đăng nhập/Đăng xuất/Quản trị */}
           <div className="flex items-center space-x-2">
             {userName ? (
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="relative flex items-center gap-2 sm:gap-3">
                 {userName.includes('Admin') && (
                   <button 
                     onClick={() => {
@@ -172,18 +164,138 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                     ⚙️ {t('common.admin')}
                   </button>
                 )}
-                <span className="hidden sm:inline text-xs text-slate-400 font-medium">
-                  {t('common.welcome')}, <strong className="text-slate-100 font-bold">{userName}</strong>
-                </span>
-                <button 
-                  onClick={() => {
-                    onLogout?.();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="text-xs font-bold text-red-400 hover:text-red-500 px-2 sm:px-3 py-2 rounded-xl hover:bg-red-500/10 transition duration-150 cursor-pointer bg-transparent border-0"
+
+                {/* Profile Pill Trigger Button */}
+                <button
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-cyan-500/30 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-cyan-50/20 dark:hover:bg-slate-850 transition-all duration-200 cursor-pointer shadow-sm relative z-50 text-left"
                 >
-                  {t('common.logout')}
+                  <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white">
+                    <User className="w-4.5 h-4.5" />
+                  </div>
+                  <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 max-w-[80px] sm:max-w-[120px] truncate">
+                    {userName}
+                  </span>
+                  {isProfileMenuOpen ? (
+                    <ChevronUp className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  )}
                 </button>
+
+                {/* Dropdown Menu Backdrop */}
+                {isProfileMenuOpen && (
+                  <div 
+                    className="fixed inset-0 z-40 bg-transparent cursor-default" 
+                    onClick={() => setIsProfileMenuOpen(false)}
+                  />
+                )}
+
+                {/* Dropdown Menu Box */}
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 py-4 px-3.5 transition-all duration-200 transform origin-top-right">
+                    
+                    {/* Header Block */}
+                    <div className="bg-[#f0f4ff] dark:bg-slate-800/80 rounded-[20px] p-4 text-center mb-3">
+                      <span className="text-[10px] font-black tracking-wider text-indigo-500 dark:text-indigo-400 uppercase mb-1 block">
+                        THÀNH VIÊN
+                      </span>
+                      <span className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate block">
+                        {userName}
+                      </span>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="space-y-0.5">
+                      <button
+                        onClick={() => {
+                          toast.info('Tính năng thông tin tài khoản đang được cập nhật!', { icon: '⚙️' });
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <Settings className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Thông tin tài khoản</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          toast.info('Tính năng thông tin cá nhân đang được cập nhật!', { icon: '👤' });
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <User className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Thông tin cá nhân</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          toast.info('Tính năng đổi mật khẩu đang được cập nhật!', { icon: '🔑' });
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <Key className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Đổi mật khẩu</span>
+                      </button>
+
+                      <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1.5" />
+
+                      <button
+                        onClick={() => {
+                          onNavigate?.('my-bookings');
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <Calendar className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Lịch hẹn của tôi</span>
+                      </button>
+
+                      <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1.5" />
+
+                      <button
+                        onClick={() => {
+                          toast.info('Danh sách sân yêu thích đang được phát triển!', { icon: '❤️' });
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <Heart className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Sân yêu thích</span>
+                      </button>
+
+                      <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1.5" />
+
+                      <button
+                        onClick={() => {
+                          onNavigate?.('partner');
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <Building className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Quản lý cơ sở</span>
+                      </button>
+
+                      <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1.5" />
+
+                      <button
+                        onClick={() => {
+                          onLogout?.();
+                          setIsProfileMenuOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-[14px] font-bold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
+                      >
+                        <LogOut className="w-4.5 h-4.5 text-rose-500 dark:text-rose-450" />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </div>
+
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-1 sm:space-x-2">
@@ -229,16 +341,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           >
             {t('nav.booking')}
           </button>
-          
-          <button 
-            onClick={() => {
-              onNavigate?.('my-bookings');
-              setIsMobileMenuOpen(false);
-            }}
-            className="text-slate-300 hover:text-slate-100 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
-          >
-            {t('nav.myBookings')}
-          </button>
 
           <button 
             onClick={() => {
@@ -258,19 +360,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
             className="text-slate-300 hover:text-slate-100 font-bold text-sm bg-transparent border-0 cursor-pointer p-0 text-left"
           >
             {t('nav.messages')}
-          </button>
-
-          <button 
-            onClick={() => {
-              onNavigate?.('partner');
-              setIsMobileMenuOpen(false);
-            }}
-            className="text-slate-300 hover:text-slate-100 font-bold text-sm flex items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0 text-left"
-          >
-            {t('nav.partnerPortal')}
-            <span className="bg-slate-850 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-md font-mono font-bold border border-slate-800">
-              {t('common.partner')}
-            </span>
           </button>
         </div>
       )}

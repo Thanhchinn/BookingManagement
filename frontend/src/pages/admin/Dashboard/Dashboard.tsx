@@ -91,7 +91,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab }) => {
                       {activity.type === 'booking' ? 'Đặt sân' : activity.type === 'cashout' ? 'Rút tiền' : 'Đối tác'}
                     </span>
                   </td>
-                  <td className="admin-table-td text-white font-bold">{activity.detail}</td>
+                  <td className="admin-table-td admin-table-wrap text-white font-bold">{activity.detail}</td>
                   <td className="admin-table-td text-slate-500">{activity.time}</td>
                   <td className={`admin-table-td text-right font-extrabold ${
                     activity.amount?.startsWith('+') ? 'text-emerald-400' : 

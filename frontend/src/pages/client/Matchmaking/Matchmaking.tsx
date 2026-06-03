@@ -14,7 +14,8 @@ import {
   ChevronRight,
   PlusCircle,
   Check,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 
 import type { MatchPost } from '../../../types';
@@ -103,6 +104,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
 
   // Modals state
   const [selectedMatch, setSelectedMatch] = useState<MatchPost | null>(null);
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   
   // Tạo phòng ghép mới
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -360,7 +362,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
           
           {/* Cột trái: Danh sách Match Posts */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className={`lg:col-span-2 space-y-4 ${isMobileDetailOpen ? 'hidden lg:block' : 'block'}`}>
             {filteredMatches.length === 0 ? (
               <div className="bg-slate-900/50 border border-slate-850 rounded-3xl p-12 text-center space-y-3">
                 <span className="text-4xl block">🔍</span>
@@ -371,7 +373,10 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
               filteredMatches.map(m => (
                 <div
                   key={m.id}
-                  onClick={() => setSelectedMatch(m)}
+                  onClick={() => {
+                    setSelectedMatch(m);
+                    setIsMobileDetailOpen(true);
+                  }}
                   className={`bg-slate-900 border transition rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 cursor-pointer hover:border-slate-700 ${
                     selectedMatch?.id === m.id ? 'border-emerald-500 bg-slate-900/90' : 'border-slate-800/80'
                   }`}
@@ -427,12 +432,19 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
           </div>
 
           {/* Cột phải: Xem chi tiết / Quản lý ca ghép */}
-          <div className="space-y-6">
+          <div className={`space-y-6 ${isMobileDetailOpen ? 'block' : 'hidden lg:block'}`}>
             {selectedMatch ? (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6 sticky top-24 backdrop-blur-md">
                 
                 {/* Header detail */}
                 <div className="border-b border-slate-800 pb-4 space-y-2">
+                  {/* Nút quay lại trên Mobile */}
+                  <button
+                    onClick={() => setIsMobileDetailOpen(false)}
+                    className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-400 transition cursor-pointer bg-transparent border-none p-0 pb-2.5"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Quay lại danh sách
+                  </button>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Chi Tiết Ghép Phòng</span>
                     {selectedMatch.status === 'FULL' ? (

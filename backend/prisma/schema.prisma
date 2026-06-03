@@ -44,9 +44,24 @@ model User {
   disputes          Dispute[]
   notifications     Notification[]
   reviews           Review[]
+  otpVerifications  OtpVerification[]
 
   @@index([latitude, longitude], name: "idx_users_location")
   @@map("users")
+}
+
+model OtpVerification {
+  id        BigInt   @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  otpCode   String   @map("otp_code") @db.VarChar(10)
+  expiresAt DateTime @map("expires_at") @db.Timestamp
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  userId    BigInt?  @map("user_id")
+
+  // Quan hệ
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_verifications")
 }
 
 model Admin {

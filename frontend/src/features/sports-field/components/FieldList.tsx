@@ -62,9 +62,10 @@ export const MOCK_FIELDS: SportField[] = [
 
 interface FieldListProps {
   fields?: SportField[];
+  onNavigate?: (page: any, authMode?: any) => void;
 }
 
-export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS }) => {
+export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS, onNavigate }) => {
   if (fields.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-slate-800 border-dashed text-slate-400 space-y-4">
@@ -84,7 +85,7 @@ export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS }) =>
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {fields.map(court => (
-        <FieldCard key={court.id} court={court} />
+        <FieldCard key={court.id} court={court} onNavigate={onNavigate} />
       ))}
     </div>
   );

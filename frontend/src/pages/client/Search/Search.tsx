@@ -5,7 +5,6 @@ import { SearchBar } from '../../../features/sports-field/components/SearchBar';
 import { CategoryList } from '../../../features/sports-field/components/CategoryList';
 import { FieldList, MOCK_FIELDS } from '../../../features/sports-field/components/FieldList';
 import { Sparkles, ArrowLeft } from 'lucide-react';
-import { Button } from '../../../components/ui/Button';
 
 interface SearchProps {
   onNavigate?: (page: any, authMode?: any) => void;
@@ -143,7 +142,7 @@ export const Search: React.FC<SearchProps> = ({
 
         {/* 5. DANH SÁCH SÂN ĐẤU (FIELD LIST) */}
         <div className="space-y-6 pt-4">
-          <FieldList fields={filteredFields} />
+          <FieldList fields={filteredFields} onNavigate={onNavigate} />
         </div>
 
       </div>

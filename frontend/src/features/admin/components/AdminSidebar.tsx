@@ -6,20 +6,17 @@ import {
   Users, 
   Handshake, 
   Landmark, 
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   X,
   Scale,
-  Coins
+  Coins,
+  LogOut
 } from 'lucide-react';
 
 interface AdminSidebarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
-  onBackToClient: () => void;
+  onLogout: () => void;
   isCollapsed: boolean;
-  onToggleCollapse: () => void;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -27,22 +24,21 @@ interface AdminSidebarProps {
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
   currentTab, 
   onSelectTab, 
-  onBackToClient,
+  onLogout,
   isCollapsed,
-  onToggleCollapse,
   isMobileOpen,
   onCloseMobile
 }) => {
   // Danh sách menu chính
   const menuItems = [
     { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
-    { id: 'analytics', name: 'Thống kê sâu', icon: BarChart3 },
     { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
-    { id: 'users', name: 'Quản lý người dùng', icon: Users },
     { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
+    { id: 'users', name: 'Quản lý người dùng', icon: Users },
     { id: 'disputes', name: 'Giải quyết khiếu nại', icon: Scale },
     { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
     { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },
+    { id: 'analytics', name: 'Thống kê sâu', icon: BarChart3 },
   ];
 
   return (
@@ -62,45 +58,33 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         } ${isCollapsed ? 'w-20' : 'w-64'}`}
       >
         
-        {/* PHẦN ĐẦU: LOGO & NÚT THU GỌN */}
-        <div className="p-4 sm:p-5 space-y-6">
-          <div className="flex items-center justify-between">
-            
-            {/* BRANDING LOGO */}
-            <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="bg-emerald-500 text-white p-2 rounded-xl text-lg shadow-md shadow-emerald-500/10 shrink-0 select-none">
-                🏆
-              </div>
-              {!isCollapsed && (
-                <div className="text-left shrink-0 transition-opacity duration-200">
-                  <h4 className="text-sm font-black text-white tracking-tight m-0">SportZone</h4>
-                  <p className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase m-0">Admin Portal</p>
-                </div>
-              )}
+        {/* PHẦN ĐẦU: LOGO CHUẨN ĐỒNG BỘ CHIỀU CAO H-16 TRÊN DI ĐỘNG & H-20 TRÊN MÁY TÍNH */}
+        <div className="h-16 lg:h-20 border-b border-slate-800 flex items-center px-6 sm:px-5 justify-between shrink-0">
+          {/* BRANDING LOGO */}
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <div className="bg-emerald-500 text-white p-2 rounded-xl text-lg shadow-md shadow-emerald-500/10 shrink-0 select-none">
+              🏆
             </div>
-
-            {/* NÚT ĐÓNG SIDEBAR TRÊN DI ĐỘNG (X) */}
-            <button 
-              onClick={onCloseMobile}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer border-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* NÚT THU GỌN SIDEBAR TRÊN MÁY TÍNH (DEKSTOP ONLY) */}
-            <button 
-              onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer border-0 shadow"
-            >
-              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
-
+            {!isCollapsed && (
+              <div className="text-left shrink-0 transition-opacity duration-200">
+                <h4 className="text-sm font-black text-white tracking-tight m-0">SportZone</h4>
+                <p className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase m-0">Admin Portal</p>
+              </div>
+            )}
           </div>
 
-          <hr className="border-slate-800 my-0" />
+          {/* NÚT ĐÓNG SIDEBAR TRÊN DI ĐỘNG (X) */}
+          <button 
+            onClick={onCloseMobile}
+            className="lg:hidden p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer border-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* DANH SÁCH MENU ĐIỀU HƯỚNG */}
-          <nav className="space-y-1.5 text-left">
+        {/* PHẦN THÂN: DANH SÁCH MENU ĐIỀU HƯỚNG CÓ THỂ CUỘN */}
+        <div className="flex-grow overflow-y-auto p-6 sm:p-5 text-left">
+          <nav className="space-y-1.5">
             {menuItems.map(item => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
@@ -129,17 +113,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </nav>
         </div>
 
-        {/* PHẦN CUỐI: NÚT QUAY LẠI CLIENT */}
-        <div className="p-4 sm:p-5">
+        {/* PHẦN CUỐI: NÚT ĐĂNG XUẤT */}
+        <div className="p-6 sm:p-5">
           <button
-            onClick={onBackToClient}
-            title={isCollapsed ? 'Về trang Client' : undefined}
-            className={`w-full flex items-center bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs text-slate-300 font-bold rounded-xl transition duration-150 cursor-pointer ${
+            onClick={onLogout}
+            title={isCollapsed ? 'Đăng xuất' : undefined}
+            className={`w-full flex items-center bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500 hover:text-white text-xs text-rose-400 font-bold rounded-xl transition duration-150 cursor-pointer ${
               isCollapsed ? 'justify-center p-3' : 'justify-center space-x-2 py-3 px-4'
             }`}
           >
-            <ArrowLeft className="w-4 h-4 text-emerald-400 shrink-0" />
-            {!isCollapsed && <span className="transition-opacity duration-200">Về trang Client</span>}
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span className="transition-opacity duration-200">Đăng xuất</span>}
           </button>
         </div>
 

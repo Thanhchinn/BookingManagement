@@ -188,7 +188,7 @@ export const FieldManagement: React.FC = () => {
                 filteredFields.map(f => (
                   <tr key={f.id} className="admin-table-tr">
                     <td className="admin-table-td text-center font-mono font-bold text-slate-500">{f.id}</td>
-                    <td className="admin-table-td">
+                    <td className="admin-table-td admin-table-wrap">
                       <div>
                         <p className="admin-table-td-bold m-0">{f.name}</p>
                         <span className="text-[9px] text-slate-500 block mt-0.5">{f.description || 'Chưa cập nhật mô tả.'}</span>

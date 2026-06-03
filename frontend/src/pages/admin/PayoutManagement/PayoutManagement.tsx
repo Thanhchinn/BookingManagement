@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  DollarSign, 
   Check, 
   X, 
   Building, 
@@ -126,43 +125,36 @@ export const PayoutManagement: React.FC = () => {
   return (
     <div className="space-y-6 text-left relative font-sans text-slate-100">
       
-      {/* Tiêu đề */}
-      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-        <div>
-          <h3 className="text-xl font-black text-white m-0 tracking-tight flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
-            Phê Duyệt Yêu Cầu Rút Tiền (Payout Approvals)
-          </h3>
-          <p className="text-xs text-slate-400 m-0">Xét duyệt chuyển khoản tiền doanh thu giữ chỗ của các chủ sân về tài khoản ngân hàng liên kết</p>
+      {/* Thẻ chỉ số tổng quỹ & bộ lọc */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-900 pb-4">
+        {/* Bộ lọc bên trái */}
+        <div className="flex flex-wrap items-center gap-2">
+          {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(filter => {
+            const label = filter === 'ALL' ? 'Tất cả yêu cầu' : 
+                          filter === 'PENDING' ? 'Chờ duyệt (PENDING)' : 
+                          filter === 'APPROVED' ? 'Đã chuyển khoản' : 'Đã từ chối (REJECTED)';
+            const isActive = activeFilter === filter;
+            return (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                  isActive 
+                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/10' 
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="text-right bg-slate-950 border border-slate-850 px-4 py-2.5 rounded-xl shrink-0">
-          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Tổng quỹ tạm giữ đối soát</span>
-          <span className="text-sm font-black text-emerald-400 font-mono mt-0.5 block">142,500,000đ</span>
+        {/* Tổng quỹ bên phải */}
+        <div className="text-left md:text-right bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl shrink-0 self-stretch md:self-auto flex items-center justify-between md:justify-end gap-6 md:gap-4">
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Tổng quỹ tạm giữ đối soát:</span>
+          <span className="text-sm font-black text-emerald-400 font-mono block">142,500,000đ</span>
         </div>
-      </div>
-
-      {/* Lọc */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
-        {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(filter => {
-          const label = filter === 'ALL' ? 'Tất cả yêu cầu' : 
-                        filter === 'PENDING' ? 'Chờ duyệt (PENDING)' : 
-                        filter === 'APPROVED' ? 'Đã chuyển khoản' : 'Đã từ chối (REJECTED)';
-          const isActive = activeFilter === filter;
-          return (
-            <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                isActive 
-                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/10' 
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/40'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
       </div>
 
       {/* Grid danh sách rút tiền */}

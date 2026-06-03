@@ -1,43 +1,42 @@
-import { Bell, Search, UserCheck, Menu } from 'lucide-react';
+import { Bell, Search, UserCheck, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AdminTopbarProps {
-  currentTab: string;
   onToggleMobileSidebar: () => void;
+  isSidebarCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 export const AdminTopbar: React.FC<AdminTopbarProps> = ({ 
-  currentTab, 
-  onToggleMobileSidebar 
+  onToggleMobileSidebar,
+  isSidebarCollapsed,
+  onToggleCollapse
 }) => {
-  // Bản đồ tên Tab hiển thị dạng Breadcrumb
-  const tabNames: Record<string, string> = {
-    dashboard: 'Tổng quan hệ thống',
-    analytics: 'Báo cáo thống kê sâu',
-    sports: 'Quản lý danh mục bộ môn',
-    users: 'Quản lý tài khoản khách hàng',
-    partners: 'Phê duyệt & Quản lý đối tác chủ sân',
-    reconciliation: 'Đối soát tài chính & Rút tiền',
-  };
-
   return (
-    <header className="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 select-none">
+    <header className="h-16 shrink-0 border-b border-slate-800 bg-slate-900 px-6 sm:px-8 flex items-center justify-between z-30 select-none">
       
-      {/* 1. NÚT HAMBURGER TRÊN DI ĐỘNG (DƯỚI LG) */}
+      {/* 1. NÚT ĐÓNG MỞ SIDEBAR CHUYÊN NGHIỆP (ĐÃ ĐƯỢC CHĂM CHÚT BẰNG CSS XỊN) */}
       <div className="flex items-center space-x-3 text-left">
+        {/* Mobile Hamburger Toggle */}
         <button 
           onClick={onToggleMobileSidebar}
-          className="lg:hidden p-2 text-slate-400 hover:text-white bg-slate-850 border border-slate-800 rounded-xl cursor-pointer"
+          className="lg:hidden flex items-center gap-1.5 px-3 py-2 text-slate-300 hover:text-white bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl cursor-pointer transition-all duration-250 shadow-sm"
         >
-          <Menu className="w-4.5 h-4.5" />
+          <Menu className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
+          <span className="text-[10px] font-black uppercase tracking-wider">Menu</span>
         </button>
-        <h2 className="text-sm font-extrabold text-white m-0 tracking-tight">
-          {tabNames[currentTab] || 'Quản lý Hệ thống'}
-        </h2>
-        <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 font-medium">
-          <span>Portal</span>
-          <span>/</span>
-          <span className="text-slate-400 capitalize">{currentTab}</span>
-        </div>
+
+        {/* Desktop Sidebar Toggle Button */}
+        <button 
+          onClick={onToggleCollapse}
+          className="hidden lg:flex items-center gap-2 px-3.5 py-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 hover:text-emerald-400 rounded-xl text-slate-300 transition-all duration-250 cursor-pointer font-bold text-xs shadow-sm hover:shadow-emerald-500/5 select-none"
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0 animate-pulse" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <span>{isSidebarCollapsed ? 'Mở rộng' : 'Thu gọn'}</span>
+        </button>
       </div>
 
       {/* 2. PHẦN PHẢI: TÌM KIẾM NHANH, THÔNG BÁO & USER PROFILE */}
