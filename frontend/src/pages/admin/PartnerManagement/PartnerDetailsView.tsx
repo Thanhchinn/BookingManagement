@@ -15,8 +15,11 @@ import {
   Wifi, 
   ShowerHead, 
   Zap, 
-  Compass
+  Compass,
+  Settings
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { PartnerFormModal } from './PartnerFormModal';
 
 export interface PartnerItem {
   id: string;
@@ -35,6 +38,9 @@ export interface PartnerItem {
     number: string;
     bankName: string;
   };
+  commissionType?: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  commissionRate?: number;
+  commissionFixedAmount?: number;
 }
 
 interface ServiceItem {
@@ -154,8 +160,48 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
   // Trạng thái mở rộng danh sách Sân của Cơ sở nào (Mặc định mở cơ sở chính)
   const [expandedLocId, setExpandedLocId] = useState<string | null>(facilities[0]?.id || null);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const toggleExpand = (locId: string) => {
     setExpandedLocId(prev => (prev === locId ? null : locId));
+  };
+
+  const handleSavePartner = async (updatedFields: {
+    businessName: string;
+    taxCode: string;
+    commissionType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+    commissionRate: number;
+    commissionFixedAmount: number;
+  }) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch(`http://localhost:3000/partners/${partner.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFields),
+      });
+      if (!res.ok) {
+        throw new Error('Cập nhật thông tin đối tác thất bại.');
+      }
+      const updated = await res.json();
+      
+      onUpdateLocalPartner(prev => prev ? {
+        ...prev,
+        businessName: updated.businessName,
+        taxCode: updated.taxCode || '(Chưa cập nhật)',
+        commissionType: updated.commissionType,
+        commissionRate: updated.commissionRate !== undefined && updated.commissionRate !== null ? parseFloat(updated.commissionRate.toString()) : 10.0,
+        commissionFixedAmount: updated.commissionFixedAmount !== undefined && updated.commissionFixedAmount !== null ? parseFloat(updated.commissionFixedAmount.toString()) : 0,
+      } : null);
+      
+      toast.success('Cập nhật thông tin đối tác thành công!');
+      setIsEditModalOpen(false);
+    } catch (err: any) {
+      throw new Error(err.message || 'Lỗi kết nối.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -359,9 +405,13 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Phí chiết khấu đối soát</span>
+                <span className="text-[10px] text-slate-500 uppercase block font-bold">Phí hoa hồng đối soát</span>
                 <span className="text-emerald-455 font-extrabold text-sm block mt-1.5">
-                  10.00% / mỗi giao dịch đặt sân thành công
+                  {partner.commissionType === 'PERCENTAGE' ? (
+                    `${partner.commissionRate?.toFixed(2)}% / mỗi đơn đặt`
+                  ) : (
+                    `${partner.commissionFixedAmount?.toLocaleString('vi-VN')}đ / mỗi ca đấu`
+                  )}
                 </span>
               </div>
             </div>
@@ -403,6 +453,13 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
             </h4>
             
             <div className="space-y-3 flex flex-col">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-bold text-white rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Settings className="w-4 h-4 text-emerald-400" /> Chỉnh sửa đối tác
+              </button>
+
               {partner.status === 'pending' ? (
                 <>
                   <button
@@ -465,6 +522,14 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
         </div>
 
       </div>
+
+      <PartnerFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        partner={partner}
+        isSaving={isSaving}
+        onSave={handleSavePartner}
+      />
     </div>
   );
 };

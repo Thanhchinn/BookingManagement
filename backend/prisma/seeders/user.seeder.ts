@@ -29,4 +29,37 @@ export async function seedUsers(prisma: PrismaClient) {
     });
     console.log('  └─ ✅ Updated default user password successfully!');
   }
+
+  const partnerUser = await prisma.user.findFirst({
+    where: { email: 'partner@booking.com' },
+  });
+
+  if (!partnerUser) {
+    const newPartnerUser = await prisma.user.create({
+      data: {
+        fullName: 'Chủ Sân Nguyễn Văn B',
+        email: 'partner@booking.com',
+        password: correctHash,
+        phone: '0987654321',
+        address: '456 Đường Trần Hưng Đạo, Quận 5, TP. Hồ Chí Minh',
+        loyaltyPoints: 0,
+        isActive: true,
+      },
+    });
+
+    await prisma.partnerProfile.create({
+      data: {
+        userId: newPartnerUser.id,
+        businessName: 'Tổ hợp Sân Cầu Lông & Bóng Đá SportZone',
+        taxCode: '0316789123',
+        businessLicenseUrl: 'https://example.com/license.pdf',
+        commissionRate: 10.00,
+        commissionType: 'PERCENTAGE',
+        commissionFixedAmount: 0.00,
+        balance: 0.00,
+        status: 'ACTIVE',
+      },
+    });
+    console.log('  └─ ✅ Seeded default partner account successfully!');
+  }
 }

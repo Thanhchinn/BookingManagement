@@ -78,7 +78,7 @@ model Admin {
 
   // Quan hệ 2 chiều
   approvedPartners PartnerProfile[]
-  processedPayouts PartnerPayout[]
+  processedCommissionBills PartnerCommissionBill[]
   resolvedDisputes Dispute[]
 
   @@map("admins")
@@ -91,6 +91,8 @@ model PartnerProfile {
   taxCode             String?   @map("tax_code") @db.VarChar(50)
   businessLicenseUrl  String?   @map("business_license_url") @db.Text
   commissionRate      Decimal   @default(10.00) @map("commission_rate") @db.Decimal(5, 2)
+  commissionType      String    @default("PERCENTAGE") @map("commission_type") @db.VarChar(20)
+  commissionFixedAmount Decimal   @default(0.00) @map("commission_fixed_amount") @db.Decimal(12, 2)
   balance             Decimal   @default(0.00) @map("balance") @db.Decimal(15, 2)
   status              String    @default("PENDING") @db.VarChar(20)
   approvedBy          BigInt?   @map("approved_by")
@@ -101,7 +103,7 @@ model PartnerProfile {
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   approver          Admin?    @relation(fields: [approvedBy], references: [id], onDelete: SetNull)
   locations         Location[]
-  payouts           PartnerPayout[]
+  commissionBills   PartnerCommissionBill[]
   disputes          Dispute[]
   promotions        Promotion[]
 
@@ -150,6 +152,7 @@ model Location {
   latitude      Decimal?  @db.Decimal(10, 8)
   longitude     Decimal?  @db.Decimal(11, 8)
   contactPhone  String?   @map("contact_phone") @db.VarChar(20)
+  imageUrl      String?   @map("image_url") @db.Text
   isActive      Boolean   @default(true) @map("is_active")
   isPrimary     Boolean   @default(false) @map("is_primary")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
@@ -294,6 +297,10 @@ model Booking {
   basePrice           Decimal   @map("base_price") @db.Decimal(12, 2)
   discountAmount      Decimal   @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
   finalPrice          Decimal   @map("final_price") @db.Decimal(12, 2)
+  commissionType      String    @default("PERCENTAGE") @map("commission_type") @db.VarChar(20)
+  commissionRate      Decimal?  @map("commission_rate") @db.Decimal(5, 2)
+  commissionFixedAmount Decimal? @map("commission_fixed_amount") @db.Decimal(12, 2)
+  commissionAmount    Decimal   @default(0.00) @map("commission_amount") @db.Decimal(12, 2)
   status              String    @default("PENDING") @db.VarChar(20)
   paymentStatus       String    @default("UNPAID") @map("payment_status") @db.VarChar(20)
   cancellationReason  String?   @map("cancellation_reason") @db.Text
@@ -491,24 +498,27 @@ model Dispute {
   @@map("disputes")
 }
 
-model PartnerPayout {
+model PartnerCommissionBill {
   id                  BigInt    @id @default(autoincrement())
   partnerId           BigInt    @map("partner_id")
-  amount              Decimal   @db.Decimal(15, 2)
-  commissionDeducted  Decimal   @map("commission_deducted") @db.Decimal(15, 2)
-  netAmount           Decimal   @map("net_amount") @db.Decimal(15, 2)
-  periodStart         DateTime? @map("period_start") @db.Date
-  periodEnd           DateTime? @map("period_end") @db.Date
-  bankAccount         String?   @map("bank_account") @db.VarChar(50)
-  bankName            String?   @map("bank_name") @db.VarChar(100)
-  status              String    @default("PENDING") @db.VarChar(20)
+  billCode            String    @unique @map("bill_code") @db.VarChar(50)
+  totalBookingsCount  Int       @default(0) @map("total_bookings_count")
+  totalRevenue        Decimal   @default(0.00) @map("total_revenue") @db.Decimal(15, 2)
+  commissionAmount    Decimal   @default(0.00) @map("commission_amount") @db.Decimal(15, 2)
+  periodStart         DateTime  @map("period_start") @db.Date
+  periodEnd           DateTime  @map("period_end") @db.Date
+  dueDate             DateTime  @map("due_date") @db.Date
+  status              String    @default("UNPAID") @db.VarChar(20) // UNPAID, PROCESSING, PAID, OVERDUE
+  paymentEvidenceUrl  String?   @map("payment_evidence_url") @db.Text
   processedBy         BigInt?   @map("processed_by")
+  processedAt         DateTime? @map("processed_at") @db.Timestamp
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
 
   partner             PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   processor           Admin?         @relation(fields: [processedBy], references: [id], onDelete: SetNull)
 
-  @@map("partner_payouts")
+  @@map("partner_commission_bills")
 }
 
 model Notification {

@@ -24,6 +24,9 @@ function serializePartner(partner: any) {
     commissionRate: partner.commissionRate
       ? parseFloat(partner.commissionRate.toString())
       : null,
+    commissionFixedAmount: partner.commissionFixedAmount
+      ? parseFloat(partner.commissionFixedAmount.toString())
+      : null,
     balance: partner.balance ? parseFloat(partner.balance.toString()) : null,
     user: partner.user
       ? {

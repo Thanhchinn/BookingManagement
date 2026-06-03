@@ -115,6 +115,8 @@ export class PartnersService {
         taxCode: data.taxCode,
         businessLicenseUrl: data.businessLicenseUrl,
         commissionRate: data.commissionRate,
+        commissionType: data.commissionType,
+        commissionFixedAmount: data.commissionFixedAmount,
       },
     });
   }

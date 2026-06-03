@@ -36,6 +36,9 @@ function normalizePartner(raw: any): PartnerItem {
       number: '(Chưa cập nhật)',
       bankName: '(Chưa cập nhật)',
     },
+    commissionType: raw.commissionType || 'PERCENTAGE',
+    commissionRate: raw.commissionRate !== undefined && raw.commissionRate !== null ? parseFloat(raw.commissionRate) : 10.00,
+    commissionFixedAmount: raw.commissionFixedAmount !== undefined && raw.commissionFixedAmount !== null ? parseFloat(raw.commissionFixedAmount) : 0,
   };
 }
 

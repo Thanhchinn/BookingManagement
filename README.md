@@ -17,8 +17,8 @@
     - Lọc theo bộ môn thể thao (Bóng đá, Cầu lông, Tennis, Pickleball,...), khung giờ hoạt động và mức giá.
 4.  **👤 Phân Quyền Người Dùng Rõ Ràng (Roles & Auth):**
     - **Khách hàng (Customer):** Tìm kiếm sân, đặt lịch, thanh toán, quản lý lịch sử đặt chỗ.
-    - **Chủ sân (Court Owner):** Quản lý danh sách sân, cấu hình giá theo giờ vàng/giờ thường, duyệt lịch đặt, xem thống kê doanh thu.
-    - **Quản trị viên (Admin):** Kiểm duyệt chủ sân, quản lý danh mục môn thể thao, giám sát toàn bộ hệ thống.
+    - **Chủ sân (Court Owner):** Quản lý tổ hợp cơ sở kinh doanh với mô hình đa sân (Multi-Court/Multi-Sport) trên cùng một địa điểm. Tích hợp công cụ **"Smart Slots"** sinh tự động khung giờ (giờ chẵn/lẻ/1h/1.5h), quản lý trạng thái hoạt động độc lập của từng sân đấu, duyệt lịch đặt, xem báo cáo doanh thu và đối soát hoa hồng hàng tháng.
+    - **Quản trị viên (Admin):** Kiểm duyệt chủ sân, cấu hình hoa hồng linh hoạt (theo phần trăm hoặc cố định trên lượt đặt) cho từng đối tác, kiểm duyệt hóa đơn hoa hồng và quản lý danh mục môn thể thao, giám sát hệ thống.
 5.  **🔔 Hệ Thống Thông Báo Tức Thời:**
     - Gửi thông báo đẩy (Push Notification) real-time khi đặt lịch thành công hoặc có thay đổi trạng thái sân.
 
@@ -179,6 +179,8 @@ BookingManagement/
 - [ ] **Giai đoạn 3 (Lịch Trống & Xử Lý Đặt Sân Real-Time):** Tạo thuật toán tính toán lịch trống động kết hợp cơ chế khóa slot giữ chỗ 10 phút. Tích hợp WebSockets/Socket.IO để cập nhật real-time.
 - [ ] **Giai đoạn 4 (Sản Phẩm Đi Kèm & Cổng Thanh Toán):** Cho phép đặt thêm sản phẩm dịch vụ phụ trợ. Tích hợp cổng thanh toán MoMo/VNPAY và xử lý Webhook.
 - [ ] **Giai đoạn 5 (Cộng Đồng Ghép Đội & Chat Nhóm):** Lập trình tính năng Matchmaking và tự động tạo phòng Chat room Socket.IO.
-- [ ] **Giai đoạn 6 (Disputes & Đối Soát Tài Chính):** Hoàn thiện module giải quyết khiếu nại của Admin và rút tiền ví đối tác.
+- [ ] **Giai đoạn 6 (Disputes & Đối Soát Tài Chính):** Hoàn thiện module giải quyết khiếu nại của Admin và hệ thống hóa đơn hoa hồng hàng tháng (Partner Commission Bill) thay thế cho cơ chế yêu cầu rút tiền thủ công.
+- [x] **Giai đoạn 7 (Quản Lý Sân & Vị Trí Cơ Sở Đối Tác Chuyên Sâu):** Phát triển phân hệ Quản lý Sân (Services) và Cơ sở (Locations) độc lập dạng Trang chuyên biệt (Dedicated Page) thay thế cho popup modal. Tích hợp quản lý Tiện ích (Amenities), Khung giờ bảng giá động (TimeSlots), Sản phẩm bán kèm (Products) và Phản hồi đánh giá của khách (Reviews).
 
 ---
+

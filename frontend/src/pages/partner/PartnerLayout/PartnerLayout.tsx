@@ -94,7 +94,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
   // Khai báo menu điều hướng Sidebar của Đối tác
   const menuItems = [
     { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard },
-    { id: 'fields', label: 'Sân Của Tôi', icon: Trophy },
+    { id: 'fields', label: 'Quản Lý Cơ Sở', icon: Trophy },
     { id: 'bookings', label: 'Lịch Đặt Khách Hàng', icon: CalendarRange },
     { id: 'products', label: 'Quản Lý Sản Phẩm', icon: ShoppingBag },
     { id: 'promotions', label: 'Quản Lý Voucher', icon: Tag },
