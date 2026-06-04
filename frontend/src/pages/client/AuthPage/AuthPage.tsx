@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { LoginForm } from '../../../features/auth/components/LoginForm';
@@ -16,6 +16,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess 
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+
+  // Tự động cuộn lên đầu trang khi chuyển đổi giữa Đăng nhập & Đăng ký
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [mode]);
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">

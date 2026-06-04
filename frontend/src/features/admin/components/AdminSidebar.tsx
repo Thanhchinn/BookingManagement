@@ -10,7 +10,8 @@ import {
   Scale,
   Coins,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  CalendarRange
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -33,6 +34,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   // Danh sách menu chính
   const menuItems = [
     { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
+    { id: 'bookings', name: 'Giám sát đặt sân', icon: CalendarRange },
     { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
     { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
     { id: 'users', name: 'Quản lý người dùng', icon: Users },

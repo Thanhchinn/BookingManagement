@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Search, Edit3, Trash2, MapPin, Phone, Settings, ShoppingBag } from 'lucide-react';
+import { Trophy, Plus, Search, Edit3, Trash2, MapPin, Phone, ShoppingBag } from 'lucide-react';
 import { LocationForm } from './LocationForm';
-import { CourtManagementPage } from './CourtManagementPage';
 import { ProductManagementPage } from './ProductManagementPage';
 import { toast } from 'sonner';
 
@@ -28,11 +27,9 @@ interface LocationItem {
   imageUrl?: string;
   isActive: boolean;
   locationAmenities?: Array<{
-    amenity: {
-      id: number;
-      name: string;
-      icon: string;
-    };
+    amenityId: string;
+    name: string;
+    icon: string;
   }>;
 }
 
@@ -43,9 +40,8 @@ export const FieldManagement: React.FC = () => {
   // - 'list': danh sách cơ sở
   // - 'add-location': thêm thông tin cơ sở
   // - 'edit-location': sửa thông tin cơ sở
-  // - 'manage-courts': trang quản lý sân lẻ của cơ sở
   // - 'manage-products': trang quản lý sản phẩm bán kèm của cơ sở
-  const [view, setView] = useState<'list' | 'add-location' | 'edit-location' | 'manage-courts' | 'manage-products'>('list');
+  const [view, setView] = useState<'list' | 'add-location' | 'edit-location' | 'manage-products'>('list');
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedLocationName, setSelectedLocationName] = useState<string>('');
 
@@ -113,12 +109,6 @@ export const FieldManagement: React.FC = () => {
     setView('edit-location');
   };
 
-  const handleOpenManageCourtsPage = (locId: string, locName: string) => {
-    setSelectedLocationId(locId);
-    setSelectedLocationName(locName);
-    setView('manage-courts');
-  };
-
   const handleOpenManageProductsPage = (locId: string, locName: string) => {
     setSelectedLocationId(locId);
     setSelectedLocationName(locName);
@@ -175,17 +165,6 @@ export const FieldManagement: React.FC = () => {
         editingLocationId={selectedLocationId}
         onBack={() => setView('list')}
         onSaveSuccess={() => setView('list')}
-      />
-    );
-  }
-
-  // 2. Phân cảnh quản lý sân của một cơ sở
-  if (view === 'manage-courts' && selectedLocationId) {
-    return (
-      <CourtManagementPage
-        locationId={selectedLocationId}
-        locationName={selectedLocationName}
-        onBack={() => setView('list')}
       />
     );
   }
@@ -321,21 +300,14 @@ export const FieldManagement: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleOpenManageProductsPage(loc.id, loc.name)}
-                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-855 hover:border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <ShoppingBag className="w-3.5 h-3.5 text-amber-500" />
                         Quản Lý Sản Phẩm
                       </button>
                       <button
-                        onClick={() => handleOpenManageCourtsPage(loc.id, loc.name)}
-                        className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-xs font-bold text-white rounded-xl transition flex items-center gap-1.5 cursor-pointer border-0 shadow-lg shadow-amber-500/10"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-white" />
-                        Quản Lý Sân ({locCourts.length})
-                      </button>
-                      <button
                         onClick={() => handleDeleteLocation(loc.id, loc.name)}
-                        className="p-2 bg-slate-950 hover:bg-red-500/10 border border-slate-850 hover:border-red-500/20 text-slate-500 hover:text-red-400 rounded-xl transition cursor-pointer"
+                        className="p-2 bg-slate-950 hover:bg-red-500/10 border border-slate-855 hover:border-red-500/20 text-slate-500 hover:text-red-400 rounded-xl transition cursor-pointer"
                         title="Xóa toàn bộ cơ sở này"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -348,11 +320,11 @@ export const FieldManagement: React.FC = () => {
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {loc.locationAmenities.map(la => (
                         <span 
-                          key={la.amenity.id} 
+                          key={la.amenityId} 
                           className="px-2.5 py-1 bg-slate-950 rounded-lg text-[10px] text-slate-400 border border-slate-850 flex items-center gap-1"
                         >
-                          <span>{la.amenity.icon || '📌'}</span>
-                          <span>{la.amenity.name}</span>
+                          <span>{la.icon || '📌'}</span>
+                          <span>{la.name}</span>
                         </span>
                       ))}
                     </div>

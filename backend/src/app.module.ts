@@ -10,6 +10,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { LocationsModule } from './locations/locations.module';
 import { ServicesModule } from './services/services.module';
 import { ProductsModule } from './products/products.module';
+import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProductsModule } from './products/products.module';
     LocationsModule,
     ServicesModule,
     ProductsModule,
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [AppService],

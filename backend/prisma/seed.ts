@@ -6,6 +6,7 @@ import 'dotenv/config';
 // Import các seeder riêng lẻ
 import { seedAdmins } from './seeders/admin.seeder';
 import { seedUsers } from './seeders/user.seeder';
+import { seedLocations } from './seeders/location.seeder';
 
 // Khởi tạo connection pool Postgres chuẩn của Prisma 7 Wasm engine
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -18,6 +19,7 @@ async function main() {
   // Thực thi các seeder theo thứ tự an toàn (bảng cha trước, bảng con sau)
   await seedAdmins(prisma);
   await seedUsers(prisma);
+  await seedLocations(prisma);
 
   console.log('🌱 [DatabaseSeeder] Database seeding completed successfully.');
 }

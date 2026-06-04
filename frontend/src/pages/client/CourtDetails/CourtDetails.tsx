@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { Button } from '../../../components/ui/Button';
@@ -13,13 +13,8 @@ import {
   AlertCircle,
   ShieldCheck,
   CreditCard,
-  Wifi,
-  Car,
-  Lightbulb,
-  Wind,
   Phone,
   CheckCircle2,
-  ThumbsUp,
   MessageSquare,
   Trophy,
   SlidersHorizontal
@@ -27,29 +22,11 @@ import {
 import { toast } from 'sonner';
 
 interface CourtDetailsProps {
-  onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner' | 'field-details' | 'my-bookings' | 'booking-success' | 'matchmaking' | 'chat', authMode?: 'login' | 'register') => void;
+  locationId?: string | null;
+  onNavigate?: (page: any, data?: any) => void;
   userName?: string;
   onLogout?: () => void;
   onSetBookingSuccessData?: (data: any) => void;
-}
-
-interface Court {
-  id: string;
-  name: string;
-  badge: string;
-  desc: string;
-  basePrice: number;
-  rating: number;
-}
-
-interface TimeSlot {
-  id: string;
-  label: string;
-  timeRange: string;
-  startHour: number; // For Even/Odd filtering
-  period: 'morning' | 'afternoon' | 'evening';
-  priceModifier: number;
-  isPromo?: boolean;
 }
 
 interface ProductItem {
@@ -61,92 +38,100 @@ interface ProductItem {
   qty: number;
 }
 
-export const CourtDetails: React.FC<CourtDetailsProps> = ({ 
-  onNavigate, 
-  userName, 
+const API = 'http://localhost:3000';
+
+// Map giờ bắt đầu → period
+const getPeriod = (h: number): 'morning' | 'afternoon' | 'evening' =>
+  h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+
+export const CourtDetails: React.FC<CourtDetailsProps> = ({
+  locationId,
+  onNavigate,
+  userName,
   onLogout,
-  onSetBookingSuccessData 
+  onSetBookingSuccessData
 }) => {
-  // 1. NGÀY ĐẶT SÂN
+  // ── Ngày chơi ──
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date(Date.now() + 86400000).toISOString().split('T')[0] // Mặc định ngày mai
+    new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
-
-  // Active Tab: 'booking' | 'details'
   const [activeTab, setActiveTab] = useState<'booking' | 'details'>('booking');
-
-  // Active Image index in Gallery
   const [activeImgIndex, setActiveImgIndex] = useState<number>(0);
 
-  const galleryImages = [
-    {
-      url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1200&auto=format&fit=crop',
-      desc: 'Mặt sân thảm Alsaflor Pro cao cấp nhập khẩu Pháp'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?q=80&w=1200&auto=format&fit=crop',
-      desc: 'Hệ thống đèn LED chống lóa chuyên nghiệp'
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1521537634215-1cf2a4d9585a?q=80&w=1200&auto=format&fit=crop',
-      desc: 'Khán đài và khu vực nghỉ ngơi của đấu thủ'
-    }
-  ];
+  // ── Dữ liệu từ API ──
+  const [location, setLocation] = useState<any>(null);
+  const [_isFetchingLocation, setIsFetchingLocation] = useState(true);
 
-  // 2. DANH SÁCH SÂN TRONG 1 CƠ SỞ (COURTS)
-  const [courts] = useState<Court[]>([
-    { id: 'c1', name: 'Sân Cầu Lông Số 1 (VIP Premium)', badge: '🏆 VIP', desc: 'Thảm Alsaflor Pro | Khán đài A | Gần quạt mát', basePrice: 160000, rating: 4.9 },
-    { id: 'c2', name: 'Sân Cầu Lông Số 2 (Standard)', badge: '⭐ Standard', desc: 'Thảm Enlio tiêu chuẩn | Lối vào tiện lợi', basePrice: 140000, rating: 4.8 },
-    { id: 'c3', name: 'Sân Cầu Lông Số 3 (Standard)', badge: '⭐ Standard', desc: 'Thảm Enlio tiêu chuẩn | Gần khu căn tin', basePrice: 140000, rating: 4.7 },
-    { id: 'c4', name: 'Sân Cầu Lông Số 4 (Economy)', badge: '⚡ Tiết Kiệm', desc: 'Thảm tập luyện | Góc khuất gió đập cầu tốt', basePrice: 120000, rating: 4.6 }
-  ]);
-  const [selectedCourtId, setSelectedCourtId] = useState<string>('c1');
+  const [courts, setCourts] = useState<any[]>([]);
+  const [selectedCourtId, setSelectedCourtId] = useState<string>('');
 
-  // Trạng thái đặt ca giả lập của từng sân để tạo cảm giác đổi sân đổi dữ liệu
-  const [bookedSlotsMap] = useState<Record<string, string[]>>({
-    'c1': ['2', '6', '10'],
-    'c2': ['3', '5', '8'],
-    'c3': ['1', '7', '11'],
-    'c4': ['4', '9']
-  });
+  const [slots, setSlots] = useState<any[]>([]);
+  const [_isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
-  // 3. DANH SÁCH CA HOẠT ĐỘNG (TIME SLOTS)
-  const [slots] = useState<TimeSlot[]>([
-    // Sáng
-    { id: '1', label: 'Ca 06:00 - 08:00', timeRange: '06:00 - 08:00', startHour: 6, period: 'morning', priceModifier: 0.9, isPromo: true },
-    { id: '2', label: 'Ca 07:00 - 09:00', timeRange: '07:00 - 09:00', startHour: 7, period: 'morning', priceModifier: 0.95 },
-    { id: '3', label: 'Ca 08:00 - 10:00', timeRange: '08:00 - 10:00', startHour: 8, period: 'morning', priceModifier: 1.0 },
-    { id: '4', label: 'Ca 09:00 - 11:00', timeRange: '09:00 - 11:00', startHour: 9, period: 'morning', priceModifier: 1.0 },
-    { id: '5', label: 'Ca 10:00 - 12:00', timeRange: '10:00 - 12:00', startHour: 10, period: 'morning', priceModifier: 1.0 },
-    // Chiều
-    { id: '6', label: 'Ca 14:00 - 16:00', timeRange: '14:00 - 16:00', startHour: 14, period: 'afternoon', priceModifier: 1.0 },
-    { id: '7', label: 'Ca 16:00 - 18:00', timeRange: '16:00 - 18:00', startHour: 16, period: 'afternoon', priceModifier: 1.1 },
-    { id: '8', label: 'Ca 17:00 - 19:00', timeRange: '17:00 - 19:00', startHour: 17, period: 'afternoon', priceModifier: 1.2 },
-    // Tối
-    { id: '9', label: 'Ca 18:00 - 20:00', timeRange: '18:00 - 20:00', startHour: 18, period: 'evening', priceModifier: 1.3 },
-    { id: '10', label: 'Ca 19:00 - 21:00', timeRange: '19:00 - 21:00', startHour: 19, period: 'evening', priceModifier: 1.3 },
-    { id: '11', label: 'Ca 20:00 - 22:00', timeRange: '20:00 - 22:00', startHour: 20, period: 'evening', priceModifier: 1.2 }
-  ]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
 
-  // Bộ lọc Ca đấu (Làm gọn)
+  // ── Bộ lọc ca ──
   const [periodFilter, setPeriodFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [hourFilter, setHourFilter] = useState<'all' | 'even' | 'odd'>('all');
 
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  // ── Fetch thông tin cơ sở + danh sách sân ──
+  useEffect(() => {
+    if (!locationId) return;
+    setIsFetchingLocation(true);
+    fetch(`${API}/public/locations/${locationId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setLocation(data);
+          const svc = data.services || [];
+          setCourts(svc);
+          if (svc.length > 0) setSelectedCourtId(svc[0].id);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsFetchingLocation(false));
+  }, [locationId]);
 
-  // Reset ca chọn khi chuyển sân
+  // ── Fetch sản phẩm bán kèm ──
+  useEffect(() => {
+    if (!locationId) return;
+    fetch(`${API}/public/products/location/${locationId}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        setProducts(data.map(p => ({ ...p, qty: 0, image: p.imageUrl || '🛍️' })));
+      })
+      .catch(console.error);
+  }, [locationId]);
+
+  // ── Fetch available slots khi đổi sân hoặc ngày ──
+  useEffect(() => {
+    if (!selectedCourtId) return;
+    setIsFetchingSlots(true);
+    setSelectedSlotId(null);
+    fetch(`${API}/public/services/${selectedCourtId}/available-slots?date=${selectedDate}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        const mapped = data.map(s => ({
+          id: s.id,
+          label: `Ca ${s.startTime} - ${s.endTime}`,
+          timeRange: `${s.startTime} - ${s.endTime}`,
+          startHour: parseInt(s.startTime.split(':')[0]),
+          period: getPeriod(parseInt(s.startTime.split(':')[0])),
+          priceModifier: s.priceModifier,
+          isBooked: s.isBooked,
+          finalPrice: s.finalPrice,
+        }));
+        setSlots(mapped);
+      })
+      .catch(console.error)
+      .finally(() => setIsFetchingSlots(false));
+  }, [selectedCourtId, selectedDate]);
+
   const handleSelectCourt = (courtId: string) => {
     setSelectedCourtId(courtId);
     setSelectedSlotId(null);
   };
-
-  // 4. SẢN PHẨM MUA KÈM (DRINKS & RENTALS)
-  const [products, setProducts] = useState<ProductItem[]>([
-    { id: '1', name: 'Nước bù khoáng Revive Chanh Muối', price: 15000, category: 'DRINK', image: '💧', qty: 0 },
-    { id: '2', name: 'Nước tăng lực Sting Dâu đỏ', price: 15000, category: 'DRINK', image: '🥤', qty: 0 },
-    { id: '3', name: 'Thuê Vợt Cầu Lông Pro Kennex', price: 30000, category: 'EQUIPMENT', image: '🏸', qty: 0 },
-    { id: '4', name: 'Thuê Bộ Áo Nhóm Bib (10 cái)', price: 40000, category: 'EQUIPMENT', image: '👕', qty: 0 }
-  ]);
 
   // 5. MÃ KHUYẾN MÃI (PROMO CODE)
   const [promoCode, setPromoCode] = useState<string>('');
@@ -156,14 +141,14 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
   // 6. CỔNG THANH TOÁN
   const [paymentMethod, setPaymentMethod] = useState<'VNPAY' | 'MOMO' | 'CASH'>('VNPAY');
 
-  const activeCourt = courts.find(c => c.id === selectedCourtId) || courts[0];
-  const BASE_PRICE = activeCourt.basePrice;
+  const activeCourt = courts.find((c: any) => c.id === selectedCourtId) || courts[0];
+  const BASE_PRICE = activeCourt?.basePricePerHour || 0;
 
-  // Tính toán số tiền
+  // Tính toán số tiền — dùng finalPrice từ API nếu có
   const getSelectedSlotPrice = () => {
     if (!selectedSlotId) return 0;
     const slot = slots.find(s => s.id === selectedSlotId);
-    return slot ? BASE_PRICE * slot.priceModifier : 0;
+    return slot?.finalPrice ?? (slot ? BASE_PRICE * slot.priceModifier : 0);
   };
 
   const getProductsPrice = () => {
@@ -226,9 +211,9 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     const chosenSlot = slots.find(s => s.id === selectedSlotId);
     const successData = {
       bookingCode: 'BKG-' + Math.floor(Math.random() * 900000 + 100000),
-      courtName: `Sân Cầu Lông Trong Nhà ProZone - ${activeCourt.name}`,
-      sport: 'Cầu Lông',
-      location: 'Số 12 Chu Văn An, Bình Thạnh, TP. HCM',
+      courtName: `${location?.name || 'Cơ sở'} - ${activeCourt?.name || ''}`,
+      sport: activeCourt?.category || 'Thể thao',
+      location: location ? `${location.address}, ${location.district}, ${location.city}` : '',
       bookingDate: selectedDate,
       startTime: chosenSlot?.timeRange.split(' ')[0] || '18:00',
       endTime: chosenSlot?.timeRange.split(' ')[2] || '20:00',
@@ -250,6 +235,106 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     onNavigate?.('booking-success');
   };
 
+  const handleDirectMessage = () => {
+    const facilityName = location?.name || 'Chủ Sân';
+    const savedRoomsStr = localStorage.getItem('sportzone_client_chat_rooms');
+    let currentRooms: any[] = [];
+    if (savedRoomsStr) {
+      try {
+        currentRooms = JSON.parse(savedRoomsStr);
+      } catch (e) {
+        currentRooms = [];
+      }
+    }
+    
+    // Nếu rỗng, nạp danh sách mặc định để giữ dữ liệu mẫu
+    if (currentRooms.length === 0) {
+      currentRooms = [
+        {
+          id: '1',
+          name: '🏸 Cầu Lông Đôi Nam Nữ - Bình Thạnh',
+          avatar: '🏸',
+          type: 'MATCH',
+          sport: 'Cầu Lông',
+          unreadCount: 2,
+          lastMessage: 'Hệ thống: Lê Hoàng Long đã tham gia phòng chat nhóm!',
+          lastMessageTime: '16:45',
+          messages: [
+            { id: '101', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Trận đấu đã được chốt 4 thành viên! Phòng chat nhóm tự động được kích hoạt.', timestamp: '16:00', type: 'SYSTEM' },
+            { id: '102', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍', isMe: false, text: 'Chào mọi người, sân mình đặt ở Bình Thạnh ca 18h-20h tối mai nhé.', timestamp: '16:02', type: 'TEXT' },
+            { id: '103', senderName: 'Trần Thị Mai', senderAvatar: '👩‍🦰', isMe: false, text: 'Ok anh Hải ơi, mình đi xe máy tới thì gửi xe ở cổng hay bên trong ạ?', timestamp: '16:05', type: 'TEXT' },
+            { id: '104', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍', isMe: false, text: 'Gửi xe máy bên hông sân miễn phí nhé em, có bảo vệ trông.', timestamp: '16:08', type: 'TEXT' },
+            { id: '105', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Lê Hoàng Long đã được duyệt duyệt tham gia nhóm!', timestamp: '16:45', type: 'SYSTEM' }
+          ]
+        },
+        {
+          id: '2',
+          name: '⚽ FC Giao Hữu Sân 5 - An Phú',
+          avatar: '⚽',
+          type: 'MATCH',
+          sport: 'Bóng Đá',
+          unreadCount: 0,
+          lastMessage: 'Hẹn tối mai 19h anh em có mặt đông đủ nhé!',
+          lastMessageTime: 'Hôm qua',
+          messages: [
+            { id: '201', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'FC Giao Hữu Sân 5 đã được kích hoạt phòng chat.', timestamp: 'Hôm qua', type: 'SYSTEM' },
+            { id: '202', senderName: 'Lê Hoàng Long', senderAvatar: '🧔', isMe: false, text: 'Đội mình mặc áo màu đỏ nhé anh em ơi.', timestamp: 'Hôm qua', type: 'TEXT' },
+            { id: '203', senderName: 'Vũ Minh Tuấn', senderAvatar: '👨', isMe: false, text: 'Ok, để em mang thêm bộ áo pitch dự phòng.', timestamp: 'Hôm qua', type: 'TEXT' }
+          ]
+        },
+        {
+          id: '3',
+          name: 'Chủ Sân Cầu Lông ProZone',
+          avatar: '🏟️',
+          type: 'INDIVIDUAL',
+          unreadCount: 0,
+          lastMessage: 'Dạ vâng ạ, sân em đã bật sẵn điều hòa cho đoàn mình.',
+          lastMessageTime: '29 Tháng 5',
+          messages: [
+            { id: '301', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Chào anh Hải, sân cầu lông ProZone xin nghe ạ.', timestamp: '29 Tháng 5', type: 'TEXT' },
+            { id: '302', senderName: 'Khách Hàng', senderAvatar: '👨‍🚀', isMe: true, text: 'Chào admin, ca 18h tối mai mình muốn thuê thêm 2 đôi giày được không?', timestamp: '29 Tháng 5', type: 'TEXT' },
+            { id: '303', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Dạ được chứ anh, bên em có sẵn giày các size từ 38 đến 44. Giá thuê 20.000đ/đôi ạ.', timestamp: '29 Tháng 5', type: 'TEXT' }
+          ]
+        }
+      ];
+    }
+
+    const roomName = `Chủ Sân ${facilityName}`;
+    let existingRoom = currentRooms.find((r: any) => r.name === roomName);
+    
+    let targetRoomId = '';
+    if (existingRoom) {
+      targetRoomId = existingRoom.id;
+    } else {
+      targetRoomId = 'ROOM-' + Date.now();
+      const newRoom = {
+        id: targetRoomId,
+        name: roomName,
+        avatar: '🏟️',
+        type: 'INDIVIDUAL',
+        unreadCount: 0,
+        lastMessage: 'Nhắn tin để bắt đầu trao đổi với chủ sân.',
+        lastMessageTime: 'Vừa xong',
+        messages: [
+          {
+            id: 'welcome-' + Date.now(),
+            senderName: roomName,
+            senderAvatar: '🏟️',
+            isMe: false,
+            text: `Xin chào! Bạn đang nhắn tin trực tiếp với cụm sân ${facilityName}. Chúng tôi có thể giúp gì cho bạn?`,
+            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            type: 'TEXT'
+          }
+        ]
+      };
+      currentRooms.push(newRoom);
+      localStorage.setItem('sportzone_client_chat_rooms', JSON.stringify(currentRooms));
+    }
+
+    localStorage.setItem('sportzone_active_chat_room_id', targetRoomId);
+    onNavigate?.('chat');
+  };
+
   // Lọc Ca đấu (Làm gọn) theo Buổi & Giờ Chẵn/Lẻ
   const filteredSlots = slots.filter(s => {
     // 1. Lọc buổi
@@ -260,41 +345,11 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     return true;
   });
 
-  const amenities = [
-    { icon: Wifi, label: 'Wifi Tốc Độ Cao', desc: 'Miễn phí phủ sóng toàn cụm sân' },
-    { icon: Car, label: 'Bãi Xe Rộng Rãi', desc: 'Có chỗ đỗ ô tô, bảo vệ trông giữ' },
-    { icon: Lightbulb, label: 'Ánh Sáng Chuẩn LĐ', desc: 'LED chống chói chuyên dụng' },
-    { icon: Wind, label: 'Hệ Thống Thông Gió', desc: 'Đối lưu không khí tự nhiên mát mẻ' },
-    { icon: Coffee, label: 'Căn Tin & Nước Uống', desc: 'Nước mát, đồ ăn nhẹ, thuê giày' },
-    { icon: ShieldCheck, label: 'Tủ Đồ Cá Nhân', desc: 'Có khóa an toàn bảo vệ tư trang' }
-  ];
+  // Tiện ích từ API location
+  const amenities: any[] = location?.locationAmenities || [];
 
-  const mockReviews = [
-    {
-      id: 'rev-1',
-      user: 'Nguyễn Minh Hải',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60',
-      rating: 5,
-      date: 'Hôm qua',
-      comment: 'Sân thảm rất bám giày, ánh sáng bố trí cực kỳ tốt không bị chói mắt khi đập cầu. Anh chủ sân nhiệt tình hỗ trợ nước mát lạnh. Sẽ quay lại!'
-    },
-    {
-      id: 'rev-2',
-      user: 'Trần Thị Mai',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60',
-      rating: 5,
-      date: '3 ngày trước',
-      comment: 'Bãi đậu xe ô tô rộng rãi, phòng thay đồ và nhà vệ sinh sạch sẽ, thoáng mát. Dịch vụ đặt trước đồ uống rất tiện lợi.'
-    },
-    {
-      id: 'rev-3',
-      user: 'Lê Hoàng Long',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60',
-      rating: 4,
-      date: '1 tuần trước',
-      comment: 'Sân đẹp, giờ vàng hơi đông một chút nhưng chất lượng thảm và dịch vụ hoàn toàn xứng đáng với tầm giá.'
-    }
-  ];
+  // Đánh giá từ sân đang chọn
+  const reviews: any[] = activeCourt?.reviews || [];
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
@@ -308,31 +363,47 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
         {/* Breadcrumb & Tiêu đề Sân */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-              🏸 Cầu Lông
-            </span>
+            {courts.length > 0 && (
+              <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                {activeCourt?.category || 'Chi tiết đặt sân'}
+              </span>
+            )}
             <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold">
-              <Star className="w-4 h-4 fill-current" /> 4.9 (142 đánh giá thực tế)
+              <Star className="w-4 h-4 fill-current" /> {location?._count?.services || courts.length} sân con
             </div>
-            <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-900/60 font-bold px-2 py-0.5 rounded flex items-center gap-1 select-none">
-              <Sparkles className="w-3 h-3 text-emerald-400" /> Cụm 4 Sân Thi Đấu
-            </span>
+            {location?.isActive && (
+              <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-900/60 font-bold px-2 py-0.5 rounded flex items-center gap-1 select-none">
+                <Sparkles className="w-3 h-3 text-emerald-400" /> Đang mở cửa
+              </span>
+            )}
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-black text-white m-0 tracking-tight leading-tight">
-            Cụm Sân Cầu Lông Trong Nhà ProZone - Chi nhánh Bình Thạnh
+            {location?.name || 'Cơ Sở Thể Thao'}
           </h2>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs sm:text-sm text-slate-400">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
-              <span>Số 12 Chu Văn An, Phường 26, Quận Bình Thạnh, TP. Hồ Chí Minh</span>
+              <span>{location ? `${location.address}, ${location.ward}, ${location.district}, ${location.city}` : ''}</span>
             </div>
+            {location?.contactPhone && (
+              <>
+                <span className="hidden sm:inline text-slate-700">|</span>
+                <div className="flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span>Hotline hỗ trợ: {location.contactPhone}</span>
+                </div>
+              </>
+            )}
             <span className="hidden sm:inline text-slate-700">|</span>
-            <div className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>Hotline hỗ trợ: 0987.654.321</span>
-            </div>
+            <button
+              onClick={handleDirectMessage}
+              className="flex items-center gap-1.5 text-teal-400 hover:text-teal-300 font-extrabold bg-teal-500/10 border border-teal-500/20 hover:border-teal-500/40 px-3.5 py-1.5 rounded-xl transition cursor-pointer select-none text-xs"
+            >
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              Nhắn tin trực tiếp
+            </button>
           </div>
         </div>
 
@@ -344,40 +415,52 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
             
             {/* Gallery Image Panel */}
             <div className="space-y-3">
-              <div className="h-64 sm:h-[380px] bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden relative flex items-center justify-center">
-                <img 
-                  src={galleryImages[activeImgIndex].url}
-                  alt="Gallery" 
-                  className="w-full h-full object-cover transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
-                <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
-                  <p className="text-xs sm:text-sm text-slate-200 font-bold m-0 bg-slate-950/70 border border-slate-800 px-4 py-2 rounded-2xl backdrop-blur-md">
-                    ℹ️ {galleryImages[activeImgIndex].desc}
-                  </p>
-                  <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-xl uppercase tracking-wider">
-                    🟢 Hoạt động 05:00 - 23:00
-                  </span>
-                </div>
-              </div>
-
-              {/* Thumbnails */}
-              <div className="grid grid-cols-3 gap-3">
-                {galleryImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImgIndex(idx)}
-                    className={`h-16 sm:h-20 rounded-2xl overflow-hidden border-2 transition cursor-pointer p-0 relative ${
-                      activeImgIndex === idx ? 'border-amber-500' : 'border-transparent hover:border-slate-700'
-                    }`}
-                  >
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                    <div className={`absolute inset-0 transition ${
-                      activeImgIndex === idx ? 'bg-transparent' : 'bg-slate-950/30'
-                    }`}></div>
-                  </button>
-                ))}
-              </div>
+              {/* Ảnh chính từ API */}
+              {(() => {
+                const imgs = [
+                  ...(location?.imageUrl ? [{ url: location.imageUrl, desc: `Ảnh đại diện cơ sở ${location?.name || ''}` }] : []),
+                  ...(courts.flatMap((c: any) => {
+                    let urls = [];
+                    if (Array.isArray(c.imageUrls)) urls = c.imageUrls;
+                    else if (typeof c.imageUrls === 'string') {
+                      try { urls = JSON.parse(c.imageUrls); } catch(e) {}
+                    }
+                    return urls.map((u: string) => ({ url: u, desc: c.name }));
+                  })),
+                ];
+                const gallery = imgs.length > 0 ? imgs : [
+                  { url: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1200&auto=format&fit=crop', desc: 'Hình ảnh cơ sở' }
+                ];
+                const cur = gallery[Math.min(activeImgIndex, gallery.length - 1)];
+                return (
+                  <>
+                    <div className="h-64 sm:h-[380px] bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden relative flex items-center justify-center">
+                      <img src={cur.url} alt="Gallery" className="w-full h-full object-cover transition-all duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+                      <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
+                        <p className="text-xs sm:text-sm text-slate-200 font-bold m-0 bg-slate-950/70 border border-slate-800 px-4 py-2 rounded-2xl backdrop-blur-md">
+                          ℹ️ {cur.desc}
+                        </p>
+                        <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-xl uppercase tracking-wider">
+                          {location?.isActive ? '🟢 Mở cửa' : '🔴 Đóng cửa'}
+                        </span>
+                      </div>
+                    </div>
+                    {gallery.length > 1 && (
+                      <div className="grid grid-cols-3 gap-3">
+                        {gallery.slice(0, 3).map((img, idx) => (
+                          <button key={idx} onClick={() => setActiveImgIndex(idx)}
+                            className={`h-16 sm:h-20 rounded-2xl overflow-hidden border-2 transition cursor-pointer p-0 relative ${
+                              activeImgIndex === idx ? 'border-amber-500' : 'border-transparent hover:border-slate-700'
+                            }`}>
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Tabs Điều Hướng Chi Tiết */}
@@ -396,7 +479,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   activeTab === 'details' ? 'border-amber-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'
                 }`}
               >
-                Tiện ích & Đánh giá sân ({mockReviews.length})
+                Tiện ích & Đánh giá ({reviews.length} đánh giá)
               </button>
             </div>
 
@@ -448,21 +531,21 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                           <div className="w-full flex justify-between items-start">
                             <div>
                               <span className="text-xs font-black block leading-none">{c.name}</span>
-                              <span className="text-[9px] text-slate-500 block mt-1.5">{c.desc}</span>
+                              <span className="text-[9px] text-slate-500 block mt-1.5">{c.subType || c.category}</span>
                             </div>
                             <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider shrink-0 ${
                               isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-550 border border-slate-800'
                             }`}>
-                              {c.badge}
+                              {c.category}
                             </span>
                           </div>
 
                           <div className="w-full flex justify-between items-center mt-2 pt-2 border-t border-slate-900/60">
                             <span className="text-[9px] text-slate-500 flex items-center gap-1">
-                              ⭐ {c.rating} / 5.0
+                              ⭐ {c._count?.reviews || 0} đánh giá
                             </span>
                             <span className={`text-[11px] font-extrabold ${isSelected ? 'text-amber-400' : 'text-slate-300'}`}>
-                              Giá gốc: {c.basePrice.toLocaleString()}đ/h
+                              Giá gốc: {(Number(c.basePricePerHour) || 0).toLocaleString()}đ/h
                             </span>
                           </div>
                         </button>
@@ -519,7 +602,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {filteredSlots.map(s => {
-                        const isBooked = bookedSlotsMap[selectedCourtId]?.includes(s.id);
+                        const isBooked = s.isBooked;
                         const isSelected = selectedSlotId === s.id;
                         return (
                           <button
@@ -621,29 +704,29 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                     <Sparkles className="w-4.5 h-4.5" />
                     Tiện ích cơ sở vật chất sân bãi
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {amenities.map((item, idx) => {
-                      const Icon = item.icon;
-                      return (
-                        <div key={idx} className="flex gap-3 bg-slate-950 p-4 border border-slate-850 rounded-2xl">
-                          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0">
-                            <Icon className="w-5 h-5" />
+                  {amenities.length === 0 ? (
+                    <p className="text-xs text-slate-500">Chưa có tiện ích nào được thiết lập.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {amenities.map((item, idx) => (
+                        <div key={idx} className="flex gap-3 bg-slate-950 p-4 border border-slate-855/80 rounded-2xl items-center">
+                          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 text-lg shrink-0 select-none">
+                            {item.icon || '📌'}
                           </div>
                           <div>
-                            <span className="text-xs font-bold text-white block">{item.label}</span>
-                            <span className="text-[10px] text-slate-500 block mt-1 leading-relaxed">{item.desc}</span>
+                            <span className="text-xs font-bold text-white block">{item.name}</span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Giới thiệu chi tiết */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-3.5 text-slate-355 text-xs leading-relaxed">
+                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-3.5 text-slate-300 text-xs leading-relaxed">
                   <h3 className="text-sm font-black text-white m-0 tracking-wider uppercase text-amber-500">Mô Tả & Quy Định Chung</h3>
                   <p className="m-0">
-                    Sân cầu lông ProZone được thiết kế theo tiêu chuẩn thi đấu thể thao quốc tế. Mặt thảm đệm PVC Alsaflor Pháp chống trơn trượt hiệu quả, nâng đỡ đầu gối và giảm thiểu chấn thương. Cường độ chiếu sáng 800 Lux được thiết lập kỹ lưỡng chống chói, tối ưu hướng đi cầu và tập trung cao độ khi thi đấu.
+                    {location?.description || 'Cơ sở hiện chưa cập nhật mô tả chi tiết. Vui lòng liên hệ hotline để biết thêm thông tin.'}
                   </p>
                   <div className="bg-slate-955 p-4 border border-slate-850 rounded-xl space-y-2 mt-4">
                     <span className="text-[10px] font-extrabold uppercase text-amber-500 block">🛑 Quy định của cụm sân</span>
@@ -662,18 +745,20 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   </h3>
                   <div className="w-full h-64 rounded-2xl overflow-hidden border border-slate-850 bg-slate-950">
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1232857037747!2d106.70228307570335!3d10.801893358721752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317528bef47230bb%3A0xe1043f25c79e6f!2zMTIgQ2h1IFbEg24gQW4sIFBoxbDynamichu51uZyAyNiwgQsOsbmggVGjhuqFuaCwgVGjDoG5oIHBo4buRIEjhu5MgQ2jDrSBNaW5oLCBWaWV0bmFt!5e0!3m2!1sen!2s!4v1716382025345!5m2!1sen!2s"
+                      src={location?.latitude && location?.longitude
+                        ? `https://maps.google.com/maps?q=${location.latitude},${location.longitude}&z=16&output=embed`
+                        : `https://maps.google.com/maps?q=${encodeURIComponent(location ? `${location.address}, ${location.city}` : '')}&z=16&output=embed`}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
                       allowFullScreen={false}
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
-                      title="Bản đồ vị trí sân cầu lông ProZone"
+                      title={`Bản đồ vị trí ${location?.name || ''}`}
                     />
                   </div>
                   <p className="text-[10px] text-slate-500 m-0 leading-relaxed">
-                    📌 <strong>Gợi ý di chuyển:</strong> Cụm sân nằm ngay ngã tư Chu Văn An - Phan Chu Trinh, đối diện siêu thị Co.opmart Bình Thạnh. Có chỗ đậu xe ô tô và bảo vệ trông coi rất an toàn.
+                    📌 <strong>Địa chỉ cụ thể:</strong> {location ? `${location.address}, ${location.ward || ''}, ${location.district}, ${location.city}` : ''}
                   </p>
                 </div>
 
@@ -684,38 +769,57 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       <MessageSquare className="w-4.5 h-4.5" />
                       Đánh Giá Thực Tế Từ Người Chơi
                     </h3>
-                    <span className="text-xs text-amber-400 font-bold">4.9/5 (142 lượt đánh giá)</span>
+                    <span className="text-xs text-amber-400 font-bold">
+                      {reviews.length > 0
+                        ? `${(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)}/5 (${reviews.length} lượt đánh giá)`
+                        : 'Chưa có đánh giá'}
+                    </span>
                   </div>
 
                   <div className="space-y-4">
-                    {mockReviews.map((r) => (
-                      <div key={r.id} className="border-b border-slate-800 pb-4 last:border-0 last:pb-0 text-left">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex gap-3">
-                            <img src={r.avatar} alt={r.user} className="w-9 h-9 rounded-full object-cover border border-slate-800" />
-                            <div>
-                              <span className="text-xs font-bold text-white block leading-none">{r.user}</span>
-                              <div className="flex items-center gap-1.5 mt-1.5">
-                                <div className="flex text-amber-400">
-                                  {Array.from({ length: r.rating }).map((_, i) => (
-                                    <Star key={i} className="w-3 h-3 fill-current" />
-                                  ))}
+                    {reviews.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-slate-500">
+                        Chưa có đánh giá nào cho sân đấu này.
+                      </div>
+                    ) : (
+                      reviews.map((r) => (
+                        <div key={r.id} className="border-b border-slate-800 pb-4 last:border-0 last:pb-0 text-left">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex gap-3">
+                              <img 
+                                src={r.user?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60'} 
+                                alt={r.user?.fullName || 'Người dùng'} 
+                                className="w-9 h-9 rounded-full object-cover border border-slate-800" 
+                              />
+                              <div>
+                                <span className="text-xs font-bold text-white block leading-none">{r.user?.fullName || 'Khách hàng'}</span>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                  <div className="flex text-amber-400">
+                                    {Array.from({ length: r.rating }).map((_, i) => (
+                                      <Star key={i} className="w-3 h-3 fill-current" />
+                                    ))}
+                                  </div>
+                                  <span className="text-[9px] text-slate-500 font-medium">
+                                    {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                                  </span>
                                 </div>
-                                <span className="text-[9px] text-slate-500 font-medium">{r.date}</span>
                               </div>
                             </div>
                           </div>
-                          
-                          <button className="flex items-center gap-1 px-2.5 py-1 bg-slate-950 border border-slate-850 hover:border-slate-800 rounded-lg text-slate-500 hover:text-slate-300 text-[10px] font-bold cursor-pointer transition">
-                            <ThumbsUp className="w-3 h-3" /> Hữu ích (3)
-                          </button>
-                        </div>
 
-                        <p className="text-xs text-slate-450 mt-3 m-0 leading-relaxed pl-12">
-                          "{r.comment}"
-                        </p>
-                      </div>
-                    ))}
+                          <p className="text-xs text-slate-400 mt-3 m-0 leading-relaxed pl-12">
+                            "{r.comment || 'Không có bình luận.'}"
+                          </p>
+
+                          {r.partnerReply && (
+                            <div className="bg-slate-900 border border-slate-850 rounded-xl p-3 mt-3 ml-12 text-left">
+                              <span className="text-[9px] text-amber-500 font-extrabold uppercase block mb-1">Chủ sân phản hồi:</span>
+                              <p className="text-xs text-slate-400 m-0">"{r.partnerReply}"</p>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 

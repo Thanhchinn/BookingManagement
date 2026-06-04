@@ -83,12 +83,13 @@ export const UserManagement: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // Tải danh sách người dùng phân trang & tìm kiếm từ Backend
-  const fetchUsers = async (page = currentPage, searchVal = searchTerm) => {
-    setIsLoading(true);
+  const fetchUsers = async (page = currentPage, searchVal = searchTerm, isBackground = false) => {
+    const isBg = isBackground === true;
+    if (!isBg) setIsLoading(true);
     const token = localStorage.getItem('admin_token');
     if (!token) {
       toast.error('Lỗi xác thực', { description: 'Vui lòng đăng nhập lại hệ thống.' });
-      setIsLoading(false);
+      if (!isBg) setIsLoading(false);
       return;
     }
 
@@ -102,7 +103,18 @@ export const UserManagement: React.FC = () => {
         }
       );
 
-      if (!response.ok) throw new Error('Không thể tải danh sách tài khoản.');
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_profile');
+          toast.error('Phiên đăng nhập hết hạn', { description: 'Vui lòng đăng nhập lại vào hệ thống.' });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+          return;
+        }
+        throw new Error('Không thể tải danh sách tài khoản.');
+      }
       const data = await response.json();
 
       if (data && Array.isArray(data)) {
@@ -119,13 +131,14 @@ export const UserManagement: React.FC = () => {
         description: err.message || 'Không thể kết nối đến máy chủ API.',
       });
     } finally {
-      setIsLoading(false);
+      if (!isBg) setIsLoading(false);
     }
   };
 
   // Tải thông tin thống kê người dùng từ Backend
-  const fetchStats = async () => {
-    setIsStatsLoading(true);
+  const fetchStats = async (isBackground = false) => {
+    const isBg = isBackground === true;
+    if (!isBg) setIsStatsLoading(true);
     const token = localStorage.getItem('admin_token');
     if (!token) return;
 
@@ -135,6 +148,14 @@ export const UserManagement: React.FC = () => {
           'Authorization': `Bearer ${token}`
         }
       });
+      if (response.status === 401) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_profile');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -142,20 +163,20 @@ export const UserManagement: React.FC = () => {
     } catch (err) {
       console.error('Lỗi tải thống kê user:', err);
     } finally {
-      setIsStatsLoading(false);
+      if (!isBg) setIsStatsLoading(false);
     }
   };
 
   // Tải dữ liệu ban đầu
   useEffect(() => {
-    fetchUsers(currentPage, searchTerm);
-    fetchStats();
+    fetchUsers(currentPage, searchTerm, false);
+    fetchStats(false);
   }, [currentPage]);
 
   // Tự động refresh mỗi 3 giây để hiển thị người dùng mới đăng ký
   const autoRefreshFn = async () => {
-    await fetchUsers(currentPage, searchTerm);
-    await fetchStats();
+    await fetchUsers(currentPage, searchTerm, true);
+    await fetchStats(true);
   };
   useAutoRefresh(autoRefreshFn, 3000);
 
@@ -164,7 +185,7 @@ export const UserManagement: React.FC = () => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (currentPage === 1) {
-        fetchUsers(1, searchTerm);
+        fetchUsers(1, searchTerm, false);
       } else {
         setCurrentPage(1);
       }
@@ -226,6 +247,15 @@ export const UserManagement: React.FC = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_profile');
+          toast.error('Phiên đăng nhập hết hạn', { description: 'Vui lòng đăng nhập lại.' });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.message || 'Cập nhật trạng thái người dùng thất bại.');
       }
@@ -306,6 +336,15 @@ export const UserManagement: React.FC = () => {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_profile');
+          toast.error('Phiên đăng nhập hết hạn', { description: 'Vui lòng đăng nhập lại.' });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+          return;
+        }
         const errorMessage = Array.isArray(data.message) ? data.message[0] : data.message;
         throw new Error(errorMessage || 'Không thể lưu tài khoản khách hàng.');
       }
@@ -352,6 +391,15 @@ export const UserManagement: React.FC = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_profile');
+          toast.error('Phiên đăng nhập hết hạn', { description: 'Vui lòng đăng nhập lại.' });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.message || 'Xóa tài khoản thất bại.');
       }

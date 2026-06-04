@@ -9,6 +9,7 @@ import { DisputeManagement } from '../DisputeManagement';
 import { PayoutManagement } from '../PayoutManagement';
 import { UserManagement } from '../UserManagement';
 import { AdminPartnerChat } from '../AdminPartnerChat';
+import { BookingMonitor } from '../BookingMonitor';
 import '../../../features/admin/styles/admin-table.css';
 
 interface AdminLayoutProps {
@@ -36,12 +37,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateT
   // Ref cho vùng cuộn chính <main> để reset scroll khi chuyển tab
   const mainRef = useRef<HTMLElement>(null);
 
+  // Tự động cuộn lên đầu trang con khi chuyển tab (kể cả qua nút điều hướng trình duyệt)
+  React.useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [currentTab]);
+
   // Hàm chuyển tab đồng thời reset trạng thái trang chi tiết và scroll về đầu trang
   const handleSelectTab = (tab: string) => {
     const newPath = tab === 'dashboard' ? '/admin' : `/admin/${tab}`;
     navigateTo(newPath);
     setIsSubPageActive(false);
-    mainRef.current?.scrollTo({ top: 0 });
   };
 
   // Bản đồ tên Tab hiển thị trong trang với đầy đủ tiêu đề, mô tả và icon premium
@@ -55,6 +60,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateT
     disputes: { title: 'Giải quyết khiếu nại khách hàng', desc: 'Theo dõi các phản ánh, tranh chấp sân bãi giữa người dùng và chủ sân.', icon: '⚖️' },
     payouts: { title: 'Duyệt rút tiền đối soát', desc: 'Phê duyệt các yêu cầu rút tiền mặt từ doanh thu sân bãi của đối tác.', icon: '💵' },
     reconciliation: { title: 'Đối soát tài chính & Rút tiền', desc: 'Kiểm tra khớp số liệu dòng tiền, xuất hóa đơn và tổng hợp báo cáo tài chính.', icon: '💰' },
+    bookings: { title: 'Giám sát đặt sân toàn hệ thống', desc: 'Theo dõi chi tiết các lượt đặt sân, trạng thái thanh toán, và doanh thu phí nền tảng theo thời gian thực.', icon: '📅' },
   };
 
   // Hàm render nội dung trang con tương ứng với Tab được chọn
@@ -76,6 +82,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateT
         return <DisputeManagement />;
       case 'payouts':
         return <PayoutManagement />;
+      case 'bookings':
+        return <BookingMonitor />;
       case 'reconciliation':
         return (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-sm">

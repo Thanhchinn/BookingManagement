@@ -1,9 +1,8 @@
-import React from 'react';
-import { Navbar } from '../../../components/layout/Navbar';
+import React, { useState, useEffect } from 'react';
 import { Footer } from '../../../components/layout/Footer';
 import { SearchBar } from '../../../features/sports-field/components/SearchBar';
 import { CategoryList } from '../../../features/sports-field/components/CategoryList';
-import { FieldList, MOCK_FIELDS } from '../../../features/sports-field/components/FieldList';
+import { FieldList } from '../../../features/sports-field/components/FieldList';
 import { Sparkles, ArrowLeft } from 'lucide-react';
 
 interface SearchProps {
@@ -18,21 +17,54 @@ interface SearchProps {
   onUpdateFilters: (filters: { query: string; address: string; category: string }) => void;
 }
 
-// Bảng ánh xạ từ ID Category sang tên Tiếng Việt trong dữ liệu Mock
 const CATEGORY_MAP: Record<string, string> = {
   'football': 'Bóng Đá',
   'badminton': 'Cầu Lông',
   'tennis': 'Tennis'
 };
 
+const API = 'http://localhost:3000';
+
 export const Search: React.FC<SearchProps> = ({
   onNavigate,
-  userName,
-  onLogout,
   searchFilters,
   onUpdateFilters,
 }) => {
   const { query, address, category } = searchFilters;
+
+  const [filteredFields, setFilteredFields] = useState<any[]>([]);
+
+  // Gọi API lấy danh sách đã lọc từ backend
+  useEffect(() => {
+    const categoryName = CATEGORY_MAP[category] || '';
+    const params = new URLSearchParams();
+    if (query.trim()) params.append('search', query.trim());
+    if (address && address !== 'all') params.append('city', address);
+    if (categoryName) params.append('category', categoryName);
+
+    fetch(`${API}/public/locations?${params.toString()}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        const mapped = data.map((loc: any) => {
+          const prices = loc.services?.map((s: any) => Number(s.basePricePerHour) || 0) || [];
+          const minPrice = prices.length > 0 ? Math.min(...prices) : 100000;
+          const maxPrice = prices.length > 0 ? Math.max(...prices) : 150000;
+          const sports = Array.from(new Set(loc.services?.map((s: any) => s.category) || []));
+          const sportLabel = sports.join(', ') || 'Thể thao';
+          return {
+            id: loc.id,
+            title: loc.name,
+            location: `${loc.district}, ${loc.city}`,
+            price: minPrice === maxPrice ? `${minPrice.toLocaleString()}đ` : `${minPrice.toLocaleString()}đ - ${maxPrice.toLocaleString()}đ`,
+            rating: 4.9,
+            image: loc.imageUrl || '🏆',
+            sport: sportLabel
+          };
+        });
+        setFilteredFields(mapped);
+      })
+      .catch(console.error);
+  }, [query, address, category]);
 
   // Cập nhật từng bộ lọc
   const handleQueryChange = (val: string) => {
@@ -51,31 +83,8 @@ export const Search: React.FC<SearchProps> = ({
     onUpdateFilters({ query: '', address: 'all', category: 'all' });
   };
 
-  // Logic lọc dữ liệu sân
-  const filteredFields = MOCK_FIELDS.filter(court => {
-    // 1. Từ khóa
-    const matchesSearch = query.trim() === '' || 
-      court.title.toLowerCase().includes(query.toLowerCase()) ||
-      court.location.toLowerCase().includes(query.toLowerCase()) ||
-      court.sport.toLowerCase().includes(query.toLowerCase());
-
-    // 2. Địa chỉ
-    const matchesAddress = address === 'all' || 
-      court.location.toLowerCase().includes(address.toLowerCase());
-
-    // 3. Danh mục
-    const categoryName = CATEGORY_MAP[category];
-    const matchesCategory = category === 'all' || 
-      court.sport.toLowerCase() === categoryName?.toLowerCase();
-
-    return matchesSearch && matchesAddress && matchesCategory;
-  });
-
   return (
     <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
-      
-      {/* 1. THANH NAV DÙNG CHUNG */}
-      <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
       {/* 2. MAIN HUB TÌM KIẾM */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-10 text-left">

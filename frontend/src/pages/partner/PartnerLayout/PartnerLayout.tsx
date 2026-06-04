@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PartnerDashboard } from '../PartnerDashboard';
 import { FieldManagement } from '../FieldManagement';
+import { PitchManagement } from '../FieldManagement/PitchManagement';
 import { CustomerBookingManagement } from '../CustomerBookingManagement';
 import { ProductManagement } from '../ProductManagement';
 import { PromotionManagement } from '../PromotionManagement';
@@ -17,7 +18,8 @@ import {
   Tag,
   Sun,
   Moon,
-  MessageSquare
+  MessageSquare,
+  Building
 } from 'lucide-react';
 import { PartnerAdminChat } from '../PartnerAdminChat';
 import '../../../features/admin/styles/admin-table.css';
@@ -71,6 +73,20 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
     const saved = localStorage.getItem('theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
   });
+  
+  // Tab hiện tại của Đối tác dựa trên URL
+  const currentTab = (() => {
+    const parts = currentPath.split('/');
+    return parts[2] || 'dashboard';
+  })();
+  
+  // Ref cho vùng cuộn chính <main> để reset scroll khi chuyển tab
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Tự động cuộn lên đầu trang con khi chuyển tab
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [currentTab]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -86,13 +102,6 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  // Tab hiện tại của Đối tác
-  // Tab hiện tại của Đối tác dựa trên URL
-  const currentTab = (() => {
-    const parts = currentPath.split('/');
-    return parts[2] || 'dashboard';
-  })();
-
   const handleSelectTab = (tab: string) => {
     const newPath = tab === 'dashboard' ? '/partner' : `/partner/${tab}`;
     navigateTo(newPath);
@@ -107,7 +116,8 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
   // Khai báo menu điều hướng Sidebar của Đối tác
   const menuItems = [
     { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard },
-    { id: 'fields', label: 'Quản Lý Cơ Sở', icon: Trophy },
+    { id: 'fields', label: 'Quản Lý Cơ Sở', icon: Building },
+    { id: 'pitches', label: 'Quản Lý Sân Đấu', icon: Trophy },
     { id: 'bookings', label: 'Lịch Đặt Khách Hàng', icon: CalendarRange },
     { id: 'products', label: 'Quản Lý Sản Phẩm', icon: ShoppingBag },
     { id: 'promotions', label: 'Quản Lý Voucher', icon: Tag },
@@ -122,6 +132,8 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
         return <PartnerDashboard onNavigateTab={handleSelectTab} />;
       case 'fields':
         return <FieldManagement />;
+      case 'pitches':
+        return <PitchManagement />;
       case 'bookings':
         return <CustomerBookingManagement />;
       case 'products':
@@ -353,7 +365,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
         </header>
 
         {/* Nội dung chi tiết của trang tương ứng */}
-        <main className="flex-1 p-6 sm:p-8 bg-slate-950 overflow-y-auto">
+        <main ref={mainRef} className="flex-1 p-6 sm:p-8 bg-slate-950 overflow-y-auto">
           {renderTabContent()}
         </main>
 

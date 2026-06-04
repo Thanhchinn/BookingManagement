@@ -74,8 +74,9 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
   });
 
   // === TẢI DỮ LIỆU TỪ API ===
-  const fetchPartners = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPartners = useCallback(async (isBackground = false) => {
+    const isBg = isBackground === true;
+    if (!isBg) setIsLoading(true);
     try {
       const res = await fetch('http://localhost:3000/partners');
       if (!res.ok) throw new Error('Không thể tải danh sách đối tác.');
@@ -84,16 +85,16 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
     } catch (err: any) {
       toast.error(err.message || 'Lỗi kết nối đến máy chủ.');
     } finally {
-      setIsLoading(false);
+      if (!isBg) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPartners();
+    fetchPartners(false);
   }, [fetchPartners]);
 
   // Tự động refresh mỗi 3 giây để hiển thị dữ liệu mới nhất
-  useAutoRefresh(fetchPartners, 3000);
+  useAutoRefresh(() => fetchPartners(true), 3000);
 
 
   // Đồng bộ trạng thái sub-page
@@ -243,7 +244,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
           <div className="flex items-center justify-between">
             <div />
             <button
-              onClick={fetchPartners}
+              onClick={() => fetchPartners(false)}
               disabled={isLoading}
               className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-lg"
             >

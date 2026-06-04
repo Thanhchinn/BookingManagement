@@ -20,7 +20,8 @@ export function serializeService(service: any) {
       id: r.id.toString(),
       bookingId: r.bookingId.toString(),
       userId: r.userId.toString(),
-      serviceId: r.serviceId.toString(),
+      serviceId: r.sportsPitchId?.toString(),
+      sportsPitchId: r.sportsPitchId?.toString(),
       user: r.user ? {
         fullName: r.user.fullName,
         avatarUrl: r.user.avatarUrl,
@@ -29,7 +30,8 @@ export function serializeService(service: any) {
     timeSlots: service.timeSlots?.map((t: any) => ({
       ...t,
       id: t.id.toString(),
-      serviceId: t.serviceId.toString(),
+      serviceId: t.sportsPitchId?.toString(),
+      sportsPitchId: t.sportsPitchId?.toString(),
       priceModifier: parseFloat(t.priceModifier.toString()),
     })) || [],
   };
@@ -53,7 +55,7 @@ export class ServicesService {
   // Lấy danh sách sân của đối tác (kèm thông tin địa điểm và số lượng)
   async findAll(userId: string | number | bigint) {
     const partner = await this.getPartnerProfile(userId);
-    const services = await this.prisma.service.findMany({
+    const services = await this.prisma.sportsPitch.findMany({
       where: {
         location: {
           partnerId: partner.id,
@@ -83,7 +85,7 @@ export class ServicesService {
   // Lấy chi tiết sân (bao gồm cấu hình khung giờ và các đánh giá từ khách)
   async findOne(id: string | number | bigint, userId: string | number | bigint) {
     const partner = await this.getPartnerProfile(userId);
-    const service = await this.prisma.service.findFirst({
+    const service = await this.prisma.sportsPitch.findFirst({
       where: {
         id: BigInt(id),
         location: {
@@ -133,7 +135,7 @@ export class ServicesService {
       throw new ForbiddenException('Bạn không có quyền thêm sân vào cơ sở này.');
     }
 
-    const newService = await this.prisma.service.create({
+    const newService = await this.prisma.sportsPitch.create({
       data: {
         locationId: BigInt(dto.locationId),
         name: dto.name,
@@ -157,7 +159,7 @@ export class ServicesService {
     const partner = await this.getPartnerProfile(userId);
 
     // Xác minh sân thuộc sở hữu của đối tác
-    const service = await this.prisma.service.findFirst({
+    const service = await this.prisma.sportsPitch.findFirst({
       where: {
         id: BigInt(id),
         location: {
@@ -182,7 +184,7 @@ export class ServicesService {
       }
     }
 
-    const updated = await this.prisma.service.update({
+    const updated = await this.prisma.sportsPitch.update({
       where: { id: BigInt(id) },
       data: {
         locationId: dto.locationId ? BigInt(dto.locationId) : undefined,
@@ -205,7 +207,7 @@ export class ServicesService {
   // Xóa sân
   async remove(id: string | number | bigint, userId: string | number | bigint) {
     const partner = await this.getPartnerProfile(userId);
-    const service = await this.prisma.service.findFirst({
+    const service = await this.prisma.sportsPitch.findFirst({
       where: {
         id: BigInt(id),
         location: {
@@ -217,7 +219,7 @@ export class ServicesService {
       throw new NotFoundException(`Không tìm thấy sân có ID: ${id}`);
     }
 
-    await this.prisma.service.delete({
+    await this.prisma.sportsPitch.delete({
       where: { id: BigInt(id) },
     });
     return { message: 'Đã xóa sân thành công.' };
@@ -229,7 +231,7 @@ export class ServicesService {
     const review = await this.prisma.review.findFirst({
       where: {
         id: BigInt(reviewId),
-        service: {
+        sportsPitch: {
           location: {
             partnerId: partner.id,
           },
@@ -261,14 +263,15 @@ export class ServicesService {
       id: updatedReview.id.toString(),
       bookingId: updatedReview.bookingId.toString(),
       userId: updatedReview.userId.toString(),
-      serviceId: updatedReview.serviceId.toString(),
+      serviceId: updatedReview.sportsPitchId?.toString(),
+      sportsPitchId: updatedReview.sportsPitchId?.toString(),
     };
   }
 
   // Cấu hình hàng loạt khung giờ & giá của sân
   async saveTimeSlots(serviceId: string | number | bigint, timeSlots: any[], userId: string | number | bigint) {
     const partner = await this.getPartnerProfile(userId);
-    const service = await this.prisma.service.findFirst({
+    const service = await this.prisma.sportsPitch.findFirst({
       where: {
         id: BigInt(serviceId),
         location: {
@@ -282,7 +285,7 @@ export class ServicesService {
 
     // Xóa tất cả khung giờ cũ của sân này
     await this.prisma.timeSlot.deleteMany({
-      where: { serviceId: BigInt(serviceId) },
+      where: { sportsPitchId: BigInt(serviceId) },
     });
 
     // Thêm các khung giờ mới
@@ -298,7 +301,7 @@ export class ServicesService {
 
         return this.prisma.timeSlot.create({
           data: {
-            serviceId: BigInt(serviceId),
+            sportsPitchId: BigInt(serviceId),
             dayOfWeek: parseInt(slot.dayOfWeek, 10),
             startTime: typeof slot.startTime === 'string' ? parseTime(slot.startTime) : slot.startTime,
             endTime: typeof slot.endTime === 'string' ? parseTime(slot.endTime) : slot.endTime,
@@ -312,7 +315,8 @@ export class ServicesService {
     return createdSlots.map((ts) => ({
       ...ts,
       id: ts.id.toString(),
-      serviceId: ts.serviceId.toString(),
+      serviceId: ts.sportsPitchId?.toString(),
+      sportsPitchId: ts.sportsPitchId?.toString(),
       priceModifier: parseFloat(ts.priceModifier.toString()),
     }));
   }

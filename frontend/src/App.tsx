@@ -8,6 +8,7 @@ import { BookingSuccess } from './pages/client/BookingSuccess';
 import { Matchmaking } from './pages/client/Matchmaking';
 import { CommunityChat } from './pages/client/CommunityChat';
 import { Search } from './pages/client/Search';
+import { NotFound } from './pages/client/NotFound';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { PartnerLayout } from './pages/partner/PartnerLayout';
@@ -24,6 +25,7 @@ function App() {
   // Trạng thái trang client phụ, được tính toán tự động dựa trên URL hiện tại để đồng bộ 100%
   const currentPage = (() => {
     const path = currentPath;
+    if (path === '/' || path === '') return 'home';
     if (path === '/auth') return 'auth';
     if (path === '/my-bookings') return 'my-bookings';
     if (path === '/field-details') return 'field-details';
@@ -31,7 +33,12 @@ function App() {
     if (path === '/matchmaking') return 'matchmaking';
     if (path === '/chat') return 'chat';
     if (path === '/search') return 'search';
-    return 'home';
+    
+    // Nếu là đường dẫn của admin hoặc partner thì không coi là 404 phía client
+    if (path === '/admin' || path.startsWith('/admin/')) return 'home';
+    if (path === '/partner' || path.startsWith('/partner/')) return 'home';
+    
+    return '404';
   })();
 
   // Chế độ đăng nhập hay đăng ký của client
@@ -67,6 +74,9 @@ function App() {
   // Lưu trữ tạm dữ liệu đặt vé thành công
   const [bookingSuccessData, setBookingSuccessData] = useState<any>(null);
 
+  // Lưu locationId được chọn từ FieldCard để truyền vào CourtDetails
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
   // Lắng nghe sự thay đổi URL khi người dùng bấm nút Quay lại/Tiến tới (Back/Forward) của trình duyệt
   useEffect(() => {
     // Khởi tạo thư viện AOS (Animate On Scroll)
@@ -90,6 +100,11 @@ function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  // Tự động cuộn lên đầu trang khi thay đổi đường dẫn URL (tránh việc giữ nguyên vị trí cuộn ở trang cũ)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPath]);
+
   // Hàm chuyển trang đồng thời cập nhật thanh địa chỉ URL
   const navigateTo = (path: string) => {
     window.history.pushState({}, '', path);
@@ -97,10 +112,12 @@ function App() {
   };
 
   const handleNavigate = (
-    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat' | 'search', 
-    mode?: 'login' | 'register'
+    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat' | 'search',
+    data?: any
   ) => {
-    if (mode) setAuthMode(mode);
+    // data có thể là string (authMode cũ) hoặc object { locationId }
+    if (typeof data === 'string') setAuthMode(data as 'login' | 'register');
+    if (data?.locationId) setSelectedLocationId(data.locationId);
     if (page === 'admin') {
       navigateTo('/admin');
     } else if (page === 'partner') {
@@ -198,6 +215,16 @@ function App() {
     }
 
     // Mặc định hiển thị trang phía Client
+    if (currentPage === '404') {
+      return (
+        <NotFound 
+          onNavigate={handleNavigate} 
+          userName={userName || undefined} 
+          onLogout={handleClientLogout} 
+        />
+      );
+    }
+
     return (
       <>
         {currentPage === 'home' && (
@@ -237,6 +264,7 @@ function App() {
         )}
         {currentPage === 'field-details' && (
           <CourtDetails 
+            locationId={selectedLocationId}
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}

@@ -17,7 +17,7 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputVal, setInputVal] = useState<string>('');
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   const activePartnerName = partnerName || 'Đối tác Cụm Sân';
 
@@ -74,8 +74,17 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
   }, []);
 
   // Tự động cuộn xuống cuối
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior
+      });
+    }
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom('smooth');
   }, [messages]);
 
   // Lọc tin nhắn của đối tác hiện tại
@@ -109,7 +118,7 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl h-[70vh] relative font-sans text-slate-100 max-w-5xl mx-auto">
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl h-[calc(100vh-180px)] min-h-[450px] relative font-sans text-slate-100 max-w-5xl mx-auto">
       {/* Header */}
       <header className="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between bg-slate-900/25 shrink-0">
         <div className="flex items-center gap-3 text-left">
@@ -128,7 +137,7 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
       </header>
 
       {/* Feed tin nhắn */}
-      <div className="flex-grow overflow-y-auto p-6 space-y-4">
+      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4">
         {activeChatMessages.length === 0 ? (
           <div className="flex flex-col justify-center items-center text-slate-500 h-full space-y-2">
             <MessageCircleCode className="w-12 h-12 stroke-[1.2] text-slate-700 animate-pulse" />
@@ -147,23 +156,22 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
                 </span>
 
                 <div className="space-y-1">
-                  <span className="text-[9px] text-slate-500 block">
+                  <span className="text-[9px] text-slate-550 block">
                     {isOwn ? activePartnerName : 'Ban Quản Trị'}
                   </span>
                   <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
                     isOwn
                       ? 'bg-amber-600 text-white rounded-tr-none text-left shadow-lg shadow-amber-900/10'
-                      : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'
+                      : 'bg-slate-900 border border-slate-800 text-slate-350 rounded-tl-none'
                   }`}>
                     {m.text}
                   </div>
-                  <span className="text-[8px] text-slate-600 block font-mono text-right">{m.timestamp}</span>
+                  <span className="text-[8px] text-slate-650 block font-mono text-right">{m.timestamp}</span>
                 </div>
               </div>
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Quick Replies Bar */}

@@ -25,7 +25,7 @@ export const AdminPartnerChat: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   // 1. Tải danh sách đối tác từ API
   useEffect(() => {
@@ -108,9 +108,22 @@ export const AdminPartnerChat: React.FC = () => {
   }, []);
 
   // Tự động cuộn xuống cuối
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior
+      });
+    }
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, selectedPartnerName]);
+    scrollToBottom('auto');
+  }, [selectedPartnerName]);
+
+  useEffect(() => {
+    scrollToBottom('smooth');
+  }, [messages]);
 
   // Lọc tin nhắn của đối tác đang chọn
   const activeChatMessages = messages.filter(m => m.partnerName === selectedPartnerName);
@@ -149,7 +162,7 @@ export const AdminPartnerChat: React.FC = () => {
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex shadow-2xl h-[70vh] relative font-sans text-slate-100">
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex shadow-2xl h-[calc(100vh-260px)] min-h-[450px] relative font-sans text-slate-100 w-full max-w-full">
       {/* 1. SIDEBAR CHAT BÊN TRÁI */}
       <aside className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/50 shrink-0">
         <div className="p-4 border-b border-slate-800/80 space-y-3">
@@ -223,7 +236,7 @@ export const AdminPartnerChat: React.FC = () => {
 
       {/* 2. KHU VỰC TRÒ CHUYỆN CHI TIẾT */}
       {selectedPartnerName ? (
-        <main className="flex-grow flex flex-col h-full bg-slate-950/20">
+        <main className="flex-grow flex flex-col h-full bg-slate-950/20 min-w-0">
           {/* Header */}
           <header className="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between bg-slate-900/25">
             <div className="flex items-center gap-3 text-left">
@@ -242,7 +255,7 @@ export const AdminPartnerChat: React.FC = () => {
           </header>
 
           {/* Feed tin nhắn */}
-          <div className="flex-grow overflow-y-auto p-6 space-y-4">
+          <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4">
             {activeChatMessages.length === 0 ? (
               <div className="flex flex-col justify-center items-center text-slate-500 h-full space-y-2">
                 <MessageCircleCode className="w-12 h-12 stroke-[1.2] text-slate-700" />
@@ -261,23 +274,22 @@ export const AdminPartnerChat: React.FC = () => {
                     </span>
 
                     <div className="space-y-1">
-                      <span className="text-[9px] text-slate-500 block">
+                      <span className="text-[9px] text-slate-550 block">
                         {isOwn ? 'Ban Quản Trị' : selectedPartnerName}
                       </span>
                       <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
                         isOwn
                           ? 'bg-teal-650 text-white rounded-tr-none text-left shadow-lg shadow-teal-900/10'
-                          : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'
+                          : 'bg-slate-900 border border-slate-800 text-slate-350 rounded-tl-none'
                       }`}>
                         {m.text}
                       </div>
-                      <span className="text-[8px] text-slate-600 block font-mono text-right">{m.timestamp}</span>
+                      <span className="text-[8px] text-slate-650 block font-mono text-right">{m.timestamp}</span>
                     </div>
                   </div>
                 );
               })
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Quick Replies Bar */}

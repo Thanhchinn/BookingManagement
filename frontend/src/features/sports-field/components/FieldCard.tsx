@@ -15,22 +15,23 @@ export interface SportField {
 
 interface FieldCardProps {
   court: SportField;
-  onNavigate?: (page: any, authMode?: any) => void;
+  onNavigate?: (page: any, data?: any) => void;
 }
 
 export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
   return (
     <div 
-      onClick={() => onNavigate?.('field-details')}
+      onClick={() => onNavigate?.('field-details', { locationId: court.id })}
       className="sz-card overflow-hidden hover:border-teal-500/40 transition-all duration-300 text-left flex flex-col group cursor-pointer"
     >
       {/* Ảnh đại diện thực tế hoặc giả lập bằng Emoji lớn */}
       <div className="h-44 bg-slate-950 flex items-center justify-center overflow-hidden select-none relative">
-        {court.image.startsWith('/') ? (
+        {(court.image.startsWith('/') || court.image.startsWith('http')) ? (
           <img 
             src={court.image} 
             alt={court.title} 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
           <span className="text-6xl group-hover:scale-105 transition-transform duration-300 block">
@@ -73,7 +74,7 @@ export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
             <Button 
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigate?.('field-details');
+                onNavigate?.('field-details', { locationId: court.id });
               }}
               variant="secondary" 
               className="px-4 py-2 text-xs font-bold rounded-lg cursor-pointer"

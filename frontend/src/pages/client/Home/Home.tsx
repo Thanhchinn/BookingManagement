@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { Button } from '../../../components/ui/Button';
@@ -22,6 +22,23 @@ interface HomeProps {
   onSearch: (filters: { query: string; address: string; category: string }) => void;
 }
 
+const API = 'http://localhost:3000';
+
+const getPitchImage = (pitch: any) => {
+  if (pitch.imageUrls && Array.isArray(pitch.imageUrls) && pitch.imageUrls.length > 0) {
+    return pitch.imageUrls[0];
+  }
+  // Fallbacks
+  const cat = (pitch.category || '').toLowerCase();
+  if (cat.includes('bóng')) {
+    return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800&auto=format&fit=crop';
+  }
+  if (cat.includes('lông')) {
+    return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=800&auto=format&fit=crop';
+  }
+  return 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=800&auto=format&fit=crop';
+};
+
 // Bảng ánh xạ từ ID Category sang tên Tiếng Việt trong dữ liệu Mock
 const CATEGORY_MAP: Record<string, string> = {
   'football': 'Bóng Đá',
@@ -44,6 +61,19 @@ export const Home: React.FC<HomeProps> = ({
   // State lọc danh mục cho phần tab duyệt sân nhanh ở cuối trang
   const [homeCategory, setHomeCategory] = useState('all');
 
+  const [dbPitches, setDbPitches] = useState<any[]>([]);
+  const [pitchCategory, setPitchCategory] = useState('all');
+
+  // Fetch danh sách sân đấu thực tế từ DB
+  useEffect(() => {
+    fetch(`${API}/public/sports-pitches`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: any[]) => {
+        setDbPitches(data);
+      })
+      .catch(console.error);
+  }, []);
+
   // Xử lý chuyển sang trang tìm kiếm khi click nút "Tìm kiếm"
   const handleSearchSubmit = () => {
     onSearch({
@@ -57,6 +87,11 @@ export const Home: React.FC<HomeProps> = ({
   const homeFilteredFields = MOCK_FIELDS.filter(court => {
     const categoryName = CATEGORY_MAP[homeCategory];
     return homeCategory === 'all' || court.sport.toLowerCase() === categoryName?.toLowerCase();
+  });
+
+  const filteredPitches = dbPitches.filter(pitch => {
+    const categoryName = CATEGORY_MAP[pitchCategory];
+    return pitchCategory === 'all' || pitch.category.toLowerCase().includes(categoryName?.toLowerCase());
   });
 
   return (
@@ -183,6 +218,107 @@ export const Home: React.FC<HomeProps> = ({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* NEW SECTION: SÂN ĐẤU NỔI BẬT (FEATURED SPORTS PITCHES) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-4 space-y-10" data-aos="fade-up">
+        
+        <div className="text-center max-w-xl mx-auto space-y-3">
+          <Badge status="info">Featured Pitches</Badge>
+          <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white m-0">
+            Sân Đấu Tiêu Biểu & Khung Giờ Đẹp
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Tìm kiếm sân đấu chất lượng cao theo nhu cầu chơi đơn, chơi đôi hay đội nhóm.
+          </p>
+        </div>
+
+        {/* Categories/Tabs lọc Sân đấu */}
+        <div className="flex justify-center gap-2">
+          {['all', 'football', 'badminton', 'tennis'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setPitchCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                pitchCategory === cat
+                  ? 'bg-teal-500/10 border-teal-500 text-teal-300 shadow-md shadow-teal-500/5 font-extrabold'
+                  : 'bg-slate-950 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {cat === 'all' ? 'Tất cả' : CATEGORY_MAP[cat] || cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Danh sách Sân đấu */}
+        {filteredPitches.length === 0 ? (
+          <div className="py-12 bg-slate-900/30 border border-slate-900 rounded-3xl text-center text-xs text-slate-500">
+            Hiện chưa có sân đấu nào được đăng tải cho bộ môn này.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredPitches.slice(0, 8).map((pitch) => {
+              const image = getPitchImage(pitch);
+              return (
+                <div 
+                  key={pitch.id}
+                  className="bg-slate-900/50 border border-slate-800 hover:border-teal-500/35 transition-all duration-300 rounded-3xl overflow-hidden flex flex-col justify-between group shadow-lg"
+                >
+                  {/* Ảnh và tag */}
+                  <div className="h-44 overflow-hidden relative">
+                    <img 
+                      src={image} 
+                      alt={pitch.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                    
+                    {/* Category Tag */}
+                    <span className="absolute top-3 right-3 text-[9px] font-black px-2.5 py-1 bg-teal-500 text-slate-950 rounded-lg uppercase tracking-wider border-0">
+                      {pitch.category}
+                    </span>
+                  </div>
+
+                  {/* Thông tin */}
+                  <div className="p-5 flex-grow space-y-3.5 text-left">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-teal-400 block uppercase tracking-widest">{pitch.subType || 'Tiêu chuẩn'}</span>
+                      <h4 className="text-sm font-black text-slate-200 group-hover:text-white transition line-clamp-1 m-0">{pitch.name}</h4>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-500">🏢</span>
+                        <span className="line-clamp-1 font-semibold text-slate-300">{pitch.locationName || 'Cơ sở thành viên'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <span>📍</span>
+                        <span>{pitch.locationDistrict ? `${pitch.locationDistrict}, ` : ''}{pitch.locationCity || ''}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Giá và nút */}
+                  <div className="px-5 pb-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <div className="flex flex-col text-left">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Đơn giá / giờ</span>
+                      <span className="text-xs font-black text-amber-400 font-mono">
+                        {(Number(pitch.basePricePerHour) || 0).toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => onNavigate?.('field-details', { locationId: pitch.locationId })}
+                      className="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 active:scale-95 text-[10px] font-extrabold text-white rounded-xl transition shadow-md shadow-teal-600/10 cursor-pointer border-0"
+                    >
+                      Đặt Lịch
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* 4. PHẦN TÌM SÂN (CATEGORIES & FIELD LIST) */}
