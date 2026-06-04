@@ -22,12 +22,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSearchSubmit,
 }) => {
   return (
-    <div className="w-full max-w-4xl">
-      <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl md:rounded-full p-2 flex flex-col md:flex-row items-stretch md:items-center gap-1 border border-white/20 transition-all duration-300">
+    <div className="w-full max-w-5xl">
+      <div className="bg-white/95 backdrop-blur-xl shadow-2xl rounded-lg p-2 flex flex-col md:flex-row items-stretch md:items-center gap-1 border border-white/40 transition-all duration-300 ring-1 ring-slate-900/5">
         
         {/* 1. Tìm theo từ khóa */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 flex-grow min-w-0">
-          <Search className="w-4.5 h-4.5 text-slate-400 shrink-0" />
+        <div className="flex items-center gap-2.5 px-4 py-2.5 flex-grow min-w-0 rounded-lg hover:bg-slate-50 focus-within:bg-slate-50">
+          <Search className="w-4.5 h-4.5 text-teal-600 shrink-0" />
           <input
             type="text"
             value={searchQuery}
@@ -41,7 +41,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="hidden md:block w-px h-7 bg-slate-200 shrink-0"></div>
 
         {/* 2. Lọc theo địa chỉ */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 w-full md:w-48 shrink-0 relative">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 w-full md:w-48 shrink-0 relative rounded-lg hover:bg-slate-50">
           <MapPin className="w-4.5 h-4.5 text-slate-400 shrink-0" />
           <select
             value={selectedAddress}
@@ -64,7 +64,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="hidden md:block w-px h-7 bg-slate-200 shrink-0"></div>
 
         {/* 3. Lọc theo danh mục */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 w-full md:w-44 shrink-0 relative">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 w-full md:w-44 shrink-0 relative rounded-lg hover:bg-slate-50">
           <Trophy className="w-4.5 h-4.5 text-slate-400 shrink-0" />
           <select
             value={selectedCategory}
@@ -91,7 +91,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         {/* Nút Tìm kiếm */}
         <button
           onClick={onSearchSubmit}
-          className="w-full md:w-auto px-7 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl md:rounded-full shadow-md shadow-emerald-600/10 transition-all duration-200 shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full md:w-auto px-7 py-3 bg-teal-600 hover:bg-teal-500 active:scale-[0.98] text-white font-extrabold text-sm rounded-lg shadow-md shadow-teal-600/10 transition-all duration-200 shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Search className="w-4 h-4" />
           <span>Tìm kiếm</span>

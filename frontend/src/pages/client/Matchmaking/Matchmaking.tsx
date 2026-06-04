@@ -21,6 +21,7 @@ import {
 import type { MatchPost } from '../../../types';
 import { CreateMatchModal } from './CreateMatchModal';
 import { ApplyJoinModal } from './ApplyJoinModal';
+import { toast } from 'sonner';
 
 interface MatchmakingProps {
   onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner' | 'field-details' | 'my-bookings' | 'booking-success' | 'matchmaking' | 'chat', authMode?: 'login' | 'register') => void;
@@ -136,7 +137,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   const handleCreateMatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName) {
-      alert('Vui lòng đăng nhập trước khi tạo phòng ghép đôi!');
+      toast.warning('Vui lòng đăng nhập trước khi tạo phòng ghép đôi');
       return;
     }
     const newMatch: MatchPost = {
@@ -162,7 +163,9 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
     setMatches([newMatch, ...matches]);
     setShowCreateModal(false);
     resetForm();
-    alert('Đăng bài tìm đội, ghép cặp giao lưu thành công! Đang đợi các tuyển thủ đăng ký ứng tuyển.');
+    toast.success('Đăng bài tìm đội thành công', {
+      description: 'Bài ghép cặp đang chờ các tuyển thủ đăng ký ứng tuyển.',
+    });
   };
 
   const resetForm = () => {
@@ -174,7 +177,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   // Nộp đơn xin gia nhập trận
   const handleApplyToJoin = () => {
     if (!userName) {
-      alert('Vui lòng đăng nhập trước khi ứng tuyển tham gia!');
+      toast.warning('Vui lòng đăng nhập trước khi ứng tuyển tham gia');
       onNavigate?.('auth', 'login');
       return;
     }
@@ -183,7 +186,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
     // Check xem đã đăng ký chưa
     const alreadyParticipant = selectedMatch.participants.some(p => p.name === userName);
     if (alreadyParticipant) {
-      alert('Bạn đã ứng tuyển hoặc tham gia vào trận này rồi!');
+      toast.info('Bạn đã ứng tuyển hoặc tham gia vào trận này rồi');
       setShowApplyModal(false);
       return;
     }
@@ -212,7 +215,9 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
 
     setShowApplyModal(false);
     setApplyNote('');
-    alert('Nộp đơn ứng tuyển thành công! Vui lòng đợi Host kiểm duyệt đồng ý.');
+    toast.success('Nộp đơn ứng tuyển thành công', {
+      description: 'Vui lòng đợi Host kiểm duyệt đồng ý.',
+    });
   };
 
   // Duyệt ứng viên (Host Approve/Reject)
@@ -259,7 +264,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
       };
     });
 
-    alert(approve ? `Đã đồng ý nhận cầu thủ ${applicantName} vào nhóm chơi!` : `Đã từ chối đơn ứng tuyển của ${applicantName}.`);
+    toast.info(approve ? `Đã đồng ý nhận ${applicantName}` : `Đã từ chối đơn của ${applicantName}`);
   };
 
   const getSportIcon = (sport: string) => {
@@ -298,7 +303,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
           <Button
             onClick={() => {
               if (!userName) {
-                alert('Vui lòng đăng nhập trước khi đăng bài tìm đội giao hữu!');
+                toast.warning('Vui lòng đăng nhập trước khi đăng bài tìm đội giao hữu');
                 onNavigate?.('auth', 'login');
               } else {
                 setShowCreateModal(true);

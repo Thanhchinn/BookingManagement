@@ -224,22 +224,22 @@ export const FieldManagement: React.FC = () => {
 
       {/* Grid thống kê nhanh */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <div className="sz-kpi p-5">
           <span className="text-[10px] text-slate-500 font-bold uppercase">Tổng số cơ sở thể thao</span>
           <h3 className="text-2xl font-black text-white mt-2 mb-0">{locations.length} cơ sở</h3>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <div className="sz-kpi p-5">
           <span className="text-[10px] text-slate-500 font-bold uppercase text-emerald-400">Cơ sở đang mở cửa</span>
           <h3 className="text-2xl font-black text-white mt-2 mb-0">{locations.filter(l => l.isActive).length} cơ sở</h3>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <div className="sz-kpi p-5">
           <span className="text-[10px] text-slate-500 font-bold uppercase text-amber-500 font-semibold">Tổng số sân đấu</span>
           <h3 className="text-2xl font-black text-white mt-2 mb-0">{courts.length} sân con</h3>
         </div>
       </div>
 
       {/* Tìm kiếm */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
+      <div className="sz-panel p-4 flex items-center gap-3 focus-within:border-amber-500/50">
         <Search className="w-4.5 h-4.5 text-slate-500 shrink-0" />
         <input 
           type="text" 
@@ -266,7 +266,7 @@ export const FieldManagement: React.FC = () => {
             return (
               <div 
                 key={loc.id} 
-                className="bg-slate-900/40 border border-slate-900 rounded-3xl overflow-hidden animate-in fade-in duration-200 group flex flex-col justify-between"
+                className="sz-card overflow-hidden animate-in fade-in duration-200 group flex flex-col justify-between"
               >
                 {/* Facility Image Cover */}
                 {loc.imageUrl && (
@@ -402,7 +402,7 @@ export const FieldManagement: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="py-16 bg-slate-900/30 border border-dashed border-slate-800 rounded-3xl text-center text-slate-500 text-xs">
+        <div className="sz-empty py-16 text-center text-slate-500 text-xs">
           Không tìm thấy cơ sở nào khớp với từ khóa tìm kiếm.
         </div>
       )}

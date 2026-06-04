@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { AdminConfirmModal } from '../../../features/admin/components/AdminConfirmModal';
 import { AdminSearchFilter } from '../../../features/admin/components/AdminSearchFilter';
 import { useAutoRefresh } from '../../../hooks/useAutoRefresh';
+import { StatCard } from '../../../features/admin/components/StatCard';
 
 export interface UserItem {
   id: string;
@@ -399,14 +400,14 @@ export const UserManagement: React.FC = () => {
         <button
           onClick={() => { fetchUsers(currentPage, searchTerm); fetchStats(); }}
           disabled={isLoading}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-300 rounded-xl transition duration-150 cursor-pointer disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-850 text-xs font-bold text-slate-300 rounded-xl transition duration-150 cursor-pointer disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Làm mới</span>
         </button>
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition duration-150 shadow-lg shadow-emerald-600/10 cursor-pointer border-0 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition duration-150 shadow-lg shadow-emerald-600/20 cursor-pointer border-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm Khách Hàng Mới</span>
@@ -415,63 +416,38 @@ export const UserManagement: React.FC = () => {
 
       {/* 2. THẺ CHỈ SỐ THỐNG KÊ NGƯỜI DÙNG */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        
-        {/* Tổng Số Khách Hàng */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-            <span>Khách hàng</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-indigo-400">
-              <Users className="w-4.5 h-4.5" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-white mt-3 mb-0">
-            {isStatsLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-650" /> : stats.totalUsers}
-          </h3>
-          <p className="text-[10px] text-slate-500 m-0 mt-1">Đăng ký tham gia nền tảng</p>
-        </div>
-
-        {/* Đang Hoạt Động */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-            <span>Hoạt động</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-emerald-400">
-              <CheckCircle className="w-4.5 h-4.5" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-white mt-3 mb-0">
-            {isStatsLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-650" /> : stats.activeUsers}
-          </h3>
-          <p className="text-[10px] text-emerald-500 m-0 mt-1">Tài khoản khả dụng</p>
-        </div>
-
-        {/* Đang Khóa */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-            <span>Đang tạm khóa</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-rose-400">
-              <ShieldAlert className="w-4.5 h-4.5" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-white mt-3 mb-0">
-            {isStatsLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-650" /> : stats.blockedUsers}
-          </h3>
-          <p className="text-[10px] text-rose-500 m-0 mt-1">Vi phạm điều khoản hoặc bị khóa</p>
-        </div>
-
-        {/* Điểm tích lũy hệ thống */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-            <span>Quỹ điểm tích lũy</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-amber-400">
-              <Award className="w-4.5 h-4.5" />
-            </span>
-          </div>
-          <h3 className="text-2xl font-black text-white mt-3 mb-0">
-            {isStatsLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-650" /> : stats.totalLoyaltyPoints}
-          </h3>
-          <p className="text-[10px] text-amber-500 m-0 mt-1">Được lưu hành toàn mạng lưới</p>
-        </div>
-
+        <StatCard
+          title="Khách hàng"
+          value={stats.totalUsers}
+          icon={Users}
+          color="indigo"
+          isLoading={isStatsLoading}
+          comparisonText="Đăng ký tham gia nền tảng"
+        />
+        <StatCard
+          title="Hoạt động"
+          value={stats.activeUsers}
+          icon={CheckCircle}
+          color="emerald"
+          isLoading={isStatsLoading}
+          comparisonText="Tài khoản khả dụng"
+        />
+        <StatCard
+          title="Đang tạm khóa"
+          value={stats.blockedUsers}
+          icon={ShieldAlert}
+          color="red"
+          isLoading={isStatsLoading}
+          comparisonText="Vi phạm điều khoản hoặc bị khóa"
+        />
+        <StatCard
+          title="Quỹ điểm tích lũy"
+          value={stats.totalLoyaltyPoints}
+          icon={Award}
+          color="amber"
+          isLoading={isStatsLoading}
+          comparisonText="Được lưu hành toàn mạng lưới"
+        />
       </div>
 
       {/* 3. BỘ LỌC TÌM KIẾM DÙNG CHUNG */}
@@ -499,7 +475,7 @@ export const UserManagement: React.FC = () => {
             <tbody className="admin-table-tbody">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-450 font-bold">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-bold">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
                       <span>Đang đồng bộ cơ sở dữ liệu khách hàng...</span>
@@ -567,7 +543,7 @@ export const UserManagement: React.FC = () => {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-slate-600 italic">Chưa đăng ký địa chỉ</span>
+                          <span className="text-slate-500 italic">Chưa đăng ký địa chỉ</span>
                         )}
                       </td>
 
@@ -591,7 +567,7 @@ export const UserManagement: React.FC = () => {
                               Hoạt động
                             </span>
                           ) : (
-                            <span className="admin-table-badge admin-table-badge-slate text-rose-450 border-rose-950/20 bg-rose-500/5">
+                            <span className="admin-table-badge admin-table-badge-slate text-rose-400 border-rose-950/20 bg-rose-500/5">
                               Đang khóa
                             </span>
                           )}
@@ -626,7 +602,7 @@ export const UserManagement: React.FC = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
                     Không tìm thấy tài khoản khách hàng nào phù hợp.
                   </td>
                 </tr>
@@ -638,16 +614,16 @@ export const UserManagement: React.FC = () => {
 
       {/* 5. PHÂN TRANG PHÍA DƯỚI BẢNG DỮ LIỆU */}
       {!isLoading && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl shadow-lg">
           <div className="text-xs text-slate-400 font-bold">
-            Hiển thị trang <span className="text-emerald-450">{currentPage}</span> / {totalPages} (Tổng cộng <span className="text-emerald-450">{totalCount}</span> khách hàng)
+            Hiển thị trang <span className="text-emerald-400">{currentPage}</span> / {totalPages} (Tổng cộng <span className="text-emerald-400">{totalCount}</span> khách hàng)
           </div>
           
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-3.5 py-2 bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+              className="px-3.5 py-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-xs font-bold text-slate-350 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
             >
               Trước
             </button>
@@ -658,8 +634,8 @@ export const UserManagement: React.FC = () => {
                 onClick={() => setCurrentPage(pageNumber)}
                 className={`w-9 h-9 flex items-center justify-center text-xs font-extrabold rounded-xl transition cursor-pointer ${
                   currentPage === pageNumber
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/10'
-                    : 'bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                    : 'bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-300 hover:text-white'
                 }`}
               >
                 {pageNumber}
@@ -669,7 +645,7 @@ export const UserManagement: React.FC = () => {
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="px-3.5 py-2 bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+              className="px-3.5 py-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-xs font-bold text-slate-350 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
             >
               Sau
             </button>

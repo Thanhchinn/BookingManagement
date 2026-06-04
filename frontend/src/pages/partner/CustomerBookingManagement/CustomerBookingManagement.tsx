@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarRange, Search, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BookingItem {
   id: string;
@@ -30,6 +31,7 @@ export const CustomerBookingManagement: React.FC = () => {
   const handleApprove = (id: string) => {
     if (window.confirm('Bạn có chắc muốn PHÊ DUYỆT lịch đặt sân này của khách hàng?')) {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved' } : b));
+      toast.success('Đã phê duyệt lịch đặt sân');
     }
   };
 
@@ -37,6 +39,7 @@ export const CustomerBookingManagement: React.FC = () => {
   const handleCancel = (id: string) => {
     if (window.confirm('Bạn có chắc muốn HỦY lịch đặt sân này của khách hàng?')) {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b));
+      toast.info('Đã hủy lịch đặt sân');
     }
   };
 
@@ -65,8 +68,8 @@ export const CustomerBookingManagement: React.FC = () => {
       </div>
 
       {/* Bộ lọc */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
-        <div className="md:col-span-2 flex items-center gap-3 bg-slate-950 border border-slate-850 rounded-xl px-3.5 py-2 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sz-panel p-4">
+        <div className="md:col-span-2 flex items-center gap-3 bg-slate-950 border border-slate-850 rounded-lg px-3.5 py-2 w-full focus-within:border-amber-500/50">
           <Search className="w-4 h-4 text-slate-500 shrink-0" />
           <input 
             type="text" 
@@ -76,7 +79,7 @@ export const CustomerBookingManagement: React.FC = () => {
             className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none placeholder-slate-700 w-full"
           />
         </div>
-        <div className="flex items-center bg-slate-950 border border-slate-850 rounded-xl px-2 py-1">
+        <div className="flex items-center bg-slate-950 border border-slate-850 rounded-lg px-2 py-1 focus-within:border-amber-500/50">
           <span className="text-[10px] text-slate-500 font-bold uppercase px-2">Trạng thái:</span>
           <select 
             value={statusFilter}

@@ -72,7 +72,7 @@ export const Search: React.FC<SearchProps> = ({
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
       
       {/* 1. THANH NAV DÙNG CHUNG */}
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
@@ -81,7 +81,7 @@ export const Search: React.FC<SearchProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-10 text-left">
         
         {/* Nút quay lại trang chủ và Tiêu đề */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div className="space-y-2">
             <button
               onClick={() => onNavigate?.('home')}
@@ -90,7 +90,7 @@ export const Search: React.FC<SearchProps> = ({
               <ArrowLeft className="w-3.5 h-3.5" /> Quay lại trang chủ
             </button>
             <h2 className="text-2xl sm:text-3xl font-black text-white m-0 tracking-tight flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-emerald-400" />
+              <Sparkles className="w-6 h-6 text-teal-300" />
               Kết Quả Tìm Kiếm Sân Đấu
             </h2>
             <p className="text-xs text-slate-400 m-0">
@@ -100,7 +100,7 @@ export const Search: React.FC<SearchProps> = ({
 
           <div className="shrink-0 flex items-center">
             {filteredFields.length > 0 ? (
-              <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full">
+              <span className="text-xs font-black text-teal-300 bg-teal-500/10 border border-teal-500/20 px-4 py-2 rounded-full">
                 Tìm thấy {filteredFields.length} sân đấu phù hợp
               </span>
             ) : (
@@ -112,7 +112,7 @@ export const Search: React.FC<SearchProps> = ({
         </div>
 
         {/* 3. THANH TÌM KIẾM CO GỌN NỔI BẬT */}
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-md flex justify-center">
+        <div className="sz-panel p-5 backdrop-blur-md flex justify-center">
           <SearchBar
             searchQuery={query}
             onSearchChange={handleQueryChange}

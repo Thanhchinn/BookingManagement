@@ -14,36 +14,36 @@ export const Analytics: React.FC = () => {
         </div>
 
         {/* Cột phải (Lg: 5 cột): Các thông số phụ trợ */}
-        <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 text-left space-y-6 flex flex-col justify-between shadow-sm">
           <div className="space-y-4">
-            <h4 className="text-sm font-extrabold text-white m-0">Phân Tích Khung Giờ & Ngày Hot</h4>
+            <h4 className="text-sm font-extrabold text-slate-950 m-0">Phân Tích Khung Giờ & Ngày Hot</h4>
             <p className="text-[10px] text-slate-500 m-0">Đánh giá hành vi đặt sân của khách hàng để tối ưu hóa giá giờ vàng</p>
             
-            <hr className="border-slate-800" />
+            <hr className="border-slate-100" />
 
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Khung giờ vàng phổ biến nhất</span>
-                <strong className="text-emerald-400">17:00 - 21:00</strong>
+                <span className="text-slate-655 text-slate-600 font-medium">Khung giờ vàng phổ biến nhất</span>
+                <strong className="text-emerald-600">17:00 - 21:00</strong>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Ngày cao điểm đặt sân</span>
-                <strong className="text-blue-400">Thứ Bảy & Chủ Nhật</strong>
+                <span className="text-slate-655 text-slate-600 font-medium">Ngày cao điểm đặt sân</span>
+                <strong className="text-blue-600">Thứ Bảy & Chủ Nhật</strong>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Giá trị trung bình 1 đơn đặt</span>
-                <strong className="text-amber-400">220.000đ / giờ</strong>
+                <span className="text-slate-655 text-slate-600 font-medium">Giá trị trung bình 1 đơn đặt</span>
+                <strong className="text-amber-600">220.000đ / giờ</strong>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Tỉ lệ lấp đầy sân trung bình</span>
-                <strong className="text-purple-400">76.4% công suất</strong>
+                <span className="text-slate-655 text-slate-600 font-medium">Tỉ lệ lấp đầy sân trung bình</span>
+                <strong className="text-purple-655 text-purple-700">76.4% công suất</strong>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-slate-950 border border-slate-800/80 rounded-xl space-y-2">
-            <p className="text-[10px] text-emerald-400 font-bold m-0 uppercase tracking-wider">💡 Đề xuất tối ưu hóa doanh thu</p>
-            <p className="text-[10px] text-slate-400 leading-normal m-0">
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <p className="text-[10px] text-emerald-700 font-bold m-0 uppercase tracking-wider">💡 Đề xuất tối ưu hóa doanh thu</p>
+            <p className="text-[10px] text-slate-600 leading-normal m-0 font-medium">
               Hãy gợi ý cho các đối tác tăng 10% - 15% đơn giá thuê sân vào khung giờ <strong>18:00 - 20:00 thứ Bảy</strong> để tối đa hóa doanh thu khi lượng cầu đạt mức tối đa.
             </p>
           </div>

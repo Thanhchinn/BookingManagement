@@ -22,7 +22,7 @@ export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
   return (
     <div 
       onClick={() => onNavigate?.('field-details')}
-      className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 text-left flex flex-col group cursor-pointer"
+      className="sz-card overflow-hidden hover:border-teal-500/40 transition-all duration-300 text-left flex flex-col group cursor-pointer"
     >
       {/* Ảnh đại diện thực tế hoặc giả lập bằng Emoji lớn */}
       <div className="h-44 bg-slate-950 flex items-center justify-center overflow-hidden select-none relative">
@@ -44,7 +44,7 @@ export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
       <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] bg-slate-800 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/20 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               {court.sport}
             </span>
             <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
@@ -52,7 +52,7 @@ export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
             </div>
           </div>
  
-          <h4 className="text-base font-extrabold text-white leading-tight m-0 group-hover:text-emerald-400 transition">
+          <h4 className="text-base font-extrabold text-white leading-tight m-0 group-hover:text-teal-300 transition">
             {court.title}
           </h4>
  
@@ -68,7 +68,7 @@ export const FieldCard: React.FC<FieldCardProps> = ({ court, onNavigate }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">Giá thuê chỉ từ</p>
-              <p className="text-sm font-extrabold text-emerald-400 m-0">{court.price}/giờ</p>
+              <p className="text-sm font-extrabold text-teal-300 m-0">{court.price}/giờ</p>
             </div>
             <Button 
               onClick={(e) => {

@@ -74,7 +74,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
 
   return (
     <div 
-      className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 font-sans text-slate-100 relative overflow-hidden"
+      className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans text-slate-900 relative overflow-hidden"
       style={{ 
         backgroundImage: "url('/stadium_hero_bg.png')",
         backgroundSize: 'cover',
@@ -82,28 +82,28 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
       }}
     >
       {/* Lớp phủ làm tối mờ huyền diệu */}
-      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-10"></div>
+      <div className="absolute inset-0 bg-slate-50/75 backdrop-blur-xs z-10"></div>
       
       {/* Vòng tròn sáng hiệu ứng Aura */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none z-10"></div>
-
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none z-10"></div>
+ 
       {/* KHUNG ĐĂNG NHẬP ADMIN GLASSMORPHISM */}
-      <div className="relative z-20 w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl backdrop-blur-md">
+      <div className="relative z-20 w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-2xl">
         
         {/* Phần Đầu Trang Đăng Nhập */}
         <div className="text-center space-y-3 mb-8">
-          <div className="inline-flex p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl shadow-inner">
+          <div className="inline-flex p-3 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-2xl shadow-inner">
             <Lock className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-white tracking-tight m-0 uppercase">Vùng Quản Trị Hệ Thống</h3>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight m-0 uppercase">Vùng Quản Trị Hệ Thống</h3>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1 font-bold">SportZone Admin Portal</p>
           </div>
         </div>
 
         {/* Thông báo lỗi */}
         {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold flex items-center gap-2 animate-pulse">
+          <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-pulse">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -119,7 +119,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
             required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="bg-slate-950 border-slate-805 text-white focus:border-emerald-500"
+            className="bg-white border-slate-200 text-slate-900 focus:border-emerald-500"
           />
 
           <InputField
@@ -130,7 +130,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-slate-950 border-slate-805 text-white focus:border-emerald-500"
+            className="bg-white border-slate-200 text-slate-900 focus:border-emerald-500"
           />
 
           <Button 
@@ -144,10 +144,10 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
         </form>
 
         {/* Nút quay lại trang Client */}
-        <div className="text-center mt-6 pt-4 border-t border-slate-800/60">
+        <div className="text-center mt-6 pt-4 border-t border-slate-150">
           <button 
             onClick={onBackToClient}
-            className="text-[11px] text-slate-400 hover:text-white font-bold bg-transparent border-0 cursor-pointer p-0 underline"
+            className="text-[11px] text-slate-555 text-slate-500 hover:text-slate-800 font-bold bg-transparent border-0 cursor-pointer p-0 underline"
           >
             Quay lại trang chính Client
           </button>
@@ -156,7 +156,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
       </div>
 
       {/* Bản quyền */}
-      <p className="relative z-20 text-[10px] text-slate-600 mt-8 font-medium">
+      <p className="relative z-20 text-[10px] text-slate-500 mt-8 font-medium">
         Hệ thống bảo mật đa tầng SportZone. Nghiêm cấm mọi hành vi truy cập trái phép.
       </p>
 

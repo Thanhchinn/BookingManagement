@@ -13,6 +13,7 @@ import { Badge } from '../../../components/ui/Badge';
 import type { PayoutRequest } from '../../../types';
 import { ApprovePayoutModal } from './ApprovePayoutModal';
 import { RejectPayoutModal } from './RejectPayoutModal';
+import { toast } from 'sonner';
 
 export const PayoutManagement: React.FC = () => {
   // Mock State để có thể tương tác đầy đủ trên giao diện
@@ -97,7 +98,9 @@ export const PayoutManagement: React.FC = () => {
     setSelectedRequest(null);
     setShowApproveModal(false);
     setTxHashInput('');
-    alert('Đã phê duyệt yêu cầu rút tiền và kết chuyển tiền gửi thành công!');
+    toast.success('Đã phê duyệt yêu cầu rút tiền', {
+      description: 'Lệnh kết chuyển tiền gửi đã được ghi nhận thành công.',
+    });
   };
 
   // Xác nhận Từ chối rút tiền
@@ -119,14 +122,16 @@ export const PayoutManagement: React.FC = () => {
     setSelectedRequest(null);
     setShowRejectModal(false);
     setRejectReasonInput('');
-    alert('Đã từ chối yêu cầu rút tiền. Tiền rút đã hoàn trả lại ví số dư thặng dư của Đối tác.');
+    toast.info('Đã từ chối yêu cầu rút tiền', {
+      description: 'Tiền rút đã được hoàn trả lại ví số dư thặng dư của đối tác.',
+    });
   };
 
   return (
     <div className="space-y-6 text-left relative font-sans text-slate-100">
       
       {/* Thẻ chỉ số tổng quỹ & bộ lọc */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-900 pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
         {/* Bộ lọc bên trái */}
         <div className="flex flex-wrap items-center gap-2">
           {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(filter => {
@@ -140,8 +145,8 @@ export const PayoutManagement: React.FC = () => {
                 onClick={() => setActiveFilter(filter)}
                 className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer border ${
                   isActive 
-                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/10' 
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/20' 
+                    : 'bg-slate-950 border-slate-850 text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
                 {label}
@@ -151,8 +156,8 @@ export const PayoutManagement: React.FC = () => {
         </div>
 
         {/* Tổng quỹ bên phải */}
-        <div className="text-left md:text-right bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl shrink-0 self-stretch md:self-auto flex items-center justify-between md:justify-end gap-6 md:gap-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Tổng quỹ tạm giữ đối soát:</span>
+        <div className="text-left md:text-right bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl shrink-0 self-stretch md:self-auto flex items-center justify-between md:justify-end gap-6 md:gap-4 shadow-lg">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tổng quỹ tạm giữ đối soát:</span>
           <span className="text-sm font-black text-emerald-400 font-mono block">142,500,000đ</span>
         </div>
       </div>
@@ -163,23 +168,23 @@ export const PayoutManagement: React.FC = () => {
         {/* Cột trái: Danh sách */}
         <div className="lg:col-span-2 space-y-4">
           {filteredRequests.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 space-y-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-3 shadow-xs">
               <span className="text-3xl block">💸</span>
               <h4 className="text-sm font-bold text-white m-0">Không có yêu cầu rút tiền nào</h4>
-              <p className="text-[11px] text-slate-500 max-w-sm mx-auto">Chưa có chủ sân nào nộp hồ sơ yêu cầu chuyển quỹ rút tiền trong bộ lọc này.</p>
+              <p className="text-[11px] text-slate-400 max-w-sm mx-auto">Chưa có chủ sân nào nộp hồ sơ yêu cầu chuyển quỹ rút tiền trong bộ lọc này.</p>
             </div>
           ) : (
             filteredRequests.map(r => (
               <div 
                 key={r.id}
                 onClick={() => setSelectedRequest(r)}
-                className={`bg-slate-900 border rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer transition hover:border-slate-700 ${
-                  selectedRequest?.id === r.id ? 'border-emerald-500 bg-slate-900/90' : 'border-slate-800/80'
+                className={`bg-slate-900 border rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer transition hover:border-slate-700 shadow-lg ${
+                  selectedRequest?.id === r.id ? 'border-emerald-500 bg-slate-900' : 'border-slate-800'
                 }`}
               >
                 <div className="space-y-2.5 flex-grow">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-slate-500">{r.id}</span>
+                    <span className="text-xs font-mono font-bold text-slate-400">{r.id}</span>
                     {r.status === 'PENDING' ? (
                       <Badge status="warning">Đang chờ duyệt</Badge>
                     ) : r.status === 'APPROVED' ? (
@@ -190,7 +195,7 @@ export const PayoutManagement: React.FC = () => {
                   </div>
 
                   <h4 className="text-sm font-black text-white m-0 flex items-center gap-1.5">
-                    <Building className="w-4.5 h-4.5 text-slate-500" />
+                    <Building className="w-4.5 h-4.5 text-slate-400" />
                     {r.partnerName}
                   </h4>
 
@@ -200,10 +205,10 @@ export const PayoutManagement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-slate-800 pt-3 sm:pt-0 shrink-0">
+                <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-slate-850 pt-3 sm:pt-0 shrink-0">
                   <div className="text-left sm:text-right">
-                    <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider m-0">Số tiền rút:</p>
-                    <p className="text-base font-extrabold text-emerald-400 font-mono m-0">
+                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider m-0">Số tiền rút:</p>
+                    <p className="text-base font-extrabold text-emerald-500 font-mono m-0">
                       {r.amount.toLocaleString('vi-VN')}đ
                     </p>
                   </div>
@@ -217,17 +222,17 @@ export const PayoutManagement: React.FC = () => {
         {/* Cột phải: Xem chi tiết ngân hàng & Duyệt */}
         <div className="space-y-6">
           {selectedRequest ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5 sticky top-24">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5 sticky top-24 shadow-lg text-slate-100">
               
               {/* Header chi tiết */}
-              <div className="border-b border-slate-800 pb-3 space-y-1">
-                <span className="text-[9px] font-mono text-slate-500 block">{selectedRequest.id} | Gửi ngày {selectedRequest.requestDate}</span>
+              <div className="border-b border-slate-850 pb-3 space-y-1">
+                <span className="text-[9px] font-mono text-slate-400 block">{selectedRequest.id} | Gửi ngày {selectedRequest.requestDate}</span>
                 <h4 className="text-base font-black text-white m-0 leading-tight">{selectedRequest.partnerName}</h4>
               </div>
 
               {/* Số tiền rút lớn nổi bật */}
               <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center">
-                <span className="text-[9px] text-slate-550 font-bold uppercase tracking-wider block">Yêu cầu rút số tiền</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Yêu cầu rút số tiền</span>
                 <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">
                   {selectedRequest.amount.toLocaleString('vi-VN')}đ
                 </span>
@@ -235,7 +240,7 @@ export const PayoutManagement: React.FC = () => {
 
               {/* Chi tiết tài khoản nhận tiền */}
               <div className="space-y-2.5 text-xs text-left">
-                <span className="text-slate-500 font-bold block uppercase tracking-wider">Thông tin Ngân hàng thụ hưởng:</span>
+                <span className="text-slate-400 font-bold block uppercase tracking-wider">Thông tin Ngân hàng thụ hưởng:</span>
                 
                 <div className="bg-slate-950 border border-slate-850 rounded-xl p-3.5 space-y-2 font-medium">
                   <div className="flex justify-between items-center text-slate-400">
@@ -261,7 +266,7 @@ export const PayoutManagement: React.FC = () => {
                       setTxHashInput('');
                       setShowApproveModal(true);
                     }}
-                    className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl border-0 cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/10 active:scale-95 transition"
+                    className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl border-0 cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 transition"
                   >
                     <Check className="w-4 h-4 shrink-0" /> Duyệt Chuyển
                   </button>
@@ -271,7 +276,7 @@ export const PayoutManagement: React.FC = () => {
                       setRejectReasonInput('');
                       setShowRejectModal(true);
                     }}
-                    className="py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 font-bold rounded-xl cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
+                    className="py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-900/30 hover:border-rose-900/50 font-bold rounded-xl cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
                   >
                     <X className="w-4 h-4 shrink-0" /> Từ Chối
                   </button>
@@ -285,7 +290,7 @@ export const PayoutManagement: React.FC = () => {
                     <CheckCircle className="w-4.5 h-4.5" /> Chuyển Khoản Thành Công
                   </span>
                   
-                  <div className="border-t border-emerald-500/10 pt-2 text-[10px] space-y-1.5 text-slate-400">
+                  <div className="border-t border-slate-850 pt-2 text-[10px] space-y-1.5 text-slate-400">
                     <div className="flex justify-between items-center">
                       <span>Mã chuyển khoản:</span>
                       <strong className="text-white font-mono">{selectedRequest.txHash}</strong>
@@ -300,14 +305,14 @@ export const PayoutManagement: React.FC = () => {
 
               {/* REJECTED details */}
               {selectedRequest.status === 'REJECTED' && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-xs text-left space-y-2">
-                  <span className="text-xs text-red-400 font-bold block flex items-center justify-center gap-1">
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-xs text-left space-y-2">
+                  <span className="text-xs text-rose-400 font-bold block flex items-center justify-center gap-1">
                     <AlertCircle className="w-4.5 h-4.5" /> Yêu Cầu Bị Từ Chối Rút
                   </span>
                   
-                  <div className="border-t border-red-500/10 pt-2 text-[10px]">
-                    <span className="text-slate-500 font-bold block uppercase tracking-wider mb-1">Lý do từ chối hệ thống:</span>
-                    <p className="text-slate-400 leading-relaxed bg-slate-950 p-2.5 rounded-lg m-0">
+                  <div className="border-t border-slate-850 pt-2 text-[10px]">
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider mb-1">Lý do từ chối hệ thống:</span>
+                    <p className="text-slate-300 leading-relaxed bg-slate-950 border border-rose-900/20 p-2.5 rounded-lg m-0">
                       "{selectedRequest.rejectReason}"
                     </p>
                   </div>
@@ -316,7 +321,7 @@ export const PayoutManagement: React.FC = () => {
 
             </div>
           ) : (
-            <div className="bg-slate-900/40 border border-slate-800 border-dashed rounded-2xl p-8 text-center text-slate-500 sticky top-24">
+            <div className="bg-slate-950 border border-slate-850 border-dashed rounded-2xl p-8 text-center text-slate-400 sticky top-24 shadow-xs">
               <span className="text-3xl block mb-2 select-none">👈</span>
               Nhấn chọn một yêu cầu rút tiền bên trái để xem ngân hàng thụ hưởng, sao lưu hóa đơn đối chiếu và ký duyệt giải ngân quỹ.
             </div>

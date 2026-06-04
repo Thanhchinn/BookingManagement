@@ -9,7 +9,8 @@ import {
   X,
   Scale,
   Coins,
-  LogOut
+  LogOut,
+  MessageSquare
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -39,6 +40,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
     { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },
     { id: 'analytics', name: 'Thống kê sâu', icon: BarChart3 },
+    { id: 'chats', name: 'Tin nhắn đối tác', icon: MessageSquare },
   ];
 
   return (
@@ -62,13 +64,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="h-16 lg:h-20 border-b border-slate-800 flex items-center px-6 sm:px-5 justify-between shrink-0">
           {/* BRANDING LOGO */}
           <div className="flex items-center space-x-3 overflow-hidden">
-            <div className="bg-emerald-500 text-white p-2 rounded-xl text-lg shadow-md shadow-emerald-500/10 shrink-0 select-none">
+            <div className="bg-teal-600 text-white p-2 rounded-lg text-lg shadow-sm shrink-0 select-none">
               🏆
             </div>
             {!isCollapsed && (
               <div className="text-left shrink-0 transition-opacity duration-200">
                 <h4 className="text-sm font-black text-white tracking-tight m-0">SportZone</h4>
-                <p className="text-[9px] text-emerald-400 font-bold tracking-widest uppercase m-0">Admin Portal</p>
+                <p className="text-[9px] text-teal-400 font-bold tracking-widest uppercase m-0">Admin Portal</p>
               </div>
             )}
           </div>
@@ -91,21 +93,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               
               return (
                 <button
-                  key={item.id}
-                  onClick={() => {
-                    onSelectTab(item.id);
-                    onCloseMobile(); // Tự động đóng trên mobile khi chọn xong
-                  }}
-                  title={isCollapsed ? item.name : undefined}
-                  className={`w-full flex items-center rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer border-0 ${
-                    isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'
-                  } ${
-                    isActive 
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/10' 
-                      : 'bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                  }`}
+                   key={item.id}
+                   onClick={() => {
+                     onSelectTab(item.id);
+                     onCloseMobile(); // Tự động đóng trên mobile khi chọn xong
+                   }}
+                   title={isCollapsed ? item.name : undefined}
+                   className={`w-full flex items-center rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer border-0 ${
+                     isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'
+                   } ${
+                     isActive 
+                       ? 'bg-slate-950 text-white border border-slate-800 shadow-inner' 
+                       : 'bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
+                   }`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-500'}`} />
                   {!isCollapsed && <span className="transition-opacity duration-200">{item.name}</span>}
                 </button>
               );
@@ -118,7 +120,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             onClick={onLogout}
             title={isCollapsed ? 'Đăng xuất' : undefined}
-            className={`w-full flex items-center bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500 hover:text-white text-xs text-rose-400 font-bold rounded-xl transition duration-150 cursor-pointer ${
+            className={`w-full flex items-center bg-rose-950/20 border border-rose-900/30 hover:bg-rose-950/40 text-xs text-rose-400 font-bold rounded-lg transition duration-150 cursor-pointer ${
               isCollapsed ? 'justify-center p-3' : 'justify-center space-x-2 py-3 px-4'
             }`}
           >

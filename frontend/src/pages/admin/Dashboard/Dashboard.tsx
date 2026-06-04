@@ -55,11 +55,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab }) => {
       </div>
 
       {/* 2. KHU VỰC BẢNG HOẠT ĐỘNG GẦN ĐÂY */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left space-y-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-5 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-sm font-extrabold text-white m-0">Nhật Ký Hoạt Động Gần Đây</h4>
-            <p className="text-[10px] text-slate-500 m-0">Giám sát giao dịch, đặt lịch và phê duyệt trong thời gian thực</p>
+            <p className="text-[10px] text-slate-400 m-0 font-medium">Giám sát giao dịch, đặt lịch và phê duyệt trong thời gian thực</p>
           </div>
           <button 
             onClick={() => onNavigateTab('analytics')}
@@ -84,18 +84,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab }) => {
                 <tr key={activity.id} className="admin-table-tr">
                   <td className="admin-table-td font-semibold">
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                      activity.type === 'booking' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/20' :
-                      activity.type === 'cashout' ? 'bg-red-950/60 text-red-400 border border-red-500/20' :
-                      'bg-amber-950/60 text-amber-400 border border-amber-500/20'
+                      activity.type === 'booking' ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/30' :
+                      activity.type === 'cashout' ? 'bg-rose-950/40 text-rose-400 border border-rose-900/30' :
+                      'bg-amber-950/40 text-amber-400 border border-amber-900/30'
                     }`}>
                       {activity.type === 'booking' ? 'Đặt sân' : activity.type === 'cashout' ? 'Rút tiền' : 'Đối tác'}
                     </span>
                   </td>
-                  <td className="admin-table-td admin-table-wrap text-white font-bold">{activity.detail}</td>
-                  <td className="admin-table-td text-slate-500">{activity.time}</td>
+                  <td className="admin-table-td admin-table-wrap text-slate-200 font-extrabold">{activity.detail}</td>
+                  <td className="admin-table-td text-slate-400">{activity.time}</td>
                   <td className={`admin-table-td text-right font-extrabold ${
                     activity.amount?.startsWith('+') ? 'text-emerald-400' : 
-                    activity.amount?.startsWith('-') ? 'text-red-400' : 'text-slate-400'
+                    activity.amount?.startsWith('-') ? 'text-rose-400' : 'text-slate-450'
                   }`}>
                     {activity.amount || (activity.status ? `[${activity.status}]` : '—')}
                   </td>

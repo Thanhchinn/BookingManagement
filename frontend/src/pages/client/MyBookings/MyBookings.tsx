@@ -16,6 +16,7 @@ import { BookingDetailsModal } from './BookingDetailsModal';
 import { CancelBookingModal } from './CancelBookingModal';
 import { ReviewBookingModal } from './ReviewBookingModal';
 import { DisputeBookingModal } from './DisputeBookingModal';
+import { toast } from 'sonner';
 
 interface MyBookingsProps {
   onNavigate?: (page: any, authMode?: any) => void;
@@ -128,7 +129,9 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
     setShowCancelModal(false);
     setSelectedBooking(null);
     setCancelReason('');
-    alert('Hủy đơn đặt lịch sân bãi thành công. Tiền đặt cọc/thanh toán (nếu có) sẽ được hoàn trả theo quy định.');
+    toast.success('Đã hủy đơn đặt lịch thành công', {
+      description: 'Tiền cọc hoặc thanh toán trước sẽ được hoàn trả theo quy định.',
+    });
   };
 
   // Đăng đánh giá
@@ -144,7 +147,9 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
     setSelectedBooking(null);
     setReviewComment('');
     setRating(5);
-    alert('Cảm ơn bạn đã gửi đánh giá! Ý kiến của bạn sẽ giúp chủ sân cải thiện dịch vụ tốt hơn.');
+    toast.success('Cảm ơn bạn đã gửi đánh giá', {
+      description: 'Ý kiến của bạn sẽ giúp chủ sân cải thiện dịch vụ tốt hơn.',
+    });
   };
 
   // Gửi khiếu nại
@@ -159,7 +164,9 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
     setShowDisputeModal(false);
     setSelectedBooking(null);
     setDisputeDescription('');
-    alert('Khiếu nại của bạn đã được gửi tới Ban Quản Trị hệ thống. Chúng tôi sẽ điều tra và phản hồi trong vòng 24 giờ.');
+    toast.info('Khiếu nại đã được gửi', {
+      description: 'Ban quản trị sẽ kiểm tra và phản hồi trong vòng 24 giờ.',
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -178,7 +185,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
       
       {/* 1. HEADER NAVBAR */}
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
@@ -187,7 +194,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-8">
         
         {/* Tiêu đề & Thống kê điểm loyalty */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-md">
+        <div className="sz-panel flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 backdrop-blur-md">
           <div className="text-left space-y-1">
             <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               Khách hàng thân thiết
@@ -200,7 +207,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
             </p>
           </div>
           
-          <div className="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-5 py-3 rounded-2xl">
+          <div className="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-5 py-3 rounded-lg">
             <TrendingUp className="w-6 h-6 text-emerald-400 shrink-0" />
             <div className="text-left leading-none">
               <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Điểm thưởng tích lũy</span>
@@ -236,8 +243,8 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
         {/* 4. DỮ LIỆU ĐƠN ĐẶT SÂN */}
         <div className="max-w-4xl mx-auto space-y-4">
           {filteredBookings.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-850 rounded-3xl p-12 text-center space-y-4">
-              <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-slate-800">
+            <div className="sz-empty p-12 text-center space-y-4">
+              <div className="w-16 h-16 bg-slate-950 rounded-lg flex items-center justify-center text-3xl mx-auto border border-slate-800">
                 📅
               </div>
               <div className="space-y-1">
@@ -257,7 +264,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
               <div 
                 key={b.id}
                 onClick={() => setSelectedBooking(b)}
-                className={`bg-slate-900 border transition-all duration-200 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer hover:shadow-lg hover:shadow-emerald-950/10 ${
+                className={`sz-card transition-all duration-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer ${
                   selectedBooking?.id === b.id ? 'border-emerald-500 bg-slate-900/90 shadow-md border-dashed' : 'border-slate-800/80 hover:border-slate-700'
                 }`}
               >
@@ -316,7 +323,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
         booking={selectedBooking}
         onClose={() => setSelectedBooking(null)}
         onPayOnline={() => {
-          alert('Hệ thống đang chuyển hướng tới Cổng Thanh Toán VNPay/MoMo để xử lý giao dịch...');
+          toast.loading('Đang kết nối cổng thanh toán an toàn...');
           if (selectedBooking) {
             setBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'CONFIRMED', paymentStatus: 'FULLY_PAID' } : b));
             setSelectedBooking(null);

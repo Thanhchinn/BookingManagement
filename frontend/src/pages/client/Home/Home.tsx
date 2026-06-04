@@ -60,44 +60,40 @@ export const Home: React.FC<HomeProps> = ({
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
       
       {/* 1. THANH NAV DÙNG CHUNG */}
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
       {/* 2. HERO SECTION LUNG LINH ĐIỆN ẢNH VỚI BANNER TÌM KIẾM */}
       <section 
-        className="relative min-h-[640px] flex items-center justify-start text-left px-6 sm:px-12 lg:px-24 bg-cover bg-center overflow-hidden"
+        className="relative min-h-[620px] flex items-center justify-start text-left px-6 sm:px-12 lg:px-24 bg-cover bg-center overflow-hidden"
         style={{ 
           backgroundImage: "url('/stadium_hero_bg.png')" 
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-slate-950/40 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/82 to-slate-950/10 z-10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(20,184,166,0.18),transparent_28rem)] z-10"></div>
 
         <div className="relative z-20 max-w-4xl space-y-6 pt-12 pb-12" data-aos="fade-right" data-aos-duration="1000">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-semibold tracking-wider uppercase">
-            <span>Professional Booking Platform</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/10 border border-teal-500/30 text-teal-300 rounded-full text-xs font-semibold uppercase">
+            <span>Modern Sport Booking Platform</span>
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block animate-ping"></span>
           </div>
 
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight m-0 text-white font-sans">
-            Elevate Your Facility To{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.2)]">
-              Pro Level
-            </span>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight m-0 text-white font-sans">
+            Đặt sân nhanh hơn, quản lý lịch chơi rõ hơn
           </h2>
 
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
-            The elite platform for facility owners and athletes. Seamlessly manage bookings, 
-            membership cycles, and professional coaching schedules in one centralized hub.
+            Tìm sân phù hợp, xem lịch trống theo thời gian thực và hoàn tất giữ chỗ chỉ trong vài bước.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <a href="#courts-list">
               <Button 
                 variant="primary" 
-                className="px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-sm font-extrabold rounded-xl shadow-lg shadow-emerald-600/20 text-white transition-all cursor-pointer flex items-center gap-2"
+                className="px-7 py-3.5 bg-teal-600 hover:bg-teal-500 active:scale-[0.98] text-sm font-extrabold rounded-lg shadow-lg shadow-teal-600/20 text-white transition-all cursor-pointer flex items-center gap-2"
               >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -108,7 +104,7 @@ export const Home: React.FC<HomeProps> = ({
 
             <Button 
               variant="secondary"
-              className="px-7 py-3.5 bg-slate-900/60 border border-slate-700/50 hover:bg-slate-800/80 active:scale-95 text-sm font-extrabold rounded-xl text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-7 py-3.5 bg-white/8 border border-white/15 hover:bg-white/12 active:scale-[0.98] text-sm font-extrabold rounded-lg text-slate-100 transition-all cursor-pointer flex items-center gap-1.5"
             >
               <span className="text-emerald-400 text-base font-bold">+</span> List your Venue
             </Button>
@@ -125,6 +121,19 @@ export const Home: React.FC<HomeProps> = ({
               onCategoryChange={setBannerCategory}
               onSearchSubmit={handleSearchSubmit}
             />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 max-w-xl pt-2">
+            {[
+              ['320+', 'Lượt đặt/tháng'],
+              ['4.9/5', 'Đánh giá trung bình'],
+              ['30s', 'Giữ chỗ nhanh'],
+            ].map(([value, label]) => (
+              <div key={label} className="sz-kpi p-3">
+                <span className="block text-lg font-black text-white">{value}</span>
+                <span className="block text-[10px] font-semibold text-slate-400">{label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -143,7 +152,7 @@ export const Home: React.FC<HomeProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4 hover:border-emerald-500/20 transition-all duration-300" data-aos="fade-up" data-aos-delay="100">
+            <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="100">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
                 ⚡
               </div>
@@ -153,7 +162,7 @@ export const Home: React.FC<HomeProps> = ({
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4 hover:border-emerald-500/20 transition-all duration-300" data-aos="fade-up" data-aos-delay="200">
+            <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="200">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
                 ⭐
               </div>
@@ -163,7 +172,7 @@ export const Home: React.FC<HomeProps> = ({
               </p>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4 hover:border-emerald-500/20 transition-all duration-300" data-aos="fade-up" data-aos-delay="300">
+            <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="300">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
                 💰
               </div>

@@ -207,13 +207,13 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
   return (
     <div className="space-y-6 animate-fade-in text-left">
       {/* Nút quay lại và Tiêu đề */}
-      <div className="mb-8 border-b border-slate-900 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-8 border-b border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center justify-center p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-805 hover:border-slate-700 text-slate-400 hover:text-white rounded-xl transition cursor-pointer shrink-0"
+            className="flex items-center justify-center p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white rounded-xl transition cursor-pointer shrink-0"
           >
-            <ChevronLeft className="w-4 h-4 text-emerald-450" />
+            <ChevronLeft className="w-4 h-4 text-emerald-400" />
           </button>
           <div className="space-y-1">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex flex-wrap items-center gap-2">
@@ -231,13 +231,13 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                 <span className="admin-table-badge admin-table-badge-red text-[9px] font-extrabold uppercase py-0.5 px-2">Bị tạm khóa</span>
               )}
             </h1>
-            <p className="text-xs text-slate-500 font-semibold leading-relaxed m-0 mt-0.5">
-              Mã đối tác: <span className="font-mono text-slate-400 font-bold">{partner.id}</span> • Đăng ký vào ngày: <span className="text-slate-400">{partner.registrationDate}</span>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed m-0 mt-0.5">
+              Mã đối tác: <span className="font-mono text-slate-200 font-bold">{partner.id}</span> • Đăng ký vào ngày: <span className="text-slate-200">{partner.registrationDate}</span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider bg-slate-900/40 border border-slate-900 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+        <div className="flex items-center space-x-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-wider bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl self-start sm:self-auto">
           <span>Portal</span>
           <span>/</span>
           <span>partners</span>
@@ -253,43 +253,43 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
         <div className="lg:col-span-2 space-y-6">
           
           {/* Thẻ 1: Thông tin người đăng ký */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4 shadow-lg">
             <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 m-0 border-b border-slate-800 pb-3">
               <Info className="w-4 h-4" />
               Thông tin người đăng ký & pháp nhân
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Tên chủ sở hữu</span>
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Tên chủ sở hữu</span>
                 <span className="text-white font-bold text-sm block mt-0.5">{partner.ownerName}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Mã số thuế doanh nghiệp</span>
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Mã số thuế doanh nghiệp</span>
                 <span className="text-white font-bold font-mono text-sm block mt-0.5">{partner.taxCode}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Số điện thoại liên hệ</span>
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Số điện thoại liên hệ</span>
                 <span className="text-white font-bold font-mono text-sm block mt-0.5">{partner.phone}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Địa chỉ hòm thư (Email)</span>
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Địa chỉ hòm thư (Email)</span>
                 <span className="text-white font-bold font-mono text-sm block mt-0.5 break-all">{partner.email}</span>
               </div>
-              <div className="sm:col-span-2 pt-3 border-t border-slate-800/80">
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Địa chỉ đăng ký kinh doanh</span>
+              <div className="sm:col-span-2 pt-3 border-t border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Địa chỉ đăng ký kinh doanh</span>
                 <span className="text-slate-300 font-medium leading-relaxed block mt-1">{partner.address}</span>
               </div>
             </div>
           </div>
 
           {/* Thẻ 2: Danh sách cơ sở & các sân dịch vụ chi tiết (Bấm để xem sân bãi) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4 shadow-lg">
             <div>
               <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 m-0">
                 <MapPin className="w-4 h-4" />
                 Danh sách chi nhánh & Cơ sở vận hành ({partner.totalFields} Sân liên kết)
               </h4>
-              <p className="text-[10.5px] text-slate-500 m-0 mt-1 font-medium">Nhấn vào cơ sở để xem danh sách sân đấu và biểu phí dịch vụ chi tiết</p>
+              <p className="text-[10.5px] text-slate-400 m-0 mt-1 font-medium">Nhấn vào cơ sở để xem danh sách sân đấu và biểu phí dịch vụ chi tiết</p>
             </div>
             
             <div className="space-y-4">
@@ -298,17 +298,17 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                 return (
                   <div 
                     key={loc.id} 
-                    className="bg-slate-950 border border-slate-850 rounded-2xl overflow-hidden transition focus-within:border-slate-700"
+                    className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden transition focus-within:border-slate-700"
                   >
                     {/* Header Cơ Sở (Bấm để đóng mở) */}
                     <div 
-                      onClick={() => toggleExpand(loc.id)}
-                      className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-900/40 select-none transition"
+                       onClick={() => toggleExpand(loc.id)}
+                       className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-900/60 select-none transition"
                     >
                       <div className="text-xs space-y-1">
                         <div className="flex items-center gap-1.5">
                           {loc.isPrimary ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950/40 text-emerald-400 border border-emerald-900/30">
                               Cơ sở chính
                             </span>
                           ) : (
@@ -319,25 +319,25 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                           <span className="text-[10px] text-slate-500 font-mono">ID: {loc.id}</span>
                         </div>
                         <h5 className="text-sm font-extrabold text-white m-0 mt-1">{loc.name}</h5>
-                        <p className="text-[11px] text-slate-450 m-0">{loc.address}</p>
+                        <p className="text-[11px] text-slate-400 m-0">{loc.address}</p>
                       </div>
                       
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[10px] font-extrabold text-white bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-xl">
+                        <span className="text-[10px] font-extrabold text-slate-300 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-xl shadow-xs">
                           {loc.services.length} sân dịch vụ
                         </span>
                         {isExpanded ? (
-                          <ChevronUp className="w-4.5 h-4.5 text-slate-450" />
+                          <ChevronUp className="w-4.5 h-4.5 text-slate-400" />
                         ) : (
-                          <ChevronDown className="w-4.5 h-4.5 text-slate-450" />
+                          <ChevronDown className="w-4.5 h-4.5 text-slate-400" />
                         )}
                       </div>
                     </div>
 
                     {/* Danh sách Sân Thể Thao / Dịch vụ (Chỉ hiển thị khi expanded) */}
                     {isExpanded && (
-                      <div className="border-t border-slate-900 bg-slate-950 p-4 pt-3 space-y-3">
-                        <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-900 pb-2 px-1">
+                      <div className="border-t border-slate-800 bg-slate-950 p-4 pt-3 space-y-3">
+                        <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 pb-2 px-1">
                           <span>Sân / Tiêu đề dịch vụ</span>
                           <span>Đơn giá & Tiện ích</span>
                         </div>
@@ -346,26 +346,26 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                           {loc.services.map((srv) => (
                             <div 
                               key={srv.id}
-                              className="bg-slate-900/60 border border-slate-850 hover:border-slate-800 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                              className="bg-slate-900 border border-slate-800 hover:border-slate-700 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs"
                             >
                               <div className="space-y-1">
-                                <h6 className="font-extrabold text-slate-100 m-0 flex items-center gap-1.5">
+                                <h6 className="font-extrabold text-white m-0 flex items-center gap-1.5">
                                   {srv.name}
                                 </h6>
                                 <div className="flex items-center gap-2 text-[10px]">
-                                  <span className="bg-slate-950 text-slate-400 font-semibold px-2 py-0.5 rounded border border-slate-850">
+                                  <span className="bg-slate-950 text-slate-300 font-semibold px-2 py-0.5 rounded border border-slate-800">
                                     🏀 {srv.category}
                                   </span>
-                                  <span className="text-slate-550 font-mono">ID: {srv.id}</span>
+                                  <span className="text-slate-500 font-mono">ID: {srv.id}</span>
                                 </div>
                               </div>
 
-                              <div className="flex sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-slate-900 pt-2 sm:pt-0">
+                              <div className="flex sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
                                 <span className="text-emerald-400 font-extrabold font-mono text-[13px]">
-                                  {srv.basePrice.toLocaleString('vi-VN')}đ<span className="text-[10px] text-slate-500 font-normal">/giờ</span>
+                                  {srv.basePrice.toLocaleString('vi-VN')}đ<span className="text-[10px] text-slate-400 font-normal">/giờ</span>
                                 </span>
                                 
-                                <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-850">
+                                <div className="flex items-center gap-1.5 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
                                   {srv.amenities.map((amenity, aIdx) => (
                                     <span key={aIdx} title={amenity} className="hover:scale-110 transition cursor-help">
                                       {renderAmenityIcon(amenity)}
@@ -385,19 +385,19 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
           </div>
 
           {/* Thẻ 3: Cấu hình bộ môn và tỉ lệ chiết khấu */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4 shadow-lg">
             <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 m-0 border-b border-slate-800 pb-3">
               <Activity className="w-4 h-4" />
               Cấu hình bộ môn & Tỉ lệ chiết khấu giao dịch
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Bộ môn kinh doanh hệ thống</span>
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Bộ môn kinh doanh hệ thống</span>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {partner.sportCategories.map(cat => (
                     <span 
                       key={cat}
-                      className="text-[10px] font-bold bg-slate-950 text-slate-350 border border-slate-850 px-2.5 py-1 rounded-xl"
+                      className="text-[10px] font-bold bg-slate-950 text-slate-300 border border-slate-800 px-2.5 py-1 rounded-xl"
                     >
                       {cat}
                     </span>
@@ -405,8 +405,8 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-bold">Phí hoa hồng đối soát</span>
-                <span className="text-emerald-455 font-extrabold text-sm block mt-1.5">
+                <span className="text-[10px] text-slate-400 uppercase block font-bold">Phí hoa hồng đối soát</span>
+                <span className="text-emerald-400 font-extrabold text-sm block mt-1.5">
                   {partner.commissionType === 'PERCENTAGE' ? (
                     `${partner.commissionRate?.toFixed(2)}% / mỗi đơn đặt`
                   ) : (
@@ -423,23 +423,23 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
         <div className="space-y-6">
           
           {/* Thẻ 4: Tài khoản ngân hàng đối soát */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4 shadow-lg">
             <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-2 m-0 border-b border-slate-800 pb-3">
               <Landmark className="w-4 h-4" />
               Tài khoản ngân hàng đối soát
             </h4>
             <div className="space-y-3.5 text-xs text-left">
-              <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl space-y-2.5 font-medium">
+              <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2.5 font-medium">
                 <div>
-                  <span className="text-[9px] text-slate-500 uppercase block font-bold">Ngân hàng liên kết</span>
+                  <span className="text-[9px] text-slate-400 uppercase block font-bold">Ngân hàng liên kết</span>
                   <span className="text-white font-bold block mt-0.5">{partner.bankAccount.bankName}</span>
                 </div>
-                <div className="pt-2 border-t border-slate-900">
-                  <span className="text-[9px] text-slate-500 uppercase block font-bold">Số tài khoản (STK)</span>
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="text-[9px] text-slate-400 uppercase block font-bold">Số tài khoản (STK)</span>
                   <span className="text-emerald-400 font-mono font-black text-sm block mt-0.5 tracking-wider">{partner.bankAccount.number}</span>
                 </div>
-                <div className="pt-2 border-t border-slate-900">
-                  <span className="text-[9px] text-slate-500 uppercase block font-bold">Chủ tài khoản (CTK)</span>
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="text-[9px] text-slate-400 uppercase block font-bold">Chủ tài khoản (CTK)</span>
                   <span className="text-white font-mono font-bold uppercase block mt-0.5">{partner.bankAccount.holder}</span>
                 </div>
               </div>
@@ -447,7 +447,7 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
           </div>
 
           {/* Thẻ 5: Thao tác quản trị viên */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition space-y-4 shadow-lg">
             <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 m-0 border-b border-slate-800 pb-3">
               ⚡ Thao tác quản trị
             </h4>
@@ -455,23 +455,23 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
             <div className="space-y-3 flex flex-col">
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs font-bold text-white rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-200 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <Settings className="w-4 h-4 text-emerald-400" /> Chỉnh sửa đối tác
+                <Settings className="w-4 h-4 text-emerald-500" /> Chỉnh sửa đối tác
               </button>
 
               {partner.status === 'pending' ? (
                 <>
                   <button
                     onClick={() => onApprove(partner.id)}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
                   >
                     <Check className="w-4 h-4" /> Duyệt hồ sơ đối tác
                   </button>
                   
                   <button
                     onClick={() => onReject(partner.id)}
-                    className="w-full py-2.5 bg-red-650 hover:bg-red-700 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 flex items-center justify-center gap-1.5"
                   >
                     <X className="w-4 h-4" /> Từ chối hồ sơ
                   </button>
@@ -488,8 +488,8 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                     }}
                     className={`w-full py-2.5 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 flex items-center justify-center gap-1.5 ${
                       partner.status === 'active'
-                        ? 'bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/10'
-                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/10'
+                        ? 'bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/20'
+                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20'
                     }`}
                   >
                     {partner.status === 'active' ? (
@@ -502,7 +502,7 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
                   {partner.status === 'suspended' && (
                     <button
                       onClick={() => onDelete(partner.id, partner.businessName)}
-                      className="w-full py-2.5 bg-red-650 hover:bg-red-750 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 flex items-center justify-center gap-1.5"
                     >
                       <Trash2 className="w-4 h-4" /> Xóa đối tác vĩnh viễn
                     </button>
@@ -512,7 +512,7 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
               
               <button
                 onClick={onBack}
-                className="w-full py-2.5 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-350 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 Quay lại danh sách
               </button>

@@ -10,15 +10,15 @@ export const RevenueChart: React.FC = () => {
   ];
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-left space-y-6">
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left space-y-6 shadow-sm">
       
       {/* Tiêu đề biểu đồ */}
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-extrabold text-white m-0">Tỉ Lệ Đặt Lịch Theo Môn Thể Thao</h4>
+          <h4 className="text-sm font-extrabold text-slate-950 m-0">Tỉ Lệ Đặt Lịch Theo Môn Thể Thao</h4>
           <p className="text-[10px] text-slate-500 m-0">Thống kê tổng số lượt đặt sân trong 30 ngày qua</p>
         </div>
-        <span className="text-[10px] bg-slate-950 text-emerald-400 font-bold px-2.5 py-1 rounded-lg border border-slate-800">
+        <span className="text-[10px] bg-slate-50 text-emerald-700 font-bold px-2.5 py-1 rounded-lg border border-slate-200">
           Real-time
         </span>
       </div>
@@ -30,15 +30,15 @@ export const RevenueChart: React.FC = () => {
             
             {/* Tên bộ môn và chỉ số số lượng */}
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center space-x-2 font-bold text-slate-200">
+              <div className="flex items-center space-x-2 font-bold text-slate-900">
                 <span>{item.icon}</span>
                 <span>{item.name}</span>
               </div>
-              <span className="text-slate-400 font-bold">{item.count} lượt đặt</span>
+              <span className="text-slate-600 font-bold">{item.count} lượt đặt</span>
             </div>
 
             {/* Thanh hiển thị tỉ lệ phần trăm phát sáng */}
-            <div className="h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 flex">
+            <div className="h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200 flex">
               <div 
                 className={`h-full rounded-full transition-all duration-1000 ${item.color} shadow-lg`} 
                 style={{ width: `${item.percentage}%` }}
@@ -52,7 +52,7 @@ export const RevenueChart: React.FC = () => {
       {/* Phần cuối chú thích */}
       <div className="pt-2 flex items-center justify-between text-[10px] text-slate-500">
         <span>Tổng lượt đặt: <strong>1,160 lượt</strong></span>
-        <span>Bộ môn hot nhất: <strong className="text-blue-400">Cầu lông (🏸)</strong></span>
+        <span>Bộ môn hot nhất: <strong className="text-blue-650">Cầu lông (🏸)</strong></span>
       </div>
 
     </div>

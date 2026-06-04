@@ -20,7 +20,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Thẻ Doanh Thu */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/30 transition duration-300">
+        <div className="sz-kpi p-5 hover:border-amber-500/30 transition duration-300">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Doanh thu hôm nay</span>
             <span className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500">
@@ -35,7 +35,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
         </div>
 
         {/* Lượt đặt lịch */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/30 transition duration-300">
+        <div className="sz-kpi p-5 hover:border-amber-500/30 transition duration-300">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Tổng lịch đặt</span>
             <span className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500">
@@ -47,7 +47,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
         </div>
 
         {/* Sân hoạt động */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/30 transition duration-300">
+        <div className="sz-kpi p-5 hover:border-amber-500/30 transition duration-300">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Sân đang hoạt động</span>
             <span className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500">
@@ -59,7 +59,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
         </div>
 
         {/* Lịch chưa duyệt */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/30 transition duration-300">
+        <div className="sz-kpi p-5 hover:border-amber-500/30 transition duration-300">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase text-amber-400">
             <span>Lịch chờ duyệt</span>
             <span className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500">
@@ -76,7 +76,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Lịch thi đấu hôm nay */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div className="lg:col-span-2 sz-panel p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-sm font-extrabold text-white m-0">Lịch Hoạt Động Hôm Nay</h4>
@@ -116,7 +116,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTa
         </div>
 
         {/* Thống kê doanh thu nhanh */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div className="sz-panel p-6 space-y-6">
           <div>
             <h4 className="text-sm font-extrabold text-white m-0">Cơ Cấu Đặt Lịch Sân</h4>
             <p className="text-[10px] text-slate-500 m-0">Tỉ lệ lấp đầy các loại sân ngày hôm nay</p>

@@ -7,6 +7,7 @@ import {
   Search
 } from 'lucide-react';
 import { ProductFormModal } from './ProductFormModal';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -72,7 +73,7 @@ export const ProductManagement: React.FC = () => {
 
     setProducts([...products, newProduct]);
     setShowAddModal(false);
-    alert('Thêm sản phẩm dịch vụ mới thành công!');
+    toast.success('Thêm sản phẩm dịch vụ mới thành công');
   };
 
   // Mở modal sửa
@@ -109,14 +110,14 @@ export const ProductManagement: React.FC = () => {
 
     setShowEditModal(false);
     setSelectedProduct(null);
-    alert('Cập nhật thông tin sản phẩm thành công!');
+    toast.success('Cập nhật thông tin sản phẩm thành công');
   };
 
   // Xóa sản phẩm
   const handleDeleteProduct = (id: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm/dịch vụ này khỏi kho quầy chi nhánh?')) {
       setProducts(prev => prev.filter(p => p.id !== id));
-      alert('Đã xóa sản phẩm khỏi danh mục.');
+      toast.info('Đã xóa sản phẩm khỏi danh mục');
     }
   };
 

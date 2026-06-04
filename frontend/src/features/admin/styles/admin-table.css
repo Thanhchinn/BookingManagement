@@ -4,11 +4,11 @@
 
 /* 1. KHUNG CHỨA BẢNG GIẢ CẢNH GLASSMORPHISM */
 .admin-table-container {
-  background-color: var(--color-slate-900, #0f172a);
-  border: 1px solid var(--color-slate-800, #1e293b);
-  border-radius: 1rem; /* 16px */
+  background-color: #0f172a; /* bg-slate-900 */
+  border: 1px solid #1e293b; /* border-slate-800 */
+  border-radius: 1rem; /* rounded-2xl */
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
 }
 
 /* Khung cuộn ngang mượt mà trên di động */
@@ -29,9 +29,9 @@
 
 /* 3. ĐẦU MỤC BẢNG (THEAD) */
 .admin-table-thead {
-  border-bottom: 1px solid var(--color-slate-850, #172554);
-  background-color: rgba(2, 6, 23, 0.4); /* slate-950/40 */
-  color: var(--color-slate-400, #94a3b8);
+  border-bottom: 1px solid #1e293b;
+  background-color: #0b0f19; /* bg-slate-950 */
+  color: #94a3b8; /* text-slate-400 */
   font-weight: 700; /* font-bold */
   text-transform: uppercase;
   letter-spacing: 0.05em; /* tracking-wider */
@@ -40,7 +40,7 @@
 /* Ô tiêu đề cột */
 .admin-table-th {
   padding: 0.75rem 0.875rem; /* py-3 px-3.5 on mobile */
-  font-weight: 800;
+  font-weight: 850;
   white-space: nowrap; /* Prevent vertical wrapping of headers! */
 }
 
@@ -52,21 +52,22 @@
 
 /* 4. THÂN BẢNG (TBODY) */
 .admin-table-tbody {
-  color: var(--color-slate-300, #cbd5e1);
+  color: #cbd5e1; /* text-slate-300 */
 }
 
 /* Từng dòng trong bảng */
 .admin-table-tr {
   transition: all 0.15s ease-in-out;
+  background-color: transparent;
 }
 
 .admin-table-tr:hover {
-  background-color: rgba(30, 41, 59, 0.2); /* hover:bg-slate-850/20 */
+  background-color: rgba(30, 41, 59, 0.4); /* bg-slate-800/40 */
 }
 
 /* Đường kẻ ngăn cách giữa các dòng */
 .admin-table-tbody > tr:not(:last-child) {
-  border-bottom: 1px solid var(--color-slate-850, #172554);
+  border-bottom: 1px solid #1e293b;
 }
 
 /* 5. Ô DỮ LIỆU BẢNG (TD) */
@@ -91,7 +92,7 @@
 
 /* Dành cho mô tả dài, chữ mờ hơn và dãn dòng tốt hơn */
 .admin-table-td-muted {
-  color: var(--color-slate-400, #94a3b8);
+  color: #94a3b8;
   line-height: 1.625;
   white-space: normal !important; /* Allow long description text to wrap */
   min-width: 220px; /* Ensure column has enough room and doesn't get squeezed too narrow! */
@@ -120,60 +121,60 @@
 /* Huy hiệu màu Xanh (Hoạt động / Thành công) */
 .admin-table-badge-emerald {
   background-color: rgba(16, 185, 129, 0.1);
-  color: var(--color-emerald-400, #34d399);
-  border-color: rgba(16, 185, 129, 0.2);
+  color: #34d399; /* text-emerald-400 */
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
 .admin-table-badge-emerald::before {
   content: '';
   width: 0.375rem;
   height: 0.375rem;
-  background-color: var(--color-emerald-500, #10b981);
+  background-color: #10b981;
   border-radius: 50%;
 }
 
 /* Huy hiệu màu Vàng (Chờ duyệt / Tạm ngưng) */
 .admin-table-badge-amber {
   background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-amber-400, #fbbf24);
-  border-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24; /* text-amber-400 */
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 .admin-table-badge-amber::before {
   content: '';
   width: 0.375rem;
   height: 0.375rem;
-  background-color: var(--color-amber-500, #f59e0b);
+  background-color: #f59e0b;
   border-radius: 50%;
 }
 
 /* Huy hiệu màu Đỏ (Đã rút / Bị từ chối) */
 .admin-table-badge-red {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--color-red-400, #f87171);
-  border-color: rgba(239, 68, 68, 0.2);
+  background-color: rgba(244, 63, 94, 0.1);
+  color: #fb7185; /* text-rose-400 */
+  border-color: rgba(244, 63, 94, 0.25);
 }
 
 .admin-table-badge-red::before {
   content: '';
   width: 0.375rem;
   height: 0.375rem;
-  background-color: var(--color-red-500, #ef4444);
+  background-color: #f43f5e;
   border-radius: 50%;
 }
 
 /* Huy hiệu màu Xám (Tạm khóa / Ẩn) */
 .admin-table-badge-slate {
-  background-color: rgba(30, 41, 59, 0.5);
-  color: var(--color-slate-400, #94a3b8);
-  border-color: var(--color-slate-700, #334155);
+  background-color: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1; /* text-slate-350 */
+  border-color: rgba(148, 163, 184, 0.2);
 }
 
 .admin-table-badge-slate::before {
   content: '';
   width: 0.375rem;
   height: 0.375rem;
-  background-color: var(--color-slate-500, #64748b);
+  background-color: #64748b;
   border-radius: 50%;
 }
 
@@ -183,23 +184,23 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background-color: var(--color-slate-950, #020617);
-  border: 1px solid var(--color-slate-800, #1e293b);
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
   border-radius: 0.5rem; /* 8px */
-  color: var(--color-slate-400, #94a3b8);
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
 }
 
 .admin-table-btn-icon:hover {
   color: #ffffff;
-  border-color: var(--color-slate-700, #334155);
+  border-color: #475569;
   transform: translateY(-1px);
 }
 
 /* Nút xóa đặc thù */
 .admin-table-btn-icon-danger:hover {
-  color: var(--color-red-400, #f87171);
-  border-color: rgba(239, 68, 68, 0.2);
-  background-color: rgba(239, 68, 68, 0.05);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.1);
 }

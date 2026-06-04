@@ -8,15 +8,21 @@ import { PartnerManagement } from '../PartnerManagement';
 import { DisputeManagement } from '../DisputeManagement';
 import { PayoutManagement } from '../PayoutManagement';
 import { UserManagement } from '../UserManagement';
+import { AdminPartnerChat } from '../AdminPartnerChat';
 import '../../../features/admin/styles/admin-table.css';
 
 interface AdminLayoutProps {
+  currentPath: string;
+  navigateTo: (path: string) => void;
   onLogout: () => void;
 }
 
-export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
-  // Quản lý tab nội dung hiện tại của Admin
-  const [currentTab, setCurrentTab] = useState('dashboard');
+export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateTo, onLogout }) => {
+  // Quản lý tab nội dung hiện tại của Admin dựa trên URL
+  const currentTab = (() => {
+    const parts = currentPath.split('/');
+    return parts[2] || 'dashboard';
+  })();
 
   // Trạng thái thu gọn Sidebar trên máy tính
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -32,7 +38,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
 
   // Hàm chuyển tab đồng thời reset trạng thái trang chi tiết và scroll về đầu trang
   const handleSelectTab = (tab: string) => {
-    setCurrentTab(tab);
+    const newPath = tab === 'dashboard' ? '/admin' : `/admin/${tab}`;
+    navigateTo(newPath);
     setIsSubPageActive(false);
     mainRef.current?.scrollTo({ top: 0 });
   };
@@ -43,6 +50,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
     analytics: { title: 'Báo cáo thống kê sâu', desc: 'Đánh giá chi tiết doanh thu, hiệu suất lấp đầy sân và hành vi người dùng.', icon: '📈' },
     sports: { title: 'Quản lý danh mục bộ môn', desc: 'Khai báo, thiết lập và cấu hình các bộ môn thể thao trên toàn hệ thống.', icon: '🏸' },
     users: { title: 'Quản lý tài khoản khách hàng', desc: 'Kiểm soát tài khoản người dùng, xem lịch sử đặt sân và quản lý phân quyền.', icon: '👥' },
+    chats: { title: 'Trao đổi & Hỗ trợ đối tác', desc: 'Trò chuyện và hỗ trợ trực tiếp các yêu cầu của chủ cơ sở sân bãi.', icon: '💬' },
     partners: { title: 'Phê duyệt & Quản lý đối tác chủ sân', desc: 'Xem xét thông tin đăng ký liên kết của chủ sân, phê duyệt hồ sơ và kiểm soát hoạt động.', icon: '🤝' },
     disputes: { title: 'Giải quyết khiếu nại khách hàng', desc: 'Theo dõi các phản ánh, tranh chấp sân bãi giữa người dùng và chủ sân.', icon: '⚖️' },
     payouts: { title: 'Duyệt rút tiền đối soát', desc: 'Phê duyệt các yêu cầu rút tiền mặt từ doanh thu sân bãi của đối tác.', icon: '💵' },
@@ -60,6 +68,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
         return <SportsManagement />;
       case 'users':
         return <UserManagement />;
+      case 'chats':
+        return <AdminPartnerChat />;
       case 'partners':
         return <PartnerManagement onSubPageActive={setIsSubPageActive} />;
       case 'disputes':
@@ -68,7 +78,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
         return <PayoutManagement />;
       case 'reconciliation':
         return (
-          <div className="bg-slate-900 border border-slate-850 rounded-2xl p-8 text-center text-slate-400">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-sm">
             💵 Tính năng Đối soát Tài chính đang được dựng ở Đợt 2...
           </div>
         );
@@ -105,7 +115,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
           
           {/* TIÊU ĐỀ TRANG LINH HOẠT VỚI THIẾT KẾ PREMIUM */}
           {tabNames[currentTab] && !isSubPageActive && (
-            <div className="mb-8 border-b border-slate-900 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="mb-8 border-b border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
                   <span className="p-1.5 bg-slate-900 border border-slate-800 rounded-xl text-lg shadow-inner select-none">
@@ -113,11 +123,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout }) => {
                   </span>
                   {tabNames[currentTab].title}
                 </h1>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed max-w-3xl">
+                <p className="text-xs text-slate-400 font-semibold leading-relaxed max-w-3xl">
                   {tabNames[currentTab].desc}
                 </p>
               </div>
-              <div className="flex items-center space-x-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider bg-slate-900/40 border border-slate-900 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+              <div className="flex items-center space-x-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-wider bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl self-start sm:self-auto">
                 <span>Portal</span>
                 <span>/</span>
                 <span className="text-emerald-400">{currentTab}</span>

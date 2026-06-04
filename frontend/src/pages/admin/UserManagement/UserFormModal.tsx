@@ -69,23 +69,23 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       {/* Nền mờ tối */}
       <div 
         onClick={isSaving ? undefined : onClose}
-        className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-300"
       />
 
       {/* Cửa sổ Modal */}
-      <div className="relative z-10 w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
         
         {/* Header Modal */}
         <div className="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
           <h3 className="text-sm font-black text-white m-0 tracking-tight uppercase flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-emerald-400" />
+            <UserPlus className="w-5 h-5 text-emerald-500" />
             {editingUser ? 'Cập Nhật Tài Khoản' : 'Thêm Tài Khoản Mới'}
           </h3>
           <button 
             type="button"
             disabled={isSaving}
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-xl cursor-pointer border-0 transition"
+            className="p-1.5 text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 disabled:opacity-50 rounded-xl cursor-pointer border-0 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -93,7 +93,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
         {/* Lỗi xác thực nếu có */}
         {formError && (
-          <div className="mb-5 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[11px] font-bold flex items-center gap-1.5 leading-relaxed">
+          <div className="mb-5 p-3 bg-rose-950/20 border border-rose-900/30 text-rose-400 rounded-xl text-[11px] font-bold flex items-center gap-1.5 leading-relaxed">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{formError}</span>
           </div>
@@ -104,47 +104,47 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           
           {/* SECTION 1: THÔNG TIN TÀI KHOẢN */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-l-2 border-emerald-500 pl-2">Thông tin tài khoản</h4>
+            <h4 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-emerald-500 pl-2">Thông tin tài khoản</h4>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Họ Tên */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Họ và tên *</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Họ và tên *</label>
                 <input 
                   type="text"
                   disabled={isSaving}
                   value={formFullName}
                   onChange={(e) => setFormFullName(e.target.value)}
                   placeholder="Ví dụ: Nguyễn Văn A..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-750 transition"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-500 transition"
                   required
                 />
               </div>
 
               {/* Số điện thoại */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Số điện thoại</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Số điện thoại</label>
                 <input 
                   type="text"
                   disabled={isSaving}
                   value={formPhone}
                   onChange={(e) => setFormPhone(e.target.value)}
                   placeholder="Ví dụ: 0987654321..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-750 transition"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-500 transition"
                 />
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Địa chỉ Email *</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Địa chỉ Email *</label>
                 <input 
                   type="email"
                   disabled={isSaving}
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-750 transition"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-500 transition"
                   required
                 />
               </div>
@@ -152,11 +152,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               {/* Mật khẩu */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Mật khẩu {editingUser ? '' : '*'}
                   </label>
                   {editingUser && (
-                    <span className="text-[9px] text-slate-550 font-medium italic">Để trống nếu không đổi</span>
+                    <span className="text-[9px] text-slate-400 font-medium italic">Để trống nếu không đổi</span>
                   )}
                 </div>
                 <div className="relative flex items-center">
@@ -166,13 +166,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     value={formPassword}
                     onChange={(e) => setFormPassword(e.target.value)}
                     placeholder={editingUser ? "Nhập mật khẩu mới..." : "Ít nhất 6 ký tự..."}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white pl-3 pr-10 py-2.5 rounded-xl focus:outline-none placeholder-slate-750 transition"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white pl-3 pr-10 py-2.5 rounded-xl focus:outline-none placeholder-slate-500 transition"
                     required={!editingUser}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 text-slate-550 hover:text-slate-350 cursor-pointer bg-transparent border-0 p-0 flex items-center justify-center focus:outline-none"
+                    className="absolute right-3 text-slate-400 hover:text-slate-200 cursor-pointer bg-transparent border-0 p-0 flex items-center justify-center focus:outline-none"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -183,14 +183,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           </div>
 
           {/* SECTION 2: CHI TIẾT ĐỊA CHỈ & ĐIỂM THƯỞNG */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-l-2 border-emerald-500 pl-2">Thông tin bổ sung & Địa chỉ</h4>
+          <div className="space-y-3 pt-2 border-t border-slate-800">
+            <h4 className="text-[10px] font-black text-white uppercase tracking-widest border-l-2 border-emerald-500 pl-2">Thông tin bổ sung & Địa chỉ</h4>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
               {/* Điểm tích lũy */}
               <div className="sm:col-span-3 space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Điểm tích lũy Loyalty</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm tích lũy Loyalty</label>
                 <input 
                   type="number"
                   disabled={isSaving}
@@ -198,7 +198,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   onChange={(e) => setFormLoyaltyPoints(Number(e.target.value))}
                   placeholder="0"
                   min={0}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-750 transition"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-xs text-white px-3 py-2.5 rounded-xl focus:outline-none placeholder-slate-500 transition"
                 />
               </div>
 
@@ -222,18 +222,18 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl border border-slate-850 select-none">
             <div>
               <span className="text-xs font-bold text-white block">Cho phép hoạt động</span>
-              <span className="text-[9px] text-slate-550">Mở/khóa trạng thái đăng nhập hệ thống của người dùng này</span>
+              <span className="text-[9px] text-slate-400">Mở/khóa trạng thái đăng nhập hệ thống của người dùng này</span>
             </div>
             <button
               type="button"
               disabled={isSaving}
               onClick={() => setFormIsActive(!formIsActive)}
-              className="bg-transparent border-0 cursor-pointer p-0 text-slate-400 hover:text-white disabled:opacity-50 transition duration-150"
+              className="bg-transparent border-0 cursor-pointer p-0 text-slate-400 hover:text-slate-200 disabled:opacity-50 transition duration-150"
             >
               {formIsActive ? (
                 <ToggleRight className="w-8 h-8 text-emerald-500" />
               ) : (
-                <ToggleLeft className="w-8 h-8 text-slate-600" />
+                <ToggleLeft className="w-8 h-8 text-slate-500" />
               )}
             </button>
           </div>
@@ -244,14 +244,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               type="button"
               disabled={isSaving}
               onClick={onClose}
-              className="w-full py-2.5 bg-slate-850 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 rounded-xl transition cursor-pointer"
+              className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-850 hover:border-slate-700 text-xs font-bold text-slate-300 rounded-xl transition cursor-pointer"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-bold text-white rounded-xl transition cursor-pointer border-0 shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
             >
               {isSaving ? (
                 <>

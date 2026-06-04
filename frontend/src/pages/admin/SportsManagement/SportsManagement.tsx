@@ -314,7 +314,7 @@ export const SportsManagement: React.FC = () => {
       <div className="flex justify-end">
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition duration-150 shadow-lg shadow-emerald-600/10 cursor-pointer border-0 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white rounded-xl transition duration-150 shadow-lg shadow-emerald-600/20 cursor-pointer border-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm Bộ Môn Mới</span>
@@ -325,47 +325,47 @@ export const SportsManagement: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* Tổng Số Bộ Môn */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-750 hover:border-slate-700 transition shadow-lg">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Tổng bộ môn</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-emerald-400">🏅</span>
+            <span className="p-1.5 bg-slate-950 border border-slate-850 rounded-lg text-emerald-400">🏅</span>
           </div>
           <h3 className="text-2xl font-black text-white mt-3 mb-0">
-            {isLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-650" /> : totalCount}
+            {isLoading ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : totalCount}
           </h3>
-          <p className="text-[10px] text-slate-500 m-0 mt-1">Đồng bộ hoàn toàn Postgres</p>
+          <p className="text-[10px] text-slate-400 m-0 mt-1">Đồng bộ hoàn toàn Postgres</p>
         </div>
 
         {/* Đang Hoạt Động */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-750 hover:border-slate-700 transition shadow-lg">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Đang hoạt động</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-emerald-400">🟢</span>
+            <span className="p-1.5 bg-slate-950 border border-slate-850 rounded-lg text-emerald-400">🟢</span>
           </div>
           <h3 className="text-2xl font-black text-white mt-3 mb-0">
             {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-slate-650" />
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             ) : (
               categories.filter(c => c.isActive).length
             )}
           </h3>
-          <p className="text-[10px] text-emerald-500 m-0 mt-1">Sân bãi hiển thị ngoài Client</p>
+          <p className="text-[10px] text-emerald-400 font-bold m-0 mt-1">Sân bãi hiển thị ngoài Client</p>
         </div>
 
         {/* Tạm Dừng Hoạt Động */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-750 hover:border-slate-700 transition shadow-lg">
           <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
             <span>Tạm ngưng</span>
-            <span className="p-1.5 bg-slate-950 rounded-lg text-rose-400">🔴</span>
+            <span className="p-1.5 bg-slate-950 border border-slate-850 rounded-lg text-rose-400">🔴</span>
           </div>
           <h3 className="text-2xl font-black text-white mt-3 mb-0">
             {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-slate-650" />
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             ) : (
               categories.filter(c => !c.isActive).length
             )}
           </h3>
-          <p className="text-[10px] text-rose-500 m-0 mt-1">Tạm thời ẩn ngoài tìm kiếm</p>
+          <p className="text-[10px] text-rose-400 font-bold m-0 mt-1">Tạm thời ẩn ngoài tìm kiếm</p>
         </div>
 
       </div>
@@ -394,7 +394,7 @@ export const SportsManagement: React.FC = () => {
             <tbody className="admin-table-tbody">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-450 font-bold">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 font-bold">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
                       <span>Đang đồng bộ dữ liệu...</span>
@@ -407,14 +407,14 @@ export const SportsManagement: React.FC = () => {
                     
                     {/* BIỂU TƯỢNG EMOJI */}
                     <td className="admin-table-td text-center">
-                      <span className="inline-flex items-center justify-center w-10 h-10 bg-slate-950 rounded-xl text-xl border border-slate-800">
+                      <span className="inline-flex items-center justify-center w-10 h-10 bg-slate-950 rounded-xl text-xl border border-slate-850">
                         {cat.icon}
                       </span>
                     </td>
 
                     {/* BADGE BỘ MÔN KHẢ TÙY CHỈNH MÀU SẮC */}
                     <td className="admin-table-td">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-extrabold border border-slate-800 ${cat.colorBg} ${cat.colorText}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-extrabold border border-transparent shadow-xs ${cat.colorBg} ${cat.colorText}`}>
                         {cat.name}
                       </span>
                     </td>
@@ -475,7 +475,7 @@ export const SportsManagement: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">
                     Không tìm thấy danh mục bộ môn nào hợp lệ.
                   </td>
                 </tr>
@@ -487,16 +487,16 @@ export const SportsManagement: React.FC = () => {
 
       {/* 5. THANH ĐIỀU HƯỚNG PHÂN TRANG (PAGINATION PANEL) */}
       {!isLoading && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 px-5 py-4 rounded-2xl shadow-lg">
           <div className="text-xs text-slate-400 font-bold">
-            Hiển thị trang <span className="text-emerald-450">{currentPage}</span> / {totalPages} (Tổng cộng <span className="text-emerald-450">{totalCount}</span> bộ môn)
+            Hiển thị trang <span className="text-emerald-400">{currentPage}</span> / {totalPages} (Tổng cộng <span className="text-emerald-400">{totalCount}</span> bộ môn)
           </div>
           
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-3.5 py-2 bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+              className="px-3.5 py-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-xs font-bold text-slate-350 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
             >
               Trước
             </button>
@@ -507,8 +507,8 @@ export const SportsManagement: React.FC = () => {
                 onClick={() => setCurrentPage(pageNumber)}
                 className={`w-9 h-9 flex items-center justify-center text-xs font-extrabold rounded-xl transition cursor-pointer ${
                   currentPage === pageNumber
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/10'
-                    : 'bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                    : 'bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-300 hover:text-white'
                 }`}
               >
                 {pageNumber}
@@ -518,7 +518,7 @@ export const SportsManagement: React.FC = () => {
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
-              className="px-3.5 py-2 bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+              className="px-3.5 py-2 bg-slate-950 border border-slate-850 hover:border-slate-700 text-xs font-bold text-slate-355 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
             >
               Sau
             </button>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Check, X, Eye, ToggleLeft, ToggleRight, Trash2, RefreshCw, Loader2 } from 'lucide-react';
+import { Check, X, Eye, ToggleLeft, ToggleRight, Trash2, RefreshCw, Loader2, Users2, UserCheck, Clock, UserX } from 'lucide-react';
 import { AdminConfirmModal } from '../../../features/admin/components/AdminConfirmModal';
 import { AdminSearchFilter } from '../../../features/admin/components/AdminSearchFilter';
 import { PartnerDetailsView } from './PartnerDetailsView';
 import type { PartnerItem } from './PartnerDetailsView';
 import { toast } from 'sonner';
 import { useAutoRefresh } from '../../../hooks/useAutoRefresh';
+import { StatCard } from '../../../features/admin/components/StatCard';
 
 
 
@@ -244,7 +245,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
             <button
               onClick={fetchPartners}
               disabled={isLoading}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-lg"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               Làm mới
@@ -253,50 +254,40 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
 
           {/* KHU VỰC THẺ CHỈ SỐ NHANH */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-                <span>Tổng đối tác</span>
-                <span className="p-1.5 bg-slate-950 rounded-lg text-emerald-400">🤝</span>
-              </div>
-              <h3 className="text-2xl font-black text-white mt-3 mb-0">{partners.length}</h3>
-              <p className="text-[10px] text-slate-500 m-0 mt-1">Đồng hành cùng SportZone</p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-                <span>Đang hoạt động</span>
-                <span className="p-1.5 bg-slate-950 rounded-lg text-emerald-400">🟢</span>
-              </div>
-              <h3 className="text-2xl font-black text-white mt-3 mb-0">
-                {partners.filter(p => getStatusKey(p.status) === 'active').length}
-              </h3>
-              <p className="text-[10px] text-emerald-500 m-0 mt-1">Sân hiển thị cho người dùng</p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition relative overflow-hidden">
-              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-                <span>Chờ phê duyệt</span>
-                <span className="p-1.5 bg-slate-950 rounded-lg text-amber-500 animate-pulse">⏳</span>
-              </div>
-              <h3 className="text-2xl font-black text-white mt-3 mb-0 flex items-center gap-2">
-                {partners.filter(p => getStatusKey(p.status) === 'pending').length}
-                {partners.filter(p => getStatusKey(p.status) === 'pending').length > 0 && (
-                  <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">Mới</span>
-                )}
-              </h3>
-              <p className="text-[10px] text-amber-500 m-0 mt-1 font-semibold">Cần duyệt hồ sơ mới</p>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
-              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase">
-                <span>Bị tạm khóa</span>
-                <span className="p-1.5 bg-slate-950 rounded-lg text-red-500">🔴</span>
-              </div>
-              <h3 className="text-2xl font-black text-white mt-3 mb-0">
-                {partners.filter(p => getStatusKey(p.status) === 'suspended').length}
-              </h3>
-              <p className="text-[10px] text-slate-500 m-0 mt-1">Vi phạm / Đang khóa</p>
-            </div>
+            <StatCard
+              title="Tổng đối tác"
+              value={partners.length}
+              icon={Users2}
+              color="blue"
+              isLoading={isLoading}
+              comparisonText="Đồng hành cùng SportZone"
+            />
+            <StatCard
+              title="Đang hoạt động"
+              value={partners.filter(p => getStatusKey(p.status) === 'active').length}
+              icon={UserCheck}
+              color="emerald"
+              isLoading={isLoading}
+              comparisonText="Sân hiển thị cho người dùng"
+            />
+            <StatCard
+              title="Chờ phê duyệt"
+              value={partners.filter(p => getStatusKey(p.status) === 'pending').length}
+              icon={Clock}
+              color="amber"
+              isLoading={isLoading}
+              trend={partners.filter(p => getStatusKey(p.status) === 'pending').length > 0 ? "Mới" : undefined}
+              trendType={partners.filter(p => getStatusKey(p.status) === 'pending').length > 0 ? "up" : undefined}
+              comparisonText="Cần duyệt hồ sơ mới"
+            />
+            <StatCard
+              title="Bị tạm khóa"
+              value={partners.filter(p => getStatusKey(p.status) === 'suspended').length}
+              icon={UserX}
+              color="red"
+              isLoading={isLoading}
+              comparisonText="Vi phạm / Đang khóa"
+            />
           </div>
 
           {/* THANH TÌM KIẾM */}
@@ -357,22 +348,22 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                         <td className="admin-table-td">
                           <div className="text-left">
                             <p className="text-white font-bold m-0">{partner.ownerName}</p>
-                            <span className="text-[9px] text-slate-500 block mt-0.5">
+                            <span className="text-[9px] text-slate-400 block mt-0.5">
                               MST: {partner.taxCode}
                             </span>
                           </div>
                         </td>
 
                         {/* LIÊN HỆ */}
-                        <td className="admin-table-td text-slate-400 font-medium">
-                          <div className="text-left font-mono">
-                            <p className="m-0 text-slate-300">{partner.phone}</p>
-                            <p className="m-0 text-[10px] text-slate-500">{partner.email}</p>
+                        <td className="admin-table-td text-slate-300 font-medium">
+                          <div className="text-left font-mono text-xs">
+                            <p className="m-0 text-slate-200">{partner.phone}</p>
+                            <p className="m-0 text-[10px] text-slate-400">{partner.email}</p>
                           </div>
                         </td>
 
                         {/* SỐ SÂN */}
-                        <td className="admin-table-td text-center font-black text-white">
+                        <td className="admin-table-td text-center font-bold text-white">
                           {partner.totalFields} sân
                         </td>
 
@@ -380,11 +371,11 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                         <td className="admin-table-td text-center">
                           <div className="flex flex-wrap gap-1 justify-center">
                             {partner.sportCategories.length > 0 ? partner.sportCategories.map(cat => (
-                              <span key={cat} className="text-[9px] font-bold bg-slate-950 text-slate-400 border border-slate-800 px-1.5 py-0.5 rounded">
+                              <span key={cat} className="text-[9px] font-bold bg-slate-950 text-slate-300 border border-slate-800 px-1.5 py-0.5 rounded">
                                 {cat}
                               </span>
                             )) : (
-                              <span className="text-[10px] text-slate-600 italic">Chưa cập nhật</span>
+                              <span className="text-[10px] text-slate-400 italic">Chưa cập nhật</span>
                             )}
                           </div>
                         </td>
@@ -418,7 +409,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                                 <button
                                   onClick={() => handleApprove(partner.id)}
                                   title="Duyệt đối tác"
-                                  className="admin-table-btn-icon text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20 hover:border-emerald-600/30"
+                                  className="admin-table-btn-icon text-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/20 hover:border-emerald-900/30"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
@@ -440,7 +431,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                                   {getStatusKey(partner.status) === 'active' ? (
                                     <ToggleRight className="w-7 h-7 text-emerald-500 transition hover:scale-105" />
                                   ) : (
-                                    <ToggleLeft className="w-7 h-7 text-slate-600 transition hover:scale-105" />
+                                    <ToggleLeft className="w-7 h-7 text-slate-400 transition hover:scale-105" />
                                   )}
                                 </button>
                                 {getStatusKey(partner.status) === 'suspended' && (

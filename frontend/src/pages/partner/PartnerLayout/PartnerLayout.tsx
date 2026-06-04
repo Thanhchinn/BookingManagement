@@ -16,17 +16,21 @@ import {
   ShoppingBag,
   Tag,
   Sun,
-  Moon
+  Moon,
+  MessageSquare
 } from 'lucide-react';
+import { PartnerAdminChat } from '../PartnerAdminChat';
 import '../../../features/admin/styles/admin-table.css';
 import { toast } from 'sonner';
 
 interface PartnerLayoutProps {
   partnerName: string;
+  currentPath: string;
+  navigateTo: (path: string) => void;
   onLogout: () => void;
 }
 
-export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLogout }) => {
+export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, currentPath, navigateTo, onLogout }) => {
   // Polling liên tục kiểm tra tài khoản đối tác có bị khóa (SUSPENDED) bởi Admin không
   useEffect(() => {
     const savedUserInfo = localStorage.getItem('user_info');
@@ -83,7 +87,16 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
   };
 
   // Tab hiện tại của Đối tác
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  // Tab hiện tại của Đối tác dựa trên URL
+  const currentTab = (() => {
+    const parts = currentPath.split('/');
+    return parts[2] || 'dashboard';
+  })();
+
+  const handleSelectTab = (tab: string) => {
+    const newPath = tab === 'dashboard' ? '/partner' : `/partner/${tab}`;
+    navigateTo(newPath);
+  };
 
   // Trạng thái thu gọn Sidebar
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -99,13 +112,14 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
     { id: 'products', label: 'Quản Lý Sản Phẩm', icon: ShoppingBag },
     { id: 'promotions', label: 'Quản Lý Voucher', icon: Tag },
     { id: 'revenue', label: 'Đối Soát & Ví Tiền', icon: DollarSign },
+    { id: 'chat', label: 'Liên Hệ Admin', icon: MessageSquare },
   ];
 
   // Render nội dung tương ứng từng Tab
   const renderTabContent = () => {
     switch (currentTab) {
       case 'dashboard':
-        return <PartnerDashboard onNavigateTab={setCurrentTab} />;
+        return <PartnerDashboard onNavigateTab={handleSelectTab} />;
       case 'fields':
         return <FieldManagement />;
       case 'bookings':
@@ -114,6 +128,8 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
         return <ProductManagement />;
       case 'promotions':
         return <PromotionManagement />;
+      case 'chat':
+        return <PartnerAdminChat partnerName={partnerName} />;
       case 'revenue':
         return (
           <div className="space-y-6 text-left relative font-sans text-slate-100">
@@ -206,7 +222,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
           </div>
         );
       default:
-        return <PartnerDashboard onNavigateTab={setCurrentTab} />;
+        return <PartnerDashboard onNavigateTab={handleSelectTab} />;
     }
   };
 
@@ -254,7 +270,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, onLog
               <button
                 key={item.id}
                 onClick={() => {
-                  setCurrentTab(item.id);
+                  handleSelectTab(item.id);
                   setIsMobileSidebarOpen(false); // Đóng drawer trên mobile sau khi chọn
                 }}
                 className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition duration-150 border-0 cursor-pointer text-left

@@ -12,12 +12,12 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyle = "inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-95";
+  const baseStyle = "inline-flex items-center justify-center gap-2 font-extrabold rounded-lg transition-all duration-200 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-emerald-500/20";
 
   const variants = {
-    primary: "px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/10",
-    secondary: "px-6 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200",
-    danger: "px-6 py-3 bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/10",
+    primary: "px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/10",
+    secondary: "px-6 py-3 bg-white/5 border border-slate-700/70 hover:bg-white/10 hover:border-slate-600 text-slate-100",
+    danger: "px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/10",
   };
 
   return (

@@ -148,6 +148,8 @@ function App() {
       if (isAdminLoggedIn) {
         return (
           <AdminLayout 
+            currentPath={currentPath}
+            navigateTo={navigateTo}
             onLogout={() => {
               // Đăng xuất hoàn toàn, xóa token an toàn
               localStorage.removeItem('admin_token');
@@ -176,6 +178,8 @@ function App() {
         return (
           <PartnerLayout 
             partnerName={partnerName}
+            currentPath={currentPath}
+            navigateTo={navigateTo}
             onLogout={() => {
               setPartnerName(null);
               navigateTo('/');

@@ -9,6 +9,7 @@ import {
   Search
 } from 'lucide-react';
 import { PromotionFormModal } from './PromotionFormModal';
+import { toast } from 'sonner';
 
 interface Promotion {
   id: string;
@@ -124,7 +125,7 @@ export const PromotionManagement: React.FC = () => {
 
     setPromotions([...promotions, newPromo]);
     setShowAddModal(false);
-    alert(`Đã khởi tạo thành công chương trình ưu đãi ${newPromo.code}!`);
+    toast.success(`Đã khởi tạo ưu đãi ${newPromo.code}`);
   };
 
   // Mở modal sửa
@@ -165,14 +166,14 @@ export const PromotionManagement: React.FC = () => {
 
     setShowEditModal(false);
     setSelectedPromo(null);
-    alert('Cập nhật mã giảm giá thành công!');
+    toast.success('Cập nhật mã giảm giá thành công');
   };
 
   // Xóa coupon
   const handleDeletePromo = (id: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này? Người dùng sẽ không thể sử dụng mã này được nữa.')) {
       setPromotions(prev => prev.filter(p => p.id !== id));
-      alert('Đã gỡ bỏ mã giảm giá.');
+      toast.info('Đã gỡ bỏ mã giảm giá');
     }
   };
 

@@ -1,0 +1,1 @@
+export { PartnerAdminChat } from './PartnerAdminChat';

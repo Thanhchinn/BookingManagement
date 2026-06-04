@@ -21,7 +21,7 @@ export const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(({
   return (
     <div className="w-full flex flex-col space-y-1.5 text-left">
       {label && (
-        <label htmlFor={id} className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <label htmlFor={id} className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
           {label}
         </label>
       )}
@@ -31,10 +31,10 @@ export const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(({
           ref={ref}
           id={id}
           type={inputType}
-          className={`w-full px-4 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 ${
+          className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-4 focus:ring-teal-500/15 transition-all duration-200 placeholder:text-slate-500 ${
             error 
-              ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' 
-              : 'border-slate-200 focus:border-emerald-500'
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15' 
+              : 'border-slate-200 focus:border-teal-500'
           } ${
             className.includes('bg-') ? '' : 'bg-slate-50 focus:bg-white'
           } ${
@@ -47,7 +47,8 @@ export const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 text-slate-500 hover:text-slate-350 cursor-pointer bg-transparent border-0 p-0 flex items-center justify-center focus:outline-none"
+            className="absolute right-3 text-slate-500 hover:text-teal-500 cursor-pointer bg-transparent border-0 p-0 flex items-center justify-center focus:outline-none"
+            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -55,7 +56,7 @@ export const InputField = React.forwardRef<HTMLInputElement, InputFieldProps>(({
       </div>
 
       {error && (
-        <span className="text-[11px] text-red-500 font-semibold">
+        <span className="text-[11px] text-rose-500 font-semibold">
           ⚠️ {error}
         </span>
       )}
