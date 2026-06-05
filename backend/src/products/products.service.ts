@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PartnersService } from '../partners/partners.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -15,16 +16,14 @@ export function serializeProduct(product: any) {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly partnersService: PartnersService,
+  ) {}
 
   // Kiểm tra xem Location có thuộc về User (đối tác) không
   private async checkLocationOwnership(locationId: string | number | bigint, userId: string | number | bigint) {
-    const partner = await this.prisma.partnerProfile.findUnique({
-      where: { userId: BigInt(userId) },
-    });
-    if (!partner) {
-      throw new NotFoundException('Không tìm thấy thông tin đối tác của tài khoản này.');
-    }
+    const partner = await this.partnersService.getPartnerProfileOrThrow(userId);
 
     const location = await this.prisma.location.findFirst({
       where: {

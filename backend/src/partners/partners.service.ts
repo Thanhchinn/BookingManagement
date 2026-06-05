@@ -64,6 +64,17 @@ export class PartnersService {
     });
   }
 
+  // Lấy Profile đối tác từ User ID — ném lỗi NotFound nếu không tồn tại
+  async getPartnerProfileOrThrow(userId: string | number | bigint): Promise<PartnerProfile> {
+    const partner = await this.prisma.partnerProfile.findUnique({
+      where: { userId: BigInt(userId) },
+    });
+    if (!partner) {
+      throw new NotFoundException('Không tìm thấy thông tin đối tác của tài khoản này.');
+    }
+    return partner;
+  }
+
   // Tạo/Đăng ký hồ sơ đối tác mới
   async create(data: CreatePartnerDto): Promise<PartnerProfile> {
     // Kiểm tra xem User ID này đã đăng ký đối tác chưa

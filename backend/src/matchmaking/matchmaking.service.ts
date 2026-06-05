@@ -5,33 +5,7 @@ import { ApplyMatchDto } from './dto/apply-match.dto';
 import { ApproveParticipantDto } from './dto/approve-participant.dto';
 import { ApprovePostDto } from './dto/approve-post.dto';
 
-function parseTimeToDate(timeStr: string): Date {
-  const [hours, minutes] = timeStr.split(':');
-  const d = new Date('1970-01-01T00:00:00Z');
-  d.setUTCHours(Number(hours), Number(minutes || 0), 0, 0);
-  return d;
-}
-
-function parseDate(dateStr: string): Date {
-  return new Date(dateStr + 'T00:00:00Z');
-}
-
-function formatTime(timeVal: any): string {
-  if (!timeVal) return '';
-  if (timeVal instanceof Date) {
-    try {
-      return timeVal.toISOString().split('T')[1].substring(0, 5);
-    } catch {
-      const hours = timeVal.getUTCHours().toString().padStart(2, '0');
-      const minutes = timeVal.getUTCMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    }
-  }
-  if (typeof timeVal === 'string') {
-    return timeVal.substring(0, 5);
-  }
-  return '';
-}
+import { parseTimeToDate, parseDate, formatTime } from '../common/utils/date-time.util';
 
 function serializeMatchPost(post: any) {
   return {
@@ -81,32 +55,36 @@ export class MatchmakingService {
 
     const bookingId = dto.bookingId ? BigInt(dto.bookingId) : null;
 
-    // Tạo MatchPost (mặc định status PENDING)
-    const post = await this.prisma.matchPost.create({
-      data: {
-        userId: BigInt(userId),
-        sportsPitchId: pitchId,
-        bookingId: bookingId,
-        title: dto.title,
-        description: dto.description || '',
-        playDate: parseDate(dto.playDate),
-        startTime: parseTimeToDate(dto.startTime),
-        endTime: parseTimeToDate(dto.endTime),
-        skillLevel: dto.skillLevel || 'ANY',
-        maxPlayers: dto.maxPlayers,
-        currentPlayers: 1,
-        status: 'PENDING',
-      },
-    });
+    // Tạo MatchPost và tự động thêm Host trong một transaction
+    const post = await this.prisma.$transaction(async (tx) => {
+      const p = await tx.matchPost.create({
+        data: {
+          userId: BigInt(userId),
+          sportsPitchId: pitchId,
+          bookingId: bookingId,
+          title: dto.title,
+          description: dto.description || '',
+          playDate: parseDate(dto.playDate),
+          startTime: parseTimeToDate(dto.startTime),
+          endTime: parseTimeToDate(dto.endTime),
+          skillLevel: dto.skillLevel || 'ANY',
+          maxPlayers: dto.maxPlayers,
+          currentPlayers: 1,
+          status: 'PENDING',
+        },
+      });
 
-    // Tự động thêm Host làm participant với trạng thái JOINED
-    await this.prisma.matchParticipant.create({
-      data: {
-        matchPostId: post.id,
-        userId: BigInt(userId),
-        status: 'JOINED',
-        note: 'Host đăng bài',
-      },
+      // Tự động thêm Host làm participant với trạng thái JOINED
+      await tx.matchParticipant.create({
+        data: {
+          matchPostId: p.id,
+          userId: BigInt(userId),
+          status: 'JOINED',
+          note: 'Host đăng bài',
+        },
+      });
+
+      return p;
     });
 
     return this.findOne(post.id);
@@ -325,32 +303,34 @@ export class MatchmakingService {
       throw new BadRequestException('Đơn ứng tuyển này đã được xử lý từ trước.');
     }
 
-    // Cập nhật trạng thái ứng cử viên
-    await this.prisma.matchParticipant.update({
-      where: { id: participant.id },
-      data: { status: dto.status },
-    });
+    // Cập nhật trạng thái ứng cử viên và số lượng tuyển thủ trong một transaction
+    await this.prisma.$transaction(async (tx) => {
+      await tx.matchParticipant.update({
+        where: { id: participant.id },
+        data: { status: dto.status },
+      });
 
-    // Tính toán lại số lượng JOINED players hiện tại
-    const updatedPost = await this.prisma.matchPost.findUnique({
-      where: { id: post.id },
-      include: { participants: true },
-    });
+      // Tính toán lại số lượng JOINED players hiện tại
+      const updatedPost = await tx.matchPost.findUnique({
+        where: { id: post.id },
+        include: { participants: true },
+      });
 
-    if (!updatedPost) {
-      throw new NotFoundException('Không tìm thấy bài đăng ghép đôi.');
-    }
+      if (!updatedPost) {
+        throw new NotFoundException('Không tìm thấy bài đăng ghép đôi.');
+      }
 
-    const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
-    const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
+      const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
+      const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
 
-    // Lưu lại số lượng
-    await this.prisma.matchPost.update({
-      where: { id: post.id },
-      data: {
-        currentPlayers: joinedCount,
-        status: newStatus,
-      },
+      // Lưu lại số lượng
+      await tx.matchPost.update({
+        where: { id: post.id },
+        data: {
+          currentPlayers: joinedCount,
+          status: newStatus,
+        },
+      });
     });
 
     return this.findOne(post.id);
@@ -383,44 +363,47 @@ export class MatchmakingService {
       throw new BadRequestException('Bạn không tham gia trận đấu này.');
     }
 
-    await this.prisma.matchParticipant.delete({
-      where: { id: participant.id },
-    });
-
-    // Tạo thông báo cho Host
-    try {
-      const pName = participant.user?.fullName || 'Một tuyển thủ';
-      const mTitle = post.title || 'Ca ghép kèo';
-      await this.prisma.notification.create({
-        data: {
-          userId: post.userId,
-          title: 'Tuyển thủ hủy tham gia kèo đấu',
-          message: `Tuyển thủ ${pName} đã hủy tham gia ca đấu "${mTitle}". Lý do: ${reason || 'Không có lý do cụ thể'}`,
-          type: 'MATCH',
-        }
+    // Thực hiện xóa participant, tạo thông báo và cập nhật số lượng trong một transaction
+    await this.prisma.$transaction(async (tx) => {
+      await tx.matchParticipant.delete({
+        where: { id: participant.id },
       });
-    } catch (err) {
-      console.error('Lỗi khi gửi thông báo hủy tham gia:', err);
-    }
 
-    // Tính toán lại số lượng JOINED players hiện tại
-    const updatedPost = await this.prisma.matchPost.findUnique({
-      where: { id: post.id },
-      include: { participants: true },
-    });
+      // Tạo thông báo cho Host
+      try {
+        const pName = participant.user?.fullName || 'Một tuyển thủ';
+        const mTitle = post.title || 'Ca ghép kèo';
+        await tx.notification.create({
+          data: {
+            userId: post.userId,
+            title: 'Tuyển thủ hủy tham gia kèo đấu',
+            message: `Tuyển thủ ${pName} đã hủy tham gia ca đấu "${mTitle}". Lý do: ${reason || 'Không có lý do cụ thể'}`,
+            type: 'MATCH',
+          }
+        });
+      } catch (err) {
+        console.error('Lỗi khi gửi thông báo hủy tham gia:', err);
+      }
 
-    if (updatedPost) {
-      const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
-      const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
-
-      await this.prisma.matchPost.update({
+      // Tính toán lại số lượng JOINED players hiện tại
+      const updatedPost = await tx.matchPost.findUnique({
         where: { id: post.id },
-        data: {
-          currentPlayers: joinedCount,
-          status: newStatus,
-        },
+        include: { participants: true },
       });
-    }
+
+      if (updatedPost) {
+        const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
+        const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
+
+        await tx.matchPost.update({
+          where: { id: post.id },
+          data: {
+            currentPlayers: joinedCount,
+            status: newStatus,
+          },
+        });
+      }
+    });
 
     return { message: 'Bạn đã hủy tham gia trận đấu này thành công.' };
   }
@@ -467,44 +450,47 @@ export class MatchmakingService {
       throw new BadRequestException('Bạn không thể tự xóa chính mình khỏi danh sách tuyển thủ.');
     }
 
-    await this.prisma.matchParticipant.delete({
-      where: { id: participant.id },
-    });
-
-    // Tạo thông báo cho Tuyển thủ bị xóa
-    try {
-      const hostName = post.user?.fullName || 'Chủ phòng';
-      const mTitle = post.title || 'Ca ghép kèo';
-      await this.prisma.notification.create({
-        data: {
-          userId: participant.userId,
-          title: 'Bạn đã bị xóa khỏi ca ghép kèo',
-          message: `Chủ phòng ${hostName} đã xóa bạn khỏi ca đấu "${mTitle}". Lý do: ${reason || 'Không có lý do cụ thể'}`,
-          type: 'MATCH',
-        }
+    // Thực hiện kick participant, tạo thông báo và cập nhật số lượng trong một transaction
+    await this.prisma.$transaction(async (tx) => {
+      await tx.matchParticipant.delete({
+        where: { id: participant.id },
       });
-    } catch (err) {
-      console.error('Lỗi khi gửi thông báo xóa tuyển thủ:', err);
-    }
 
-    // Tính toán lại số lượng JOINED players hiện tại
-    const updatedPost = await this.prisma.matchPost.findUnique({
-      where: { id: post.id },
-      include: { participants: true },
-    });
+      // Tạo thông báo cho Tuyển thủ bị xóa
+      try {
+        const hostName = post.user?.fullName || 'Chủ phòng';
+        const mTitle = post.title || 'Ca ghép kèo';
+        await tx.notification.create({
+          data: {
+            userId: participant.userId,
+            title: 'Bạn đã bị xóa khỏi ca ghép kèo',
+            message: `Chủ phòng ${hostName} đã xóa bạn khỏi ca đấu "${mTitle}". Lý do: ${reason || 'Không có lý do cụ thể'}`,
+            type: 'MATCH',
+          }
+        });
+      } catch (err) {
+        console.error('Lỗi khi gửi thông báo xóa tuyển thủ:', err);
+      }
 
-    if (updatedPost) {
-      const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
-      const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
-
-      await this.prisma.matchPost.update({
+      // Tính toán lại số lượng JOINED players hiện tại
+      const updatedPost = await tx.matchPost.findUnique({
         where: { id: post.id },
-        data: {
-          currentPlayers: joinedCount,
-          status: newStatus,
-        },
+        include: { participants: true },
       });
-    }
+
+      if (updatedPost) {
+        const joinedCount = updatedPost.participants.filter((p) => p.status === 'JOINED').length;
+        const newStatus = joinedCount >= post.maxPlayers ? 'FULL' : 'OPEN';
+
+        await tx.matchPost.update({
+          where: { id: post.id },
+          data: {
+            currentPlayers: joinedCount,
+            status: newStatus,
+          },
+        });
+      }
+    });
 
     return this.findOne(post.id);
   }

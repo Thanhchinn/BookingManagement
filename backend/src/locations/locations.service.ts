@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { PartnersService } from '../partners/partners.service';
 
 // Hàm helper serialize BigInt thành string/number trong Location
 export function serializeLocation(loc: any) {
@@ -22,17 +23,14 @@ export function serializeLocation(loc: any) {
 
 @Injectable()
 export class LocationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly partnersService: PartnersService,
+  ) {}
 
   // Lấy Profile đối tác từ User ID
   private async getPartnerProfile(userId: string | number | bigint) {
-    const partner = await this.prisma.partnerProfile.findUnique({
-      where: { userId: BigInt(userId) },
-    });
-    if (!partner) {
-      throw new NotFoundException('Không tìm thấy thông tin đối tác của tài khoản này.');
-    }
-    return partner;
+    return this.partnersService.getPartnerProfileOrThrow(userId);
   }
 
   // Lấy danh sách cơ sở của đối tác

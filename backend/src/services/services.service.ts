@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PartnersService } from '../partners/partners.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { parseTimeToLocal } from '../common/utils/date-time.util';
 
 export function serializeService(service: any) {
   if (!service) return null;
@@ -39,17 +41,14 @@ export function serializeService(service: any) {
 
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly partnersService: PartnersService,
+  ) {}
 
   // Lấy Profile đối tác từ User ID
   private async getPartnerProfile(userId: string | number | bigint) {
-    const partner = await this.prisma.partnerProfile.findUnique({
-      where: { userId: BigInt(userId) },
-    });
-    if (!partner) {
-      throw new NotFoundException('Không tìm thấy thông tin đối tác của tài khoản này.');
-    }
-    return partner;
+    return this.partnersService.getPartnerProfileOrThrow(userId);
   }
 
   // Lấy danh sách sân của đối tác (kèm thông tin địa điểm và số lượng)
@@ -291,20 +290,12 @@ export class ServicesService {
     // Thêm các khung giờ mới
     const createdSlots = await Promise.all(
       timeSlots.map(async (slot) => {
-        const parseTime = (tStr: string) => {
-          const [h, m] = tStr.split(':');
-          // Tạo đối tượng Date chứa giờ phút phù hợp, timezone UTC/Local để lưu vào DB PostgreSQL Time
-          const d = new Date();
-          d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
-          return d;
-        };
-
         return this.prisma.timeSlot.create({
           data: {
             sportsPitchId: BigInt(serviceId),
             dayOfWeek: parseInt(slot.dayOfWeek, 10),
-            startTime: typeof slot.startTime === 'string' ? parseTime(slot.startTime) : slot.startTime,
-            endTime: typeof slot.endTime === 'string' ? parseTime(slot.endTime) : slot.endTime,
+            startTime: typeof slot.startTime === 'string' ? parseTimeToLocal(slot.startTime) : slot.startTime,
+            endTime: typeof slot.endTime === 'string' ? parseTimeToLocal(slot.endTime) : slot.endTime,
             priceModifier: parseFloat(slot.priceModifier || 1.0),
             isAvailable: slot.isAvailable ?? true,
           },

@@ -2,11 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-
-// Polyfill toàn cục để tự động chuyển kiểu BigInt sang String khi trả về JSON qua API
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +20,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Sử dụng interceptor toàn cục để tự động chuyển kiểu BigInt sang String và Decimal sang Number
+  app.useGlobalInterceptors(new TransformResponseInterceptor());
 
   await app.listen(process.env.PORT ?? 3000);
 }
