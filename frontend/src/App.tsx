@@ -10,6 +10,7 @@ import { MatchmakingCreate } from './pages/client/Matchmaking/MatchmakingCreate'
 import { CommunityChat } from './pages/client/CommunityChat';
 import { Search } from './pages/client/Search';
 import { NotFound } from './pages/client/NotFound';
+import { Profile, ChangePassword } from './pages/client/Profile';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { PartnerLayout } from './pages/partner/PartnerLayout';
@@ -18,6 +19,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import './App.css';
 import { Toaster, toast } from 'sonner';
+import { LockedAccountView } from './pages/client/LockedAccount';
 
 function App() {
   // 1. QUẢN LÝ ĐƯỜNG DẪN URL TRÊN TRÌNH DUYỆT (NATIVE PATH ROUTING)
@@ -35,6 +37,8 @@ function App() {
     if (path === '/matchmaking/create') return 'matchmaking-create';
     if (path === '/chat') return 'chat';
     if (path === '/search') return 'search';
+    if (path === '/profile') return 'profile';
+    if (path === '/change-password') return 'change-password';
     
     // Nếu là đường dẫn của admin hoặc partner thì không coi là 404 phía client
     if (path === '/admin' || path.startsWith('/admin/')) return 'home';
@@ -79,6 +83,58 @@ function App() {
   // Lưu locationId được chọn từ FieldCard để truyền vào CourtDetails
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
 
+  // Trạng thái tài khoản Client bị khóa
+  const [isUserLocked, setIsUserLocked] = useState(false);
+  const [lockedUserEmail, setLockedUserEmail] = useState('');
+
+  // Định kỳ 3 giây kiểm tra trạng thái tài khoản (isActive) của Client
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      const token = localStorage.getItem('user_token');
+      const infoStr = localStorage.getItem('user_info');
+      
+      if (!token || !infoStr) {
+        setIsUserLocked(false);
+        return;
+      }
+      
+      try {
+        const currentUser = JSON.parse(infoStr);
+        setLockedUserEmail(currentUser.email || '');
+        
+        const res = await fetch(`http://localhost:3000/users/${currentUser.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.status === 401) {
+          const data = await res.json();
+          if (data.message && (
+            data.message.includes('khóa') || 
+            data.message.includes('vô hiệu hóa') || 
+            data.message.includes('block') || 
+            data.message.includes('lock') || 
+            data.message.includes('không tồn tại')
+          )) {
+            setIsUserLocked(true);
+          }
+        } else if (res.ok) {
+          const data = await res.json();
+          if (data && data.isActive === false) {
+            setIsUserLocked(true);
+          } else {
+            setIsUserLocked(false);
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra trạng thái tài khoản:', err);
+      }
+    };
+
+    checkUserStatus();
+    const interval = setInterval(checkUserStatus, 3000);
+    return () => clearInterval(interval);
+  }, [currentPath]);
+
   // Lắng nghe sự thay đổi URL khi người dùng bấm nút Quay lại/Tiến tới (Back/Forward) của trình duyệt
   useEffect(() => {
     // Khởi tạo thư viện AOS (Animate On Scroll)
@@ -114,7 +170,7 @@ function App() {
   };
 
   const handleNavigate = (
-    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'matchmaking/create' | 'chat' | 'search',
+    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'matchmaking/create' | 'chat' | 'search' | 'profile' | 'change-password',
     data?: any
   ) => {
     // data có thể là string (authMode cũ) hoặc object { locationId }
@@ -163,6 +219,17 @@ function App() {
   // RENDER CONTENT HELPER
   // ==========================================================================
   const renderContent = () => {
+    // Nếu tài khoản bị khóa và không ở route quản lý
+    if (!isAdminRoute && !isPartnerRoute && isUserLocked) {
+      return (
+        <LockedAccountView 
+          email={lockedUserEmail}
+          onLogout={handleClientLogout}
+          onNavigate={handleNavigate}
+        />
+      );
+    }
+
     if (isAdminRoute) {
       if (isAdminLoggedIn) {
         return (
@@ -297,6 +364,21 @@ function App() {
         )}
         {currentPage === 'chat' && (
           <CommunityChat 
+            onNavigate={handleNavigate}
+            userName={userName || undefined}
+            onLogout={handleClientLogout}
+          />
+        )}
+        {currentPage === 'profile' && (
+          <Profile 
+            onNavigate={handleNavigate}
+            userName={userName || undefined}
+            onLogout={handleClientLogout}
+            onProfileUpdated={(newName) => setUserName(newName)}
+          />
+        )}
+        {currentPage === 'change-password' && (
+          <ChangePassword
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}

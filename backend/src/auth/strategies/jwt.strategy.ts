@@ -1,10 +1,11 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -13,7 +14,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    // Giá trị trả về ở đây sẽ được gắn vào request.user
+    // Nếu là tài khoản Khách hàng (User)
+    if (payload.role === 'USER') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: BigInt(payload.sub) }
+      });
+      if (!user) {
+        throw new UnauthorizedException('Tài khoản không tồn tại trên hệ thống');
+      }
+      if (!user.isActive) {
+        throw new UnauthorizedException('Tài khoản của bạn đã bị khóa bởi quản trị viên');
+      }
+    }
+    
+    // Nếu là tài khoản Quản trị viên (Admin)
+    if (payload.role === 'ADMIN' || payload.role === 'SUPERADMIN' || payload.role === 'MODERATOR') {
+      const admin = await this.prisma.admin.findUnique({
+        where: { id: BigInt(payload.sub) }
+      });
+      if (!admin) {
+        throw new UnauthorizedException('Tài khoản quản trị không tồn tại');
+      }
+      if (!admin.isActive) {
+        throw new UnauthorizedException('Tài khoản quản trị viên đã bị vô hiệu hóa');
+      }
+    }
+
     return { userId: payload.sub, username: payload.username, role: payload.role };
   }
 }

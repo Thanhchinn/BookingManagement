@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 // KHAI BÁO COMPONENT NAVBAR (THANH ĐIỀU HƯỚNG TRÊN CÙNG)
 // ============================================================================
 interface NavbarProps {
-  onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat', authMode?: 'login' | 'register') => void;
+  onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
   onLogout?: () => void;
 }
@@ -37,6 +37,38 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
+
+  const [avatar, setAvatar] = useState('👤');
+
+  useEffect(() => {
+    const updateAvatar = () => {
+      const userInfoStr = localStorage.getItem('user_info');
+      if (userInfoStr) {
+        try {
+          const u = JSON.parse(userInfoStr);
+          if (u && u.avatarUrl) {
+            setAvatar(u.avatarUrl);
+          } else {
+            setAvatar('👤');
+          }
+        } catch {
+          setAvatar('👤');
+        }
+      } else {
+        setAvatar('👤');
+      }
+    };
+
+    updateAvatar();
+    
+    window.addEventListener('storage', updateAvatar);
+    window.addEventListener('user_profile_updated', updateAvatar);
+    
+    return () => {
+      window.removeEventListener('storage', updateAvatar);
+      window.removeEventListener('user_profile_updated', updateAvatar);
+    };
+  }, [userName]);
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -170,8 +202,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-cyan-500/30 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-cyan-50/20 dark:hover:bg-slate-850 transition-all duration-200 cursor-pointer shadow-sm relative z-50 text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white">
-                    <User className="w-4.5 h-4.5" />
+                  <div className="w-8 h-8 rounded-full bg-cyan-500 dark:bg-slate-850 flex items-center justify-center text-white overflow-hidden shrink-0">
+                    {avatar.startsWith('http') ? (
+                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover animate-fade-in" />
+                    ) : (
+                      <span className="text-base select-none">{avatar}</span>
+                    )}
                   </div>
                   <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 max-w-[80px] sm:max-w-[120px] truncate">
                     {userName}
@@ -196,11 +232,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                   <div className="absolute right-0 top-full mt-2 w-72 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 py-4 px-3.5 transition-all duration-200 transform origin-top-right">
                     
                     {/* Header Block */}
-                    <div className="bg-[#f0f4ff] dark:bg-slate-800/80 rounded-[20px] p-4 text-center mb-3">
-                      <span className="text-[10px] font-black tracking-wider text-indigo-500 dark:text-indigo-400 uppercase mb-1 block">
+                    <div className="bg-[#f0f4ff] dark:bg-slate-800/80 rounded-[20px] p-4 text-center mb-3 flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-2xl overflow-hidden mb-2 shadow-inner border border-slate-300 dark:border-slate-650 shrink-0">
+                        {avatar.startsWith('http') ? (
+                          <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="select-none">{avatar}</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-black tracking-wider text-indigo-500 dark:text-indigo-400 uppercase mb-0.5 block">
                         THÀNH VIÊN
                       </span>
-                      <span className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate block">
+                      <span className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate w-full block">
                         {userName}
                       </span>
                     </div>
@@ -209,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                     <div className="space-y-0.5">
                       <button
                         onClick={() => {
-                          toast.info('Tính năng thông tin tài khoản đang được cập nhật!', { icon: '⚙️' });
+                          onNavigate?.('profile');
                           setIsProfileMenuOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
@@ -220,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
 
                       <button
                         onClick={() => {
-                          toast.info('Tính năng thông tin cá nhân đang được cập nhật!', { icon: '👤' });
+                          onNavigate?.('profile');
                           setIsProfileMenuOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"
@@ -229,9 +272,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                         <span>Thông tin cá nhân</span>
                       </button>
 
-                      <button
+                       <button
                         onClick={() => {
-                          toast.info('Tính năng đổi mật khẩu đang được cập nhật!', { icon: '🔑' });
+                          onNavigate?.('change-password');
                           setIsProfileMenuOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px] font-semibold transition-all duration-150 text-left border-0 bg-transparent cursor-pointer"

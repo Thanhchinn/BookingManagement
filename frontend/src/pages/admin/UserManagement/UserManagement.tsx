@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, Loader2, Users, CheckCircle, ShieldAlert, Award, Mail, Phone, MapPin, RefreshCw } from 'lucide-react';
+import { Plus, Edit3, Trash2, Loader2, Users, CheckCircle, ShieldAlert, Award, Mail, Phone, MapPin, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { UserFormModal } from './UserFormModal';
 import { toast } from 'sonner';
 import { AdminConfirmModal } from '../../../features/admin/components/AdminConfirmModal';
@@ -229,7 +229,18 @@ export const UserManagement: React.FC = () => {
   };
 
   // Thay đổi nhanh trạng thái hoạt động của tài khoản khách hàng
-  const handleToggleStatus = async (user: UserItem) => {
+  const handleToggleStatus = (user: UserItem) => {
+    const actionText = user.isActive ? 'KHÓA' : 'KÍCH HOẠT LẠI';
+    setConfirmModal({
+      isOpen: true,
+      title: `${user.isActive ? 'Khóa' : 'Kích Hoạt Lại'} Tài Khoản`,
+      message: `Bạn có chắc chắn muốn ${actionText} tài khoản khách hàng "${user.fullName}"?`,
+      variant: user.isActive ? 'warning' : 'primary',
+      onConfirm: () => executeToggleStatus(user)
+    });
+  };
+
+  const executeToggleStatus = async (user: UserItem) => {
     const token = localStorage.getItem('admin_token');
     if (!token) {
       toast.error('Lỗi xác thực', { description: 'Hết hạn phiên làm việc quản trị.' });
@@ -266,7 +277,7 @@ export const UserManagement: React.FC = () => {
       ));
 
       toast.success('Cập nhật trạng thái thành công', {
-        description: `Tài khoản "${user.fullName}" đã được ${!user.isActive ? 'kích hoạt' : 'tạm khóa'}.`,
+        description: `Tài khoản "${user.fullName}" đã được ${user.isActive ? 'tạm khóa' : 'kích hoạt'}.`,
         duration: 3000
       });
 
@@ -626,6 +637,18 @@ export const UserManagement: React.FC = () => {
                       <td className="admin-table-td text-center">
                         <div className="flex items-center justify-center gap-2">
                           
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            title={user.isActive ? 'Khóa tài khoản' : 'Kích hoạt lại tài khoản'}
+                            className="bg-transparent border-0 cursor-pointer p-0"
+                          >
+                            {user.isActive ? (
+                              <ToggleRight className="w-7 h-7 text-emerald-500 transition hover:scale-105" />
+                            ) : (
+                              <ToggleLeft className="w-7 h-7 text-slate-400 transition hover:scale-105" />
+                            )}
+                          </button>
+
                           <button
                             onClick={() => handleOpenEditModal(user)}
                             title="Sửa thông tin tài khoản"

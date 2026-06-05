@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -165,8 +165,25 @@ export class UsersService {
 
     // 3. Chuẩn bị dữ liệu cập nhật
     const updateData: any = { ...dto };
+    if (dto.birthDate !== undefined) {
+      updateData.birthDate = dto.birthDate ? new Date(dto.birthDate) : null;
+    }
     if (dto.password) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Vui lòng nhập mật khẩu hiện tại.');
+      }
+      const user = await this.prisma.user.findUnique({
+        where: { id: BigInt(id) },
+      });
+      if (!user) {
+        throw new NotFoundException('Không tìm thấy người dùng.');
+      }
+      const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!isMatch) {
+        throw new ForbiddenException('Mật khẩu hiện tại không chính xác.');
+      }
       updateData.password = await bcrypt.hash(dto.password, 10);
+      delete updateData.currentPassword;
     }
 
     return this.prisma.user.update({

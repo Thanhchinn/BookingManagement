@@ -33,6 +33,14 @@ model User {
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
 
+  // --- CÁC TRƯỜNG BỔ SUNG MỚI ---
+  birthDate         DateTime? @map("birth_date") @db.Date
+  gender            String?   @db.VarChar(10) // MALE, FEMALE, OTHER
+  bio               String?   @db.Text
+  favoriteSports    Json?     @map("favorite_sports") // Mảng tên/slug bộ môn, ví dụ: ["football", "badminton"]
+  skillLevels       Json?     @map("skill_levels")    // JSON lưu trình độ từng bộ môn, ví dụ: {"football": "INTERMEDIATE"}
+  preferredPlayTime Json?     @map("preferred_play_time")
+
   // Quan hệ 2 chiều (Reciprocal Relations)
   partnerProfile    PartnerProfile?
   bookings          Booking[]

@@ -108,7 +108,16 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
             'Authorization': `Bearer ${token}`,
           },
         });
-        if (!res.ok) throw new Error('Không thể tải lịch ghép cặp.');
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('user_info');
+            onLogout?.();
+            onNavigate?.('auth', 'login');
+            throw new Error('Tài khoản của bạn đã bị khóa hoặc phiên đăng nhập hết hạn.');
+          }
+          throw new Error('Không thể tải lịch ghép cặp.');
+        }
         const data = await res.json();
         
         const infoStr = localStorage.getItem('user_info');

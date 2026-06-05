@@ -77,7 +77,10 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
             }
           }
         } else if (res.status === 401) {
-          toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          localStorage.removeItem('user_token');
+          localStorage.removeItem('user_info');
+          onLogout?.();
+          toast.error('Phiên đăng nhập hết hạn hoặc tài khoản đã bị khóa.');
           onNavigate?.('auth', 'login');
         } else {
           toast.error('Không thể tải bài đăng của bạn.');

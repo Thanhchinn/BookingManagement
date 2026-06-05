@@ -70,9 +70,7 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException('Tài khoản của bạn đã bị khóa bởi quản trị viên');
-    }
+
 
     const isMatch = await bcrypt.compare(pass, user.password);
     if (!isMatch) {

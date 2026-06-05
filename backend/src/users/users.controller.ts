@@ -9,12 +9,18 @@ import {
   HttpCode, 
   HttpStatus,
   Query,
-  UseGuards
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  HttpException
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 // Hàm helper để convert BigInt thành string/number giúp JSON serialization không bị lỗi
 function serializeUser(user: any) {
@@ -30,6 +36,37 @@ function serializeUser(user: any) {
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  // 0. Upload ảnh đại diện
+  @Post('upload-avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `avatar-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return cb(new Error('Chỉ chấp nhận file ảnh (jpg, jpeg, png, webp).'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 2 * 1024 * 1024, // 2MB
+      },
+    }),
+  )
+  async uploadAvatar(@UploadedFile() file: any) {
+    if (!file) {
+      throw new HttpException('Vui lòng chọn file để tải lên.', HttpStatus.BAD_REQUEST);
+    }
+    const avatarUrl = `http://localhost:3000/uploads/${file.filename}`;
+    return { avatarUrl };
+  }
 
   // 1. Thống kê nhanh thông số tài khoản (LƯU Ý: Phải đặt trước GET :id để tránh bị đè route)
   @Get('stats')

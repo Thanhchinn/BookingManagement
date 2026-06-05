@@ -23,6 +23,10 @@ export class UpdateUserDto {
   @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự.' })
   password?: string;
 
+  @IsString({ message: 'Mật khẩu hiện tại phải là chuỗi ký tự.' })
+  @IsOptional()
+  currentPassword?: string;
+
   @IsString({ message: 'Số điện thoại phải là chuỗi ký tự.' })
   @IsOptional()
   phone?: string;
@@ -55,4 +59,25 @@ export class UpdateUserDto {
   @IsBoolean({ message: 'Trạng thái hoạt động phải là kiểu Boolean.' })
   @IsOptional()
   isActive?: boolean;
+
+  @IsString({ message: 'Ngày sinh phải là chuỗi định dạng ngày.' })
+  @IsOptional()
+  birthDate?: string;
+
+  @IsString({ message: 'Giới tính phải là chuỗi ký tự.' })
+  @IsOptional()
+  gender?: string;
+
+  @IsString({ message: 'Tiểu sử phải là chuỗi ký tự.' })
+  @IsOptional()
+  bio?: string;
+
+  @IsOptional()
+  favoriteSports?: any;
+
+  @IsOptional()
+  skillLevels?: any;
+
+  @IsOptional()
+  preferredPlayTime?: any;
 }
