@@ -1,5 +1,11 @@
 import React from 'react';
-import { InputField } from '../../../components/ui/InputField';
+
+interface SportsPitchItem {
+  id: string;
+  name: string;
+  category: string;
+  locationName: string;
+}
 
 interface CreateMatchModalProps {
   isOpen: boolean;
@@ -11,8 +17,9 @@ interface CreateMatchModalProps {
   setNewSport: (val: any) => void;
   newSkill: 'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp';
   setNewSkill: (val: any) => void;
-  newCourt: string;
-  setNewCourt: (val: string) => void;
+  selectedPitchId: string;
+  setSelectedPitchId: (val: string) => void;
+  sportsPitches: SportsPitchItem[];
   newDate: string;
   setNewDate: (val: string) => void;
   newStart: string;
@@ -35,8 +42,9 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
   setNewSport,
   newSkill,
   setNewSkill,
-  newCourt,
-  setNewCourt,
+  selectedPitchId,
+  setSelectedPitchId,
+  sportsPitches,
   newDate,
   setNewDate,
   newStart,
@@ -49,6 +57,11 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
   setNewDesc,
 }) => {
   if (!isOpen) return null;
+
+  // Lọc danh sách sân theo môn thể thao đã chọn
+  const filteredPitches = sportsPitches.filter(
+    (pitch) => pitch.category.toLowerCase() === newSport.toLowerCase()
+  );
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
@@ -70,13 +83,13 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
           {/* Tiêu đề */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-300 block">Tiêu đề tin tuyển (Ngắn gọn, hấp dẫn):</label>
-            <InputField
+            <input
               type="text"
               required
               placeholder="Ví dụ: Cần tuyển 3 chân sút sân 5 đá giao hữu tối nay..."
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-850 p-3 rounded-xl text-xs text-white outline-none focus:border-emerald-500/50"
+              className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs text-white outline-none focus:border-emerald-500/50"
             />
           </div>
 
@@ -86,7 +99,10 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
               <label className="text-xs font-bold text-slate-300 block">Chọn bộ môn:</label>
               <select
                 value={newSport}
-                onChange={(e) => setNewSport(e.target.value as any)}
+                onChange={(e) => {
+                  setNewSport(e.target.value as any);
+                  setSelectedPitchId(''); // Reset pitch selection when sport changes
+                }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 outline-none"
               >
                 <option value="Cầu Lông">Cầu Lông</option>
@@ -115,15 +131,25 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
 
           {/* Sân bãi */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300 block">Chọn địa điểm cụm sân (Đã đặt hoặc dự kiến):</label>
-            <InputField
-              type="text"
+            <label className="text-xs font-bold text-slate-300 block">Chọn sân thi đấu:</label>
+            <select
               required
-              placeholder="Ví dụ: Sân Cầu Lông ProZone - Sân 1"
-              value={newCourt}
-              onChange={(e) => setNewCourt(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-850 p-3 rounded-xl text-xs text-white outline-none focus:border-emerald-500/50"
-            />
+              value={selectedPitchId}
+              onChange={(e) => setSelectedPitchId(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 outline-none"
+            >
+              <option value="">-- Chọn sân ({newSport}) --</option>
+              {filteredPitches.map((pitch) => (
+                <option key={pitch.id} value={pitch.id}>
+                  {pitch.locationName} - {pitch.name}
+                </option>
+              ))}
+            </select>
+            {filteredPitches.length === 0 && (
+              <span className="text-[10px] text-amber-500 block mt-1">
+                Lưu ý: Không tìm thấy sân nào thuộc bộ môn này trên hệ thống.
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

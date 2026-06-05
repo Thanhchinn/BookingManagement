@@ -10,6 +10,7 @@ import { PayoutManagement } from '../PayoutManagement';
 import { UserManagement } from '../UserManagement';
 import { AdminPartnerChat } from '../AdminPartnerChat';
 import { BookingMonitor } from '../BookingMonitor';
+import { MatchmakingModeration } from '../MatchmakingModeration/MatchmakingModeration';
 import '../../../features/admin/styles/admin-table.css';
 
 interface AdminLayoutProps {
@@ -55,6 +56,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateT
     analytics: { title: 'Báo cáo thống kê sâu', desc: 'Đánh giá chi tiết doanh thu, hiệu suất lấp đầy sân và hành vi người dùng.', icon: '📈' },
     sports: { title: 'Quản lý danh mục bộ môn', desc: 'Khai báo, thiết lập và cấu hình các bộ môn thể thao trên toàn hệ thống.', icon: '🏸' },
     users: { title: 'Quản lý tài khoản khách hàng', desc: 'Kiểm soát tài khoản người dùng, xem lịch sử đặt sân và quản lý phân quyền.', icon: '👥' },
+    matchmaking: { title: 'Kiểm duyệt bài đăng ghép đôi', desc: 'Kiểm tra và phê duyệt/từ chối các bài đăng ghép cặp từ khách hàng.', icon: '🏸' },
     chats: { title: 'Trao đổi & Hỗ trợ đối tác', desc: 'Trò chuyện và hỗ trợ trực tiếp các yêu cầu của chủ cơ sở sân bãi.', icon: '💬' },
     partners: { title: 'Phê duyệt & Quản lý đối tác chủ sân', desc: 'Xem xét thông tin đăng ký liên kết của chủ sân, phê duyệt hồ sơ và kiểm soát hoạt động.', icon: '🤝' },
     disputes: { title: 'Giải quyết khiếu nại khách hàng', desc: 'Theo dõi các phản ánh, tranh chấp sân bãi giữa người dùng và chủ sân.', icon: '⚖️' },
@@ -74,6 +76,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPath, navigateT
         return <SportsManagement />;
       case 'users':
         return <UserManagement />;
+      case 'matchmaking':
+        return <MatchmakingModeration />;
       case 'chats':
         return <AdminPartnerChat />;
       case 'partners':

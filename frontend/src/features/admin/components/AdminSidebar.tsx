@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   LayoutDashboard, 
   BarChart3, 
@@ -11,7 +10,8 @@ import {
   Coins,
   LogOut,
   MessageSquare,
-  CalendarRange
+  CalendarRange,
+  ClipboardCheck
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -38,6 +38,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
     { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
     { id: 'users', name: 'Quản lý người dùng', icon: Users },
+    { id: 'matchmaking', name: 'Duyệt ghép đôi', icon: ClipboardCheck },
     { id: 'disputes', name: 'Giải quyết khiếu nại', icon: Scale },
     { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
     { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },

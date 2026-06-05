@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { Button } from '../../../components/ui/Button';
@@ -92,8 +92,68 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
     }
   ]);
 
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'>('ALL');
-  
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'APPLIED'>('ALL');
+  const [matchBookings, setMatchBookings] = useState<BookingItem[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Tải danh sách ghép kèo mà user tham gia từ backend
+  useEffect(() => {
+    const fetchJoinedMatches = async () => {
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/matchmaking/posts/joined', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error('Không thể tải lịch ghép cặp.');
+        const data = await res.json();
+        
+        const infoStr = localStorage.getItem('user_info');
+        let currentUserId = '';
+        if (infoStr) {
+          try {
+            currentUserId = String(JSON.parse(infoStr).id);
+          } catch (_) {}
+        }
+
+        // Map MatchPost sang BookingItem format
+        const mappedMatches: BookingItem[] = data.map((m: any) => {
+          const isHost = currentUserId ? String(m.userId) === currentUserId : false;
+          return {
+            id: `match-${m.id}`,
+            bookingCode: `MATCH-${String(m.id).padStart(4, '0')}`,
+            courtName: m.courtName || 'Sân thi đấu giao lưu',
+            sport: m.sport,
+            location: m.courtAddress || 'Địa chỉ sân đấu',
+            bookingDate: m.playDate,
+            startTime: m.startTime,
+            endTime: m.endTime,
+            price: 0,
+            status: m.status === 'FULL' || m.status === 'OPEN' ? 'CONFIRMED' : (m.status === 'CANCELLED' ? 'CANCELLED' : 'PENDING'),
+            paymentStatus: 'FULLY_PAID',
+            products: [],
+            isMatch: true,
+            matchHost: m.hostName,
+            matchMaxPlayers: m.maxPlayers,
+            matchCurrentPlayers: m.currentPlayers,
+            description: m.description,
+            isHostMatch: isHost,
+            matchParticipants: m.participants,
+          };
+        });
+        
+        setMatchBookings(mappedMatches);
+      } catch (err: any) {
+        console.error('Lỗi tải dữ liệu ghép kèo:', err);
+      }
+    };
+
+    fetchJoinedMatches();
+  }, [userName, refreshTrigger]);
+
   // Drawer / Modals State
   const [selectedBooking, setSelectedBooking] = useState<BookingItem | null>(null);
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
@@ -108,8 +168,10 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   const [disputeDescription, setDisputeDescription] = useState<string>('');
 
   // Lọc danh sách đơn đặt sân
-  const filteredBookings = bookings.filter(b => {
+  const allBookings = [...bookings, ...matchBookings];
+  const filteredBookings = allBookings.filter(b => {
     if (activeFilter === 'ALL') return true;
+    if (activeFilter === 'APPLIED') return b.isMatch === true;
     return b.status === activeFilter;
   });
 
@@ -218,11 +280,12 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
 
         {/* 3. TABS BỘ LỌC ĐƠN HÀNG */}
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
-          {(['ALL', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED'] as const).map(filter => {
+          {(['ALL', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED', 'APPLIED'] as const).map(filter => {
             const label = filter === 'ALL' ? 'Tất cả đơn' : 
                           filter === 'CONFIRMED' ? 'Chờ chơi' : 
                           filter === 'PENDING' ? 'Chờ thanh toán' : 
-                          filter === 'COMPLETED' ? 'Đã hoàn thành' : 'Đã hủy';
+                          filter === 'COMPLETED' ? 'Đã hoàn thành' : 
+                          filter === 'CANCELLED' ? 'Đã hủy' : 'Đã ứng tuyển';
             const isActive = activeFilter === filter;
             return (
               <button
@@ -272,6 +335,22 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
                   <div className="flex flex-wrap items-center gap-2 text-left">
                     <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">{b.bookingCode}</span>
                     {getStatusBadge(b.status)}
+                    {b.isMatch && (
+                      <>
+                        <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Ghép Kèo ({b.matchCurrentPlayers}/{b.matchMaxPlayers})
+                        </span>
+                        {b.isHostMatch ? (
+                          <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Chủ phòng (Tổ chức)
+                          </span>
+                        ) : (
+                          <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Đã ứng tuyển thành công
+                          </span>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   <h4 className="text-base sm:text-lg font-black text-white m-0 hover:text-emerald-400 transition text-left">
@@ -296,9 +375,11 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
 
                 <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-3 border-t sm:border-t-0 border-slate-800 pt-4 sm:pt-0 shrink-0">
                   <div className="text-left sm:text-right">
-                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">Tổng thanh toán</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">
+                      {b.isMatch ? 'Chi phí tham gia' : 'Tổng thanh toán'}
+                    </p>
                     <p className="text-base font-extrabold text-emerald-400 font-mono m-0">
-                      {b.price.toLocaleString('vi-VN')}đ
+                      {b.isMatch ? 'Chia đều / Miễn phí' : `${b.price.toLocaleString('vi-VN')}đ`}
                     </p>
                   </div>
 
@@ -332,6 +413,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
         onCancelRequest={() => setShowCancelModal(true)}
         onWriteReview={() => setShowReviewModal(true)}
         onOpenDispute={() => setShowDisputeModal(true)}
+        onRefreshMatches={() => setRefreshTrigger(prev => prev + 1)}
       />
 
       {/* A. MODAL HỦY ĐẶT SÂN */}

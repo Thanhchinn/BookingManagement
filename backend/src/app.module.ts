@@ -11,6 +11,7 @@ import { LocationsModule } from './locations/locations.module';
 import { ServicesModule } from './services/services.module';
 import { ProductsModule } from './products/products.module';
 import { PublicModule } from './public/public.module';
+import { MatchmakingModule } from './matchmaking/matchmaking.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PublicModule } from './public/public.module';
     ServicesModule,
     ProductsModule,
     PublicModule,
+    MatchmakingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

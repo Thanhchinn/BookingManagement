@@ -37,4 +37,21 @@ export interface BookingItem {
   products: BookingProduct[];                                         // Danh sách các dịch vụ & sản phẩm thuê kèm
   disputed?: boolean;                                                 // Đánh dấu đơn đang bị khiếu nại (true nếu đang tranh chấp)
   reviewed?: boolean;                                                 // Đánh dấu đơn hàng đã được người dùng đánh giá (true nếu rồi)
+  isMatch?: boolean;                                                  // Đánh dấu đây là trận đấu ghép cặp
+  matchHost?: string;                                                 // Chủ phòng ghép cặp
+  matchMaxPlayers?: number;                                           // Số lượng người chơi tối đa
+  matchCurrentPlayers?: number;                                       // Số lượng người chơi hiện tại
+  description?: string;                                               // Mô tả chi tiết (dành cho kèo đấu giao lưu)
+  isHostMatch?: boolean;                                              // Người dùng hiện tại là chủ phòng (Host) của trận đấu này
+  matchParticipants?: MatchParticipantItem[];                         // Danh sách thành viên tham gia ghép kèo
 }
+
+export interface MatchParticipantItem {
+  id: string;
+  userId: string;
+  name: string;
+  avatar: string;
+  status: 'PENDING' | 'JOINED' | 'REJECTED';
+  note?: string;
+}
+

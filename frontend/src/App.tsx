@@ -6,6 +6,7 @@ import { MyBookings } from './pages/client/MyBookings';
 import { CourtDetails } from './pages/client/CourtDetails';
 import { BookingSuccess } from './pages/client/BookingSuccess';
 import { Matchmaking } from './pages/client/Matchmaking';
+import { MatchmakingCreate } from './pages/client/Matchmaking/MatchmakingCreate';
 import { CommunityChat } from './pages/client/CommunityChat';
 import { Search } from './pages/client/Search';
 import { NotFound } from './pages/client/NotFound';
@@ -31,6 +32,7 @@ function App() {
     if (path === '/field-details') return 'field-details';
     if (path === '/booking-success') return 'booking-success';
     if (path === '/matchmaking') return 'matchmaking';
+    if (path === '/matchmaking/create') return 'matchmaking-create';
     if (path === '/chat') return 'chat';
     if (path === '/search') return 'search';
     
@@ -112,7 +114,7 @@ function App() {
   };
 
   const handleNavigate = (
-    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'chat' | 'search',
+    page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'matchmaking/create' | 'chat' | 'search',
     data?: any
   ) => {
     // data có thể là string (authMode cũ) hoặc object { locationId }
@@ -281,6 +283,13 @@ function App() {
         )}
         {currentPage === 'matchmaking' && (
           <Matchmaking 
+            onNavigate={handleNavigate}
+            userName={userName || undefined}
+            onLogout={handleClientLogout}
+          />
+        )}
+        {currentPage === 'matchmaking-create' && (
+          <MatchmakingCreate
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}
