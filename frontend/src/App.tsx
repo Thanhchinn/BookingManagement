@@ -155,7 +155,39 @@ function App() {
       setCurrentPath(window.location.pathname);
     };
     window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+
+    // Lắng nghe sự kiện buộc đăng xuất do hết hạn phiên làm việc
+    const handleAdminForceLogout = () => {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_profile');
+      setIsAdminLoggedIn(false);
+      navigateTo('/admin');
+      toast.error('Phiên làm việc quản trị đã hết hạn.', {
+        description: 'Vui lòng đăng nhập lại.',
+        duration: 5000,
+      });
+    };
+
+    const handleUserForceLogout = () => {
+      localStorage.removeItem('user_token');
+      localStorage.removeItem('user_info');
+      setUserName(null);
+      setPartnerName(null);
+      navigateTo('/');
+      toast.error('Phiên làm việc đã hết hạn.', {
+        description: 'Vui lòng đăng nhập lại để tiếp tục.',
+        duration: 5000,
+      });
+    };
+
+    window.addEventListener('admin-force-logout', handleAdminForceLogout);
+    window.addEventListener('user-force-logout', handleUserForceLogout);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('admin-force-logout', handleAdminForceLogout);
+      window.removeEventListener('user-force-logout', handleUserForceLogout);
+    };
   }, []);
 
   // Tự động cuộn lên đầu trang khi thay đổi đường dẫn URL (tránh việc giữ nguyên vị trí cuộn ở trang cũ)

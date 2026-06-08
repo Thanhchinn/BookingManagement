@@ -7,6 +7,7 @@ export function serializePublicLocation(loc: any) {
     ...loc,
     id: loc.id.toString(),
     partnerId: loc.partnerId?.toString(),
+    partnerUserId: loc.partner?.userId?.toString() || null,
     latitude: loc.latitude ? parseFloat(loc.latitude.toString()) : null,
     longitude: loc.longitude ? parseFloat(loc.longitude.toString()) : null,
     locationAmenities: loc.locationAmenities?.map((la: any) => ({
@@ -129,6 +130,7 @@ export class PublicService {
     const location = await this.prisma.location.findFirst({
       where: { id: BigInt(id), isActive: true },
       include: {
+        partner: true,
         locationAmenities: { include: { amenity: true } },
         sportsPitches: {
           where: { isActive: true },

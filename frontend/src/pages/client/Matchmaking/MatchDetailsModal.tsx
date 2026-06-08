@@ -62,118 +62,72 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
     return new Date() >= playStart;
   };
 
-  const handleContactHost = () => {
+  const handleContactHost = async () => {
     if (!userName) {
       toast.error('Vui lòng đăng nhập để gửi tin nhắn.');
       onNavigate?.('auth');
       return;
     }
 
-    // 1. Lấy danh sách phòng chat hiện tại từ localStorage
-    const savedRoomsStr = localStorage.getItem('sportzone_client_chat_rooms');
-    let currentRooms: any[] = [];
-    if (savedRoomsStr) {
-      try {
-        currentRooms = JSON.parse(savedRoomsStr);
-      } catch (e) {
-        currentRooms = [];
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      toast.error('Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.');
+      onNavigate?.('auth');
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3000/chats/rooms/individual`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId: match.userId.toString() })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('sportzone_active_chat_room_id', data.id);
+        onClose();
+        onNavigate?.('chat');
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.message || 'Không thể mở phòng chat cá nhân với Host.');
       }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi kết nối máy chủ.');
     }
+  };
 
-    // Nếu chưa có rooms, dùng danh sách mặc định của CommunityChat
-    if (currentRooms.length === 0) {
-      currentRooms = [
-        {
-          id: '1',
-          name: '🏸 Cầu Lông Đôi Nam Nữ - Bình Thạnh',
-          avatar: '🏸',
-          type: 'MATCH',
-          sport: 'Cầu Lông',
-          unreadCount: 2,
-          lastMessage: 'Hệ thống: Lê Hoàng Long đã tham gia phòng chat nhóm!',
-          lastMessageTime: '16:45',
-          messages: [
-            { id: '101', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Trận đấu đã được chốt 4 thành viên! Phòng chat nhóm tự động được kích hoạt.', timestamp: '16:00', type: 'SYSTEM' },
-            { id: '102', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍🦱', isMe: false, text: 'Chào mọi người, sân mình đặt ở Bình Thạnh ca 18h-20h tối mai nhé.', timestamp: '16:02', type: 'TEXT' },
-            { id: '103', senderName: 'Trần Thị Mai', senderAvatar: '👩‍🦰', isMe: false, text: 'Ok anh Hải ơi, mình đi xe máy tới thì gửi xe ở cổng hay bên trong ạ?', timestamp: '16:05', type: 'TEXT' },
-            { id: '104', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍🦱', isMe: false, text: 'Gửi xe máy bên hông sân miễn phí nhé em, có bảo vệ trông.', timestamp: '16:08', type: 'TEXT' },
-            { id: '105', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Lê Hoàng Long đã được duyệt duyệt tham gia nhóm!', timestamp: '16:45', type: 'SYSTEM' }
-          ]
-        },
-        {
-          id: '2',
-          name: '⚽ FC Giao Hữu Sân 5 - An Phú',
-          avatar: '⚽',
-          type: 'MATCH',
-          sport: 'Bóng Đá',
-          unreadCount: 0,
-          lastMessage: 'Hẹn tối mai 19h anh em có mặt đông đủ nhé!',
-          lastMessageTime: 'Hôm qua',
-          messages: [
-            { id: '201', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'FC Giao Hữu Sân 5 đã được kích hoạt phòng chat.', timestamp: 'Hôm qua', type: 'SYSTEM' },
-            { id: '202', senderName: 'Lê Hoàng Long', senderAvatar: '🧔', isMe: false, text: 'Đội mình mặc áo màu đỏ nhé anh em ơi.', timestamp: 'Hôm qua', type: 'TEXT' },
-            { id: '203', senderName: 'Vũ Minh Tuấn', senderAvatar: '👨', isMe: false, text: 'Ok, để em mang thêm bộ áo pitch dự phòng.', timestamp: 'Hôm qua', type: 'TEXT' }
-          ]
-        },
-        {
-          id: '3',
-          name: 'Chủ Sân Cầu Lông ProZone',
-          avatar: '🏟️',
-          type: 'INDIVIDUAL',
-          unreadCount: 0,
-          lastMessage: 'Dạ vâng ạ, sân em đã bật sẵn điều hòa cho đoàn mình.',
-          lastMessageTime: '29 Tháng 5',
-          messages: [
-            { id: '301', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Chào anh Hải, sân cầu lông ProZone xin nghe ạ.', timestamp: '29 Tháng 5', type: 'TEXT' },
-            { id: '302', senderName: 'Khách Hàng', senderAvatar: '👨‍🚀', isMe: true, text: 'Chào admin, ca 18h tối mai mình muốn thuê thêm 2 đôi giày được không?', timestamp: '29 Tháng 5', type: 'TEXT' },
-            { id: '303', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Dạ được chứ anh, bên em có sẵn giày các size từ 38 đến 44. Giá thuê 20.000đ/đôi ạ.', timestamp: '29 Tháng 5', type: 'TEXT' }
-          ]
+  const handleEnterGroupChat = async () => {
+    if (!match) return;
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để tham gia.');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:3000/chats/rooms/match/${match.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      ];
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('sportzone_active_chat_room_id', data.id);
+        onClose();
+        onNavigate?.('chat');
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.message || 'Không thể mở phòng chat nhóm.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi kết nối máy chủ.');
     }
-
-    // 2. Tìm xem phòng chat với Host này đã tồn tại chưa
-    const existingRoom = currentRooms.find(
-      (r) => r.type === 'INDIVIDUAL' && r.name === match.hostName
-    );
-
-    let targetRoomId = '';
-
-    if (existingRoom) {
-      targetRoomId = existingRoom.id;
-    } else {
-      // 3. Nếu chưa có, tạo phòng chat cá nhân mới
-      targetRoomId = `host-${match.userId || Date.now()}`;
-      const newRoom = {
-        id: targetRoomId,
-        name: match.hostName,
-        avatar: match.hostAvatar || '🧑',
-        type: 'INDIVIDUAL',
-        unreadCount: 0,
-        lastMessage: `Bắt đầu cuộc trò chuyện với ${match.hostName} về bài đăng: "${match.title}"`,
-        lastMessageTime: 'Mới đây',
-        messages: [
-          {
-            id: String(Date.now()),
-            senderName: 'Hệ thống',
-            senderAvatar: '🤖',
-            isMe: false,
-            text: `Bạn đang liên hệ với ${match.hostName} về tin tuyển ghép sân "${match.title}". Hãy gửi lời chào hoặc thắc mắc của bạn tại đây!`,
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            type: 'SYSTEM',
-          },
-        ],
-      };
-      currentRooms = [newRoom, ...currentRooms];
-      localStorage.setItem('sportzone_client_chat_rooms', JSON.stringify(currentRooms));
-    }
-
-    // 4. Set phòng này làm active room
-    localStorage.setItem('sportzone_active_chat_room_id', targetRoomId);
-
-    // 5. Đóng modal và chuyển hướng sang trang Chat
-    onClose();
-    onNavigate?.('chat');
   };
 
   return (
@@ -403,10 +357,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
                     </p>
                   </div>
                   <Button 
-                    onClick={() => {
-                      onClose();
-                      onNavigate?.('chat');
-                    }}
+                    onClick={handleEnterGroupChat}
                     variant="primary" 
                     className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold rounded-xl cursor-pointer flex items-center justify-center gap-2"
                   >

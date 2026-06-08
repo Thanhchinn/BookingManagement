@@ -22,6 +22,7 @@ import {
   Building
 } from 'lucide-react';
 import { PartnerAdminChat } from '../PartnerAdminChat';
+import { PartnerCustomerChat } from '../PartnerCustomerChat/PartnerCustomerChat';
 import '../../../features/admin/styles/admin-table.css';
 import { toast } from 'sonner';
 
@@ -123,6 +124,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
     { id: 'promotions', label: 'Quản Lý Voucher', icon: Tag },
     { id: 'revenue', label: 'Đối Soát & Ví Tiền', icon: DollarSign },
     { id: 'chat', label: 'Liên Hệ Admin', icon: MessageSquare },
+    { id: 'customer-chat', label: 'Khách Hàng', icon: MessageSquare },
   ];
 
   // Render nội dung tương ứng từng Tab
@@ -142,6 +144,8 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
         return <PromotionManagement />;
       case 'chat':
         return <PartnerAdminChat partnerName={partnerName} />;
+      case 'customer-chat':
+        return <PartnerCustomerChat partnerName={partnerName} />;
       case 'revenue':
         return (
           <div className="space-y-6 text-left relative font-sans text-slate-100">

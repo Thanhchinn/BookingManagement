@@ -114,6 +114,7 @@ model PartnerProfile {
   commissionBills   PartnerCommissionBill[]
   disputes          Dispute[]
   promotions        Promotion[]
+  adminPartnerMessages AdminPartnerMessage[]
 
   @@map("partner_profiles")
 }
@@ -564,3 +565,18 @@ model Review {
   @@index([rating])
   @@map("reviews")
 }
+
+model AdminPartnerMessage {
+  id          BigInt         @id @default(autoincrement())
+  partnerId   BigInt         @map("partner_id")
+  senderType  String         @map("sender_type") @db.VarChar(20) // 'ADMIN' | 'PARTNER'
+  senderId    BigInt         @map("sender_id")
+  messageText String         @map("message_text") @db.Text
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  partner     PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("admin_partner_messages")
+}
+

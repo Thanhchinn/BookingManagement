@@ -10,7 +10,28 @@ import {
   Info,
   ArrowLeft
 } from 'lucide-react';
-import type { ChatMessage, ChatRoom } from '../../../types';
+import { toast } from 'sonner';
+
+interface ChatMessage {
+  id: string;
+  senderName: string;
+  senderAvatar: string;
+  isMe: boolean;
+  text: string;
+  timestamp: string;
+  type: 'TEXT' | 'SYSTEM';
+}
+
+interface ChatRoom {
+  id: string;
+  name: string;
+  avatar: string;
+  type: 'MATCH' | 'INDIVIDUAL';
+  sport?: string;
+  unreadCount: number;
+  lastMessage: string;
+  lastMessageTime: string;
+}
 
 interface CommunityChatProps {
   onNavigate?: (page: 'home' | 'auth' | 'admin' | 'partner' | 'field-details' | 'my-bookings' | 'booking-success' | 'matchmaking' | 'chat', authMode?: 'login' | 'register') => void;
@@ -18,83 +39,121 @@ interface CommunityChatProps {
   onLogout?: () => void;
 }
 
-export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userName, onLogout }) => {
-  // Mock Data hỗ trợ trò chuyện động (lấy từ localStorage nếu có)
-  const [rooms, setRooms] = useState<ChatRoom[]>(() => {
-    const saved = localStorage.getItem('sportzone_client_chat_rooms');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Fallback to default
-      }
-    }
-    return [
-      {
-        id: '1',
-        name: '🏸 Cầu Lông Đôi Nam Nữ - Bình Thạnh',
-        avatar: '🏸',
-        type: 'MATCH',
-        sport: 'Cầu Lông',
-        unreadCount: 2,
-        lastMessage: 'Hệ thống: Lê Hoàng Long đã tham gia phòng chat nhóm!',
-        lastMessageTime: '16:45',
-        messages: [
-          { id: '101', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Trận đấu đã được chốt 4 thành viên! Phòng chat nhóm tự động được kích hoạt.', timestamp: '16:00', type: 'SYSTEM' },
-          { id: '102', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍🦱', isMe: false, text: 'Chào mọi người, sân mình đặt ở Bình Thạnh ca 18h-20h tối mai nhé.', timestamp: '16:02', type: 'TEXT' },
-          { id: '103', senderName: 'Trần Thị Mai', senderAvatar: '👩‍🦰', isMe: false, text: 'Ok anh Hải ơi, mình đi xe máy tới thì gửi xe ở cổng hay bên trong ạ?', timestamp: '16:05', type: 'TEXT' },
-          { id: '104', senderName: 'Nguyễn Minh Hải', senderAvatar: '👨‍🦱', isMe: false, text: 'Gửi xe máy bên hông sân miễn phí nhé em, có bảo vệ trông.', timestamp: '16:08', type: 'TEXT' },
-          { id: '105', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'Lê Hoàng Long đã được duyệt duyệt tham gia nhóm!', timestamp: '16:45', type: 'SYSTEM' }
-        ]
-      },
-      {
-        id: '2',
-        name: '⚽ FC Giao Hữu Sân 5 - An Phú',
-        avatar: '⚽',
-        type: 'MATCH',
-        sport: 'Bóng Đá',
-        unreadCount: 0,
-        lastMessage: 'Hẹn tối mai 19h anh em có mặt đông đủ nhé!',
-        lastMessageTime: 'Hôm qua',
-        messages: [
-          { id: '201', senderName: 'Hệ thống', senderAvatar: '🤖', isMe: false, text: 'FC Giao Hữu Sân 5 đã được kích hoạt phòng chat.', timestamp: 'Hôm qua', type: 'SYSTEM' },
-          { id: '202', senderName: 'Lê Hoàng Long', senderAvatar: '🧔', isMe: false, text: 'Đội mình mặc áo màu đỏ nhé anh em ơi.', timestamp: 'Hôm qua', type: 'TEXT' },
-          { id: '203', senderName: 'Vũ Minh Tuấn', senderAvatar: '👨', isMe: false, text: 'Ok, để em mang thêm bộ áo pitch dự phòng.', timestamp: 'Hôm qua', type: 'TEXT' }
-        ]
-      },
-      {
-        id: '3',
-        name: 'Chủ Sân Cầu Lông ProZone',
-        avatar: '🏟️',
-        type: 'INDIVIDUAL',
-        unreadCount: 0,
-        lastMessage: 'Dạ vâng ạ, sân em đã bật sẵn điều hòa cho đoàn mình.',
-        lastMessageTime: '29 Tháng 5',
-        messages: [
-          { id: '301', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Chào anh Hải, sân cầu lông ProZone xin nghe ạ.', timestamp: '29 Tháng 5', type: 'TEXT' },
-          { id: '302', senderName: 'Khách Hàng', senderAvatar: '👨‍🚀', isMe: true, text: 'Chào admin, ca 18h tối mai mình muốn thuê thêm 2 đôi giày được không?', timestamp: '29 Tháng 5', type: 'TEXT' },
-          { id: '303', senderName: 'Chủ Sân Cầu Lông ProZone', senderAvatar: '🏟️', isMe: false, text: 'Dạ được chứ anh, bên em có sẵn giày các size từ 38 đến 44. Giá thuê 20.000đ/đôi ạ.', timestamp: '29 Tháng 5', type: 'TEXT' }
-        ]
-      }
-    ];
-  });
+const API = 'http://localhost:3000';
 
-  const [activeRoomId, setActiveRoomId] = useState<string>(() => {
-    return localStorage.getItem('sportzone_active_chat_room_id') || '1';
+export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userName, onLogout }) => {
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(() => {
+    return localStorage.getItem('sportzone_active_chat_room_id');
   });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobileChatOpen, setIsMobileChatOpen] = useState<boolean>(false);
+  const [isLoadingRooms, setIsLoadingRooms] = useState<boolean>(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(false);
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Lưu rooms vào localStorage mỗi khi thay đổi
+  // 1. Kiểm tra xác thực token khi vào trang
   useEffect(() => {
-    localStorage.setItem('sportzone_client_chat_rooms', JSON.stringify(rooms));
-  }, [rooms]);
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      toast.warning('Vui lòng đăng nhập để sử dụng tính năng trò chuyện.');
+      onNavigate?.('auth', 'login');
+    }
+  }, [onNavigate]);
 
-  // Lấy phòng chat đang mở
-  const activeRoom = rooms.find(r => r.id === activeRoomId);
+  // 2. Fetch danh sách các phòng chat của user hiện tại
+  const fetchRooms = async (isFirstLoad = false) => {
+    const token = localStorage.getItem('user_token');
+    if (!token) return;
+
+    try {
+      if (isFirstLoad) setIsLoadingRooms(true);
+      const res = await fetch(`${API}/chats/rooms`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        setRooms(data);
+        
+        // Nếu chưa chọn active room hoặc phòng đã chọn không tồn tại, chọn phòng đầu tiên
+        if (data.length > 0) {
+          const savedActiveId = localStorage.getItem('sportzone_active_chat_room_id');
+          const exists = data.some((r: any) => r.id === savedActiveId);
+          if (!savedActiveId || !exists) {
+            setActiveRoomId(data[0].id);
+            localStorage.setItem('sportzone_active_chat_room_id', data[0].id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách phòng chat:', err);
+    } finally {
+      if (isFirstLoad) setIsLoadingRooms(false);
+    }
+  };
+
+  // 3. Fetch danh sách tin nhắn của phòng chat đang active
+  const fetchMessages = async (roomId: string, showLoader = false) => {
+    const token = localStorage.getItem('user_token');
+    if (!token) return;
+
+    try {
+      if (showLoader) setIsLoadingMessages(true);
+      const res = await fetch(`${API}/chats/rooms/${roomId}/messages`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải tin nhắn phòng chat:', err);
+    } finally {
+      if (showLoader) setIsLoadingMessages(false);
+    }
+  };
+
+  // 4. Polling định kỳ tải dữ liệu
+  useEffect(() => {
+    fetchRooms(true);
+
+    const interval = setInterval(() => {
+      fetchRooms(false);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 5. Load tin nhắn mỗi khi đổi phòng chat hoặc định kỳ
+  useEffect(() => {
+    if (!activeRoomId) {
+      setMessages([]);
+      return;
+    }
+
+    fetchMessages(activeRoomId, true);
+
+    const interval = setInterval(() => {
+      fetchMessages(activeRoomId, false);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [activeRoomId]);
 
   // Tự động cuộn xuống cuối tin nhắn
   const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
@@ -112,51 +171,72 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
 
   useEffect(() => {
     scrollToBottom('smooth');
-  }, [activeRoom?.messages]);
+  }, [messages]);
 
-  // Gửi tin nhắn mới
-  const handleSendMessage = (e: React.FormEvent) => {
+  // Gửi tin nhắn mới lên Backend
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !activeRoom) return;
+    if (!inputText.trim() || !activeRoomId) return;
 
-    const newMsg: ChatMessage = {
-      id: String(Date.now()),
-      senderName: userName || 'Khách Hàng',
-      senderAvatar: '👨‍🚀',
-      isMe: true,
-      text: inputText.trim(),
-      timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      type: 'TEXT'
-    };
+    const token = localStorage.getItem('user_token');
+    if (!token) return;
 
-    setRooms(prevRooms => prevRooms.map(r => {
-      if (r.id === activeRoom.id) {
-        return {
-          ...r,
-          unreadCount: 0,
-          lastMessage: inputText.trim(),
-          lastMessageTime: newMsg.timestamp,
-          messages: [...r.messages, newMsg]
-        };
-      }
-      return r;
-    }));
-
+    const textToSend = inputText.trim();
     setInputText('');
+
+    try {
+      const res = await fetch(`${API}/chats/rooms/${activeRoomId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: textToSend })
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+        return;
+      }
+
+      if (res.ok) {
+        const newMsg = await res.json();
+        setMessages(prev => [...prev, newMsg]);
+        // Cập nhật xem trước tin nhắn trong phòng tương ứng
+        setRooms(prev => prev.map(r => {
+          if (r.id === activeRoomId) {
+            return {
+              ...r,
+              lastMessage: textToSend,
+              lastMessageTime: newMsg.timestamp
+            };
+          }
+          return r;
+        }));
+      } else {
+        const errData = await res.json();
+        toast.error(errData.message || 'Không thể gửi tin nhắn.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi đường truyền internet.');
+    }
   };
 
-  // Đọc tin nhắn (Reset unreadCount về 0 khi bấm vào phòng)
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId);
     localStorage.setItem('sportzone_active_chat_room_id', roomId);
-    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, unreadCount: 0 } : r));
     setIsMobileChatOpen(true);
+    // Tải ngay tin nhắn của phòng mới chọn
+    fetchMessages(roomId, true);
   };
 
   // Lọc phòng chat
   const filteredRooms = rooms.filter(r => 
     r.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const activeRoom = rooms.find(r => r.id === activeRoomId);
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
@@ -167,7 +247,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
       {/* 2. CHAT HUBS WRAPPER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full flex flex-col h-[75svh]">
         
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex-grow flex shadow-2xl relative">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex-grow flex shadow-2xl relative animate-in fade-in duration-300">
           
           {/* CỘT TRÁI: DANH SÁCH PHÒNG CHAT */}
           <aside className={`w-full md:w-80 border-r border-slate-800/80 flex flex-col bg-slate-900 shrink-0 ${
@@ -197,7 +277,19 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
 
             {/* Danh sách phòng */}
             <div className="flex-grow overflow-y-auto p-2 space-y-1">
-              {filteredRooms.length === 0 ? (
+              {isLoadingRooms ? (
+                <div className="space-y-2.5 p-3">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="flex gap-3 p-3 rounded-2xl bg-slate-850/20 border border-slate-800/30 animate-pulse">
+                      <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0" />
+                      <div className="flex-grow space-y-2">
+                        <div className="h-3.5 bg-slate-850 rounded w-3/4" />
+                        <div className="h-2 bg-slate-850 rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredRooms.length === 0 ? (
                 <p className="text-xs text-slate-600 text-center py-8 m-0">Không tìm thấy phòng chat nào.</p>
               ) : (
                 filteredRooms.map(r => {
@@ -212,8 +304,12 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
                           : 'bg-transparent text-slate-400 hover:bg-slate-800/30 hover:text-slate-200'
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xl shrink-0 select-none">
-                        {r.avatar}
+                      <div className="w-10 h-10 rounded-xl bg-slate-955 border border-slate-800 flex items-center justify-center text-xl shrink-0 select-none overflow-hidden">
+                        {r.avatar && (r.avatar.startsWith('http') || r.avatar.startsWith('/')) ? (
+                          <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" />
+                        ) : (
+                          r.avatar || '💬'
+                        )}
                       </div>
 
                       <div className="flex-grow text-left leading-tight min-w-0">
@@ -224,7 +320,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
                           <span className="text-[9px] text-slate-550 font-mono shrink-0">{r.lastMessageTime}</span>
                         </div>
                         
-                        <p className="text-[10px] text-slate-500 truncate mt-1.5 m-0">
+                        <p className="text-[10px] text-slate-500 truncate mt-1.5 m-0 font-medium">
                           {r.lastMessage}
                         </p>
                       </div>
@@ -258,8 +354,12 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
-                  <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-lg select-none">
-                    {activeRoom.avatar}
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-lg select-none overflow-hidden">
+                    {activeRoom.avatar && (activeRoom.avatar.startsWith('http') || activeRoom.avatar.startsWith('/')) ? (
+                      <img src={activeRoom.avatar} alt={activeRoom.name} className="w-full h-full object-cover" />
+                    ) : (
+                      activeRoom.avatar || '💬'
+                    )}
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-black text-white m-0 tracking-tight leading-none">{activeRoom.name}</h4>
@@ -284,43 +384,75 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ onNavigate, userNa
 
               {/* Feed tin nhắn */}
               <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-4">
-                {activeRoom.messages.map((m, idx) => {
-                  if (m.type === 'SYSTEM') {
+                {isLoadingMessages ? (
+                  <div className="space-y-4">
+                    <div className="flex gap-2 max-w-[60%] animate-pulse">
+                      <div className="w-8 h-8 rounded-full bg-slate-800 shrink-0" />
+                      <div className="space-y-1.5">
+                        <div className="h-2 bg-slate-850 rounded w-16" />
+                        <div className="h-10 bg-slate-800 rounded-2xl w-48" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 max-w-[60%] ml-auto flex-row-reverse animate-pulse">
+                      <div className="w-8 h-8 rounded-full bg-slate-800 shrink-0" />
+                      <div className="space-y-1.5">
+                        <div className="h-2 bg-slate-850 rounded w-16" />
+                        <div className="h-10 bg-slate-800 rounded-2xl w-48" />
+                      </div>
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex flex-col justify-center items-center h-full text-slate-600 space-y-2">
+                    <MessageSquare className="w-10 h-10 stroke-[1.2] text-slate-800" />
+                    <p className="text-[11px]">Bắt đầu gửi lời chào tại đây!</p>
+                  </div>
+                ) : (
+                  messages.map((m) => {
+                    if (m.type === 'SYSTEM') {
+                      return (
+                        <div key={m.id} className="flex justify-center my-2">
+                          <div className="bg-slate-900 border border-slate-850 px-4 py-2 rounded-2xl text-[10px] text-slate-400 max-w-md text-center leading-relaxed">
+                            🤖 {m.text}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const isOwn = m.isMe;
                     return (
-                      <div key={idx} className="flex justify-center my-2">
-                        <div className="bg-slate-900 border border-slate-850 px-4 py-2 rounded-2xl text-[10px] text-slate-400 max-w-md text-center leading-relaxed">
-                          🤖 {m.text}
+                      <div 
+                        key={m.id} 
+                        className={`flex gap-3 max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : 'mr-auto text-left'}`}
+                      >
+                        {/* Avatar */}
+                        {m.senderAvatar && (m.senderAvatar.startsWith('http') || m.senderAvatar.startsWith('/')) ? (
+                          <img 
+                            src={m.senderAvatar} 
+                            alt={m.senderName} 
+                            className="w-8 h-8 rounded-full object-cover shrink-0 select-none border border-slate-800"
+                          />
+                        ) : (
+                          <span className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-sm shrink-0 select-none">
+                            {m.senderAvatar || '🧑'}
+                          </span>
+                        )}
+
+                        {/* Bubble */}
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-550 block">{m.senderName}</span>
+                          <div className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
+                            isOwn 
+                              ? 'bg-emerald-600 text-white rounded-tr-none text-left' 
+                              : 'bg-slate-900 border border-slate-800 text-slate-350 rounded-tl-none'
+                          }`}>
+                            {m.text}
+                          </div>
+                          <span className="text-[8px] text-slate-650 block font-mono">{m.timestamp}</span>
                         </div>
                       </div>
                     );
-                  }
-
-                  const isOwn = m.isMe || m.senderName === userName;
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`flex gap-3 max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : 'mr-auto text-left'}`}
-                    >
-                      {/* Avatar */}
-                      <span className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-sm shrink-0 select-none">
-                        {m.senderAvatar}
-                      </span>
-
-                      {/* Bubble */}
-                      <div className="space-y-1">
-                        <span className="text-[9px] text-slate-550 block">{m.senderName}</span>
-                        <div className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
-                          isOwn 
-                            ? 'bg-emerald-600 text-white rounded-tr-none text-left' 
-                            : 'bg-slate-900 border border-slate-800 text-slate-350 rounded-tl-none'
-                        }`}>
-                          {m.text}
-                        </div>
-                        <span className="text-[8px] text-slate-650 block font-mono">{m.timestamp}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                  })
+                )}
               </div>
 
               {/* Ô gõ tin nhắn */}

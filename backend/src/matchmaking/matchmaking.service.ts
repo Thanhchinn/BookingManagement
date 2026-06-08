@@ -84,6 +84,9 @@ export class MatchmakingService {
         },
       });
 
+      // Tự động thêm Host vào Chat Room
+      await this.syncChatRoomMember(tx, p.id, BigInt(userId), true);
+
       return p;
     });
 
@@ -310,6 +313,9 @@ export class MatchmakingService {
         data: { status: dto.status },
       });
 
+      // Đồng bộ vào Chat Room
+      await this.syncChatRoomMember(tx, post.id, participant.userId, dto.status === 'JOINED');
+
       // Tính toán lại số lượng JOINED players hiện tại
       const updatedPost = await tx.matchPost.findUnique({
         where: { id: post.id },
@@ -368,6 +374,9 @@ export class MatchmakingService {
       await tx.matchParticipant.delete({
         where: { id: participant.id },
       });
+
+      // Đồng bộ xóa khỏi Chat Room
+      await this.syncChatRoomMember(tx, post.id, participant.userId, false);
 
       // Tạo thông báo cho Host
       try {
@@ -455,6 +464,9 @@ export class MatchmakingService {
       await tx.matchParticipant.delete({
         where: { id: participant.id },
       });
+
+      // Đồng bộ xóa khỏi Chat Room
+      await this.syncChatRoomMember(tx, post.id, participant.userId, false);
 
       // Tạo thông báo cho Tuyển thủ bị xóa
       try {
@@ -603,5 +615,53 @@ export class MatchmakingService {
     });
 
     return this.findOne(post.id);
+  }
+
+  // Helper to sync chat room members
+  private async syncChatRoomMember(tx: any, matchPostId: bigint, userId: bigint, join: boolean) {
+    let chatRoom = await tx.chatRoom.findUnique({
+      where: { matchPostId }
+    });
+
+    if (!chatRoom && join) {
+      const post = await tx.matchPost.findUnique({
+        where: { id: matchPostId }
+      });
+      chatRoom = await tx.chatRoom.create({
+        data: {
+          type: 'MATCH',
+          matchPostId,
+          name: post?.title || 'Phòng ghép kèo'
+        }
+      });
+    }
+
+    if (chatRoom) {
+      if (join) {
+        const existing = await tx.chatRoomMember.findUnique({
+          where: {
+            chatRoomId_userId: {
+              chatRoomId: chatRoom.id,
+              userId
+            }
+          }
+        });
+        if (!existing) {
+          await tx.chatRoomMember.create({
+            data: {
+              chatRoomId: chatRoom.id,
+              userId
+            }
+          });
+        }
+      } else {
+        await tx.chatRoomMember.deleteMany({
+          where: {
+            chatRoomId: chatRoom.id,
+            userId
+          }
+        });
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircleCode } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -16,62 +17,84 @@ interface PartnerAdminChatProps {
 export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputVal, setInputVal] = useState<string>('');
+  const [partnerId, setPartnerId] = useState<string>('');
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   const activePartnerName = partnerName || 'Đối tác Cụm Sân';
 
-  // 1. Đồng bộ tin nhắn từ localStorage
-  const loadMessages = () => {
-    const stored = localStorage.getItem('sportzone_admin_partner_messages');
-    if (stored) {
+  // 1. Tải partnerId từ API thông qua user_info
+  useEffect(() => {
+    const fetchPartnerId = async () => {
+      const savedUserInfo = localStorage.getItem('user_info');
+      const token = localStorage.getItem('user_token');
+      if (!savedUserInfo || !token) return;
+
       try {
-        setMessages(JSON.parse(stored));
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      // Dữ liệu khởi tạo nếu chưa có cuộc trò chuyện nào
-      const initialMessages: Message[] = [
-        {
-          id: 'init-1',
-          partnerName: 'Cầu Lông ProZone',
-          sender: 'partner',
-          text: 'Chào admin, tài khoản của bên mình đã được kích hoạt chưa ạ?',
-          timestamp: '10:00'
-        },
-        {
-          id: 'init-2',
-          partnerName: 'Cầu Lông ProZone',
-          sender: 'admin',
-          text: 'Chào bạn, hồ sơ của bạn đã được kiểm duyệt hợp lệ. Tài khoản ProZone đã chính thức kích hoạt nhé!',
-          timestamp: '10:05'
+        const parsed = JSON.parse(savedUserInfo);
+        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) {
+          window.dispatchEvent(new Event('user-force-logout'));
+          return;
         }
-      ];
-      localStorage.setItem('sportzone_admin_partner_messages', JSON.stringify(initialMessages));
-      setMessages(initialMessages);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.id) {
+            setPartnerId(String(data.id));
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi lấy ID đối tác:', err);
+      }
+    };
+    fetchPartnerId();
+  }, []);
+
+  // 2. Đồng bộ tin nhắn từ Backend API
+  const loadMessages = async () => {
+    if (!partnerId) return;
+    const token = localStorage.getItem('user_token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:3000/chats/admin-partner/${partnerId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) {
+        window.dispatchEvent(new Event('user-force-logout'));
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = data.map((m: any) => ({
+          id: m.id,
+          partnerName: activePartnerName,
+          sender: m.senderType.toLowerCase() as 'admin' | 'partner',
+          text: m.text,
+          timestamp: m.timestamp
+        }));
+
+        setMessages(mapped);
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải tin nhắn:', err);
     }
   };
 
   useEffect(() => {
-    loadMessages();
+    if (!partnerId) return;
 
-    // Listen to changes in other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sportzone_admin_partner_messages') {
-        loadMessages();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
+    loadMessages();
 
     // Polling every 1.5 seconds for real-time interaction
     const interval = setInterval(loadMessages, 1500);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [partnerId]);
 
   // Tự động cuộn xuống cuối
   const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
@@ -87,26 +110,54 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
     scrollToBottom('smooth');
   }, [messages]);
 
-  // Lọc tin nhắn của đối tác hiện tại
-  const activeChatMessages = messages.filter(m => m.partnerName === activePartnerName);
-
   // Gửi tin nhắn
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() || !partnerId) return;
 
-    const newMsg: Message = {
-      id: String(Date.now()),
-      partnerName: activePartnerName,
-      sender: 'partner',
-      text: inputVal.trim(),
-      timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-    };
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      toast.error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
 
-    const updated = [...messages, newMsg];
-    localStorage.setItem('sportzone_admin_partner_messages', JSON.stringify(updated));
-    setMessages(updated);
+    const textToSend = inputVal.trim();
     setInputVal('');
+
+    try {
+      const res = await fetch(`http://localhost:3000/chats/admin-partner/${partnerId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: textToSend })
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new Event('user-force-logout'));
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const newMsg: Message = {
+          id: data.id,
+          partnerName: activePartnerName,
+          sender: 'partner',
+          text: data.text,
+          timestamp: data.timestamp
+        };
+        setMessages((prev) => [...prev, newMsg]);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.message || 'Gửi tin nhắn thất bại.';
+        toast.error(Array.isArray(errorMsg) ? errorMsg[0] : errorMsg);
+      }
+    } catch (err) {
+      console.error('Lỗi khi gửi tin nhắn:', err);
+      toast.error('Không thể kết nối đến máy chủ.');
+    }
   };
 
   // Trợ lý phản hồi nhanh của Đối tác
@@ -138,13 +189,13 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
 
       {/* Feed tin nhắn */}
       <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-6 space-y-4">
-        {activeChatMessages.length === 0 ? (
+        {messages.length === 0 ? (
           <div className="flex flex-col justify-center items-center text-slate-500 h-full space-y-2">
             <MessageCircleCode className="w-12 h-12 stroke-[1.2] text-slate-700 animate-pulse" />
             <p className="text-xs">Chưa có tin nhắn nào với Ban quản trị. Hãy gửi lời chào hỗ trợ đầu tiên!</p>
           </div>
         ) : (
-          activeChatMessages.map((m, idx) => {
+          messages.map((m, idx) => {
             const isOwn = m.sender === 'partner';
             return (
               <div
@@ -194,7 +245,7 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
       >
         <input
           type="text"
-          placeholder="Nhập câu hỏi để gửi cho Ban quản trị..."
+          placeholder="Nhập nội dung tin nhắn gửi tới Admin..."
           value={inputVal}
           onChange={(e) => setInputVal(e.target.value)}
           className="flex-grow bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-3 text-xs text-white outline-none transition"
@@ -205,8 +256,8 @@ export const PartnerAdminChat: React.FC<PartnerAdminChatProps> = ({ partnerName 
           disabled={!inputVal.trim()}
           className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border-0 cursor-pointer transition ${
             inputVal.trim()
-              ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-md shadow-amber-500/10'
-              : 'bg-slate-900 text-slate-655 cursor-not-allowed'
+              ? 'bg-amber-500 text-white hover:bg-amber-400 active:scale-95 shadow-md shadow-amber-500/10'
+              : 'bg-slate-900 text-slate-650 cursor-not-allowed'
           }`}
         >
           <Send className="w-4.5 h-4.5" />

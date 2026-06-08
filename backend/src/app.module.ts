@@ -12,6 +12,7 @@ import { ServicesModule } from './services/services.module';
 import { ProductsModule } from './products/products.module';
 import { PublicModule } from './public/public.module';
 import { MatchmakingModule } from './matchmaking/matchmaking.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MatchmakingModule } from './matchmaking/matchmaking.module';
     ProductsModule,
     PublicModule,
     MatchmakingModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
