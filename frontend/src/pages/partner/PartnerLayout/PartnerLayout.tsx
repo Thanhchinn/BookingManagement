@@ -114,6 +114,74 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
   // Trạng thái mở Sidebar di động (Off-canvas Drawer)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Cấu hình tài khoản ngân hàng đối tác
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const [bankName, setBankName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankAccountName, setBankAccountName] = useState('');
+
+  useEffect(() => {
+    const fetchPartnerProfile = async () => {
+      const savedUserInfo = localStorage.getItem('user_info');
+      if (!savedUserInfo) return;
+      let parsed: any;
+      try {
+        parsed = JSON.parse(savedUserInfo);
+      } catch {
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPartnerProfile(data);
+          setBankName(data.bankName || '');
+          setBankAccountNumber(data.bankAccountNumber || '');
+          setBankAccountName(data.bankAccountName || '');
+        }
+      } catch (err) {
+        console.error('Lỗi tải thông tin đối tác:', err);
+      }
+    };
+    fetchPartnerProfile();
+  }, []);
+
+  const handleSaveBankDetails = async () => {
+    if (!partnerProfile) {
+      toast.error('Không tìm thấy thông tin đối tác.');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:3000/partners/${partnerProfile.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessName: partnerProfile.businessName,
+          taxCode: partnerProfile.taxCode,
+          businessLicenseUrl: partnerProfile.businessLicenseUrl,
+          commissionRate: partnerProfile.commissionRate,
+          commissionType: partnerProfile.commissionType,
+          commissionFixedAmount: partnerProfile.commissionFixedAmount,
+          bankName,
+          bankAccountNumber,
+          bankAccountName,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Không thể lưu thông tin tài khoản ngân hàng.');
+      }
+
+      const updated = await res.json();
+      setPartnerProfile(updated);
+      toast.success('Đã cập nhật thông tin tài khoản ngân hàng thụ hưởng thành công!');
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi cập nhật thông tin ngân hàng.');
+    }
+  };
+
   // Khai báo menu điều hướng Sidebar của Đối tác
   const menuItems = [
     { id: 'dashboard', label: 'Tổng Quan', icon: LayoutDashboard },
@@ -185,54 +253,107 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
               </div>
             </div>
 
-            {/* Bảng lịch sử giao dịch */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-extrabold text-white m-0">Lịch Sử Giao Dịch Đối Soát</h4>
-              <div className="admin-table-container">
-                <div className="admin-table-scroll">
-                  <table className="admin-table">
-                    <thead>
-                      <tr className="admin-table-thead">
-                        <th className="admin-table-th">Mã Lệnh</th>
-                        <th className="admin-table-th">Ngân hàng thụ hưởng</th>
-                        <th className="admin-table-th">Thời gian rút</th>
-                        <th className="admin-table-th text-right">Số tiền rút</th>
-                        <th className="admin-table-th w-36 text-center">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="admin-table-tbody">
-                      <tr className="admin-table-tr">
-                        <td className="admin-table-td font-mono font-bold text-slate-400">WD90872</td>
-                        <td className="admin-table-td">
-                          <div>
-                            <p className="admin-table-td-bold m-0">Techcombank</p>
-                            <span className="text-[9px] text-slate-500 block">1903456789012 (NGUYEN VAN HUNG)</span>
-                          </div>
-                        </td>
-                        <td className="admin-table-td text-slate-400">2026-05-25 10:15</td>
-                        <td className="admin-table-td text-right font-black text-white font-mono">-15.000.000đ</td>
-                        <td className="admin-table-td text-center">
-                          <span className="admin-table-badge admin-table-badge-emerald">Thành công</span>
-                        </td>
-                      </tr>
-                      <tr className="admin-table-tr">
-                        <td className="admin-table-td font-mono font-bold text-slate-400">WD90543</td>
-                        <td className="admin-table-td">
-                          <div>
-                            <p className="admin-table-td-bold m-0">Techcombank</p>
-                            <span className="text-[9px] text-slate-500 block">1903456789012 (NGUYEN VAN HUNG)</span>
-                          </div>
-                        </td>
-                        <td className="admin-table-td text-slate-400">2026-05-10 14:30</td>
-                        <td className="admin-table-td text-right font-black text-white font-mono">-20.000.000đ</td>
-                        <td className="admin-table-td text-center">
-                          <span className="admin-table-badge admin-table-badge-emerald">Thành công</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+            {/* Hàng bên dưới: Cấu hình ngân hàng & Lịch sử đối soát */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Cài đặt thông tin ngân hàng nhận tiền chuyển khoản */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 h-fit">
+                <span className="text-xs font-black text-white uppercase block tracking-wider">Cấu Hình Tài Khoản Nhận Chuyển Khoản</span>
+                <p className="text-[10px] text-slate-400 m-0">Cung cấp số tài khoản và thông tin ngân hàng để khách hàng quét mã VietQR chuyển khoản thanh toán khi đặt sân.</p>
+                
+                <div className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-extrabold uppercase block mb-1">Tên Ngân Hàng</label>
+                    <input
+                      type="text"
+                      placeholder="VD: Vietcombank, MB Bank, Techcombank..."
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-850 focus:border-amber-500/50 rounded-xl px-3.5 py-2 text-white outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-extrabold uppercase block mb-1">Số Tài Khoản</label>
+                    <input
+                      type="text"
+                      placeholder="Nhập số tài khoản ngân hàng..."
+                      value={bankAccountNumber}
+                      onChange={(e) => setBankAccountNumber(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-850 focus:border-amber-500/50 rounded-xl px-3.5 py-2 text-white outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-extrabold uppercase block mb-1">Tên Chủ Tài Khoản</label>
+                    <input
+                      type="text"
+                      placeholder="VD: NGUYEN VAN HUNG (viết hoa không dấu)..."
+                      value={bankAccountName}
+                      onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+                      className="w-full bg-slate-950 border border-slate-850 focus:border-amber-500/50 rounded-xl px-3.5 py-2 text-white outline-none transition"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSaveBankDetails}
+                    className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-xs font-black text-white border-0 rounded-xl transition duration-150 cursor-pointer shadow-lg shadow-amber-500/10"
+                  >
+                    Lưu Cấu Hình Ngân Hàng
+                  </button>
                 </div>
               </div>
+
+              {/* Bảng lịch sử giao dịch */}
+              <div className="lg:col-span-2 space-y-4">
+                <h4 className="text-sm font-extrabold text-white m-0 uppercase tracking-wider">Lịch Sử Giao Dịch Đối Soát</h4>
+                <div className="admin-table-container">
+                  <div className="admin-table-scroll">
+                    <table className="admin-table">
+                      <thead>
+                        <tr className="admin-table-thead">
+                          <th className="admin-table-th">Mã Lệnh</th>
+                          <th className="admin-table-th">Ngân hàng thụ hưởng</th>
+                          <th className="admin-table-th">Thời gian rút</th>
+                          <th className="admin-table-th text-right">Số tiền rút</th>
+                          <th className="admin-table-th w-36 text-center">Trạng thái</th>
+                        </tr>
+                      </thead>
+                      <tbody className="admin-table-tbody">
+                        <tr className="admin-table-tr">
+                          <td className="admin-table-td font-mono font-bold text-slate-400">WD90872</td>
+                          <td className="admin-table-td">
+                            <div>
+                              <p className="admin-table-td-bold m-0">{bankName || 'Techcombank'}</p>
+                              <span className="text-[9px] text-slate-500 block">{bankAccountNumber || '1903456789012'} ({bankAccountName || 'NGUYEN VAN HUNG'})</span>
+                            </div>
+                          </td>
+                          <td className="admin-table-td text-slate-400">2026-05-25 10:15</td>
+                          <td className="admin-table-td text-right font-black text-white font-mono">-15.000.000đ</td>
+                          <td className="admin-table-td text-center">
+                            <span className="admin-table-badge admin-table-badge-emerald">Thành công</span>
+                          </td>
+                        </tr>
+                        <tr className="admin-table-tr">
+                          <td className="admin-table-td font-mono font-bold text-slate-400">WD90543</td>
+                          <td className="admin-table-td">
+                            <div>
+                              <p className="admin-table-td-bold m-0">{bankName || 'Techcombank'}</p>
+                              <span className="text-[9px] text-slate-500 block">{bankAccountNumber || '1903456789012'} ({bankAccountName || 'NGUYEN VAN HUNG'})</span>
+                            </div>
+                          </td>
+                          <td className="admin-table-td text-slate-400">2026-05-10 14:30</td>
+                          <td className="admin-table-td text-right font-black text-white font-mono">-20.000.000đ</td>
+                          <td className="admin-table-td text-center">
+                            <span className="admin-table-badge admin-table-badge-emerald">Thành công</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Search, Edit3, Trash2, MapPin, Phone, ShoppingBag } from 'lucide-react';
+import { Trophy, Plus, Edit3, Trash2, MapPin, Phone, ShoppingBag } from 'lucide-react';
 import { LocationForm } from './LocationForm';
 import { ProductManagementPage } from './ProductManagementPage';
 import { toast } from 'sonner';
+import { PartnerFilterBar } from '../components/PartnerFilterBar';
 
 interface CourtItem {
   id: string;
@@ -217,17 +218,12 @@ export const FieldManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Tìm kiếm */}
-      <div className="sz-panel p-4 flex items-center gap-3 focus-within:border-amber-500/50">
-        <Search className="w-4.5 h-4.5 text-slate-500 shrink-0" />
-        <input 
-          type="text" 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Tìm nhanh theo tên cơ sở, địa chỉ, số điện thoại..." 
-          className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none placeholder-slate-700 w-full"
-        />
-      </div>
+      {/* Tìm kiếm dùng chung */}
+      <PartnerFilterBar
+        mode="locations"
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* Danh sách các cơ sở dạng Cards Master-Detail */}
       {isLoading ? (

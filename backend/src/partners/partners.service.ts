@@ -128,6 +128,9 @@ export class PartnersService {
         commissionRate: data.commissionRate,
         commissionType: data.commissionType,
         commissionFixedAmount: data.commissionFixedAmount,
+        bankName: data.bankName,
+        bankAccountNumber: data.bankAccountNumber,
+        bankAccountName: data.bankAccountName,
       },
     });
   }

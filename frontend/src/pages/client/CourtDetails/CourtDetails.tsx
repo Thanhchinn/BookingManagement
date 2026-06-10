@@ -40,6 +40,27 @@ interface ProductItem {
 
 const API = 'http://localhost:3000';
 
+const getBankId = (name: string) => {
+  if (!name) return 'VCB';
+  const lower = name.toLowerCase();
+  if (lower.includes('vietcom')) return 'VCB';
+  if (lower.includes('techcom')) return 'TCB';
+  if (lower.includes('vietin')) return 'CTG';
+  if (lower.includes('bidv')) return 'BIDV';
+  if (lower.includes('mb') || lower.includes('quan doi')) return 'MB';
+  if (lower.includes('acb')) return 'ACB';
+  if (lower.includes('sacom')) return 'STB';
+  if (lower.includes('agri')) return 'VARB';
+  if (lower.includes('tp')) return 'TPB';
+  if (lower.includes('vp')) return 'VPB';
+  if (lower.includes('hd')) return 'HDB';
+  if (lower.includes('shb')) return 'SHB';
+  if (lower.includes('scb')) return 'SCB';
+  if (lower.includes('seabank')) return 'SEAB';
+  if (lower.includes('vib')) return 'VIB';
+  return name.replace(/\s+/g, '');
+};
+
 // Map giờ bắt đầu → period
 const getPeriod = (h: number): 'morning' | 'afternoon' | 'evening' =>
   h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
@@ -51,6 +72,17 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
   onLogout,
   onSetBookingSuccessData
 }) => {
+  const userPhone = (() => {
+    const saved = localStorage.getItem('user_info');
+    if (!saved) return '';
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.phone || '';
+    } catch {
+      return '';
+    }
+  })();
+
   // ── Ngày chơi ──
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
@@ -139,7 +171,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
   const [promoError, setPromoError] = useState<string>('');
 
   // 6. CỔNG THANH TOÁN
-  const [paymentMethod, setPaymentMethod] = useState<'VNPAY' | 'MOMO' | 'CASH'>('VNPAY');
+  const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'CASH'>('BANK_TRANSFER');
+  const [paymentOption, setPaymentOption] = useState<'FULL' | 'PARTIAL'>('FULL');
 
   const activeCourt = courts.find((c: any) => c.id === selectedCourtId) || courts[0];
   const BASE_PRICE = activeCourt?.basePricePerHour || 0;
@@ -195,7 +228,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
   };
 
   // Thanh toán xác nhận đặt sân
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!userName) {
       toast.warning('Vui lòng đăng nhập trước khi đặt lịch', {
         description: 'Bạn sẽ được chuyển sang màn hình đăng nhập để tiếp tục.',
@@ -208,31 +241,76 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
       return;
     }
 
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      toast.error('Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.');
+      onNavigate?.('auth', 'login');
+      return;
+    }
+
     const chosenSlot = slots.find(s => s.id === selectedSlotId);
-    const successData = {
-      bookingCode: 'BKG-' + Math.floor(Math.random() * 900000 + 100000),
-      courtName: `${location?.name || 'Cơ sở'} - ${activeCourt?.name || ''}`,
-      sport: activeCourt?.category || 'Thể thao',
-      location: location ? `${location.address}, ${location.district}, ${location.city}` : '',
-      bookingDate: selectedDate,
-      startTime: chosenSlot?.timeRange.split(' ')[0] || '18:00',
-      endTime: chosenSlot?.timeRange.split(' ')[2] || '20:00',
-      paymentMethod: paymentMethod,
-      finalPrice: finalPrice,
-      products: products.filter(p => p.qty > 0).map(p => ({ name: p.name, qty: p.qty, price: p.price }))
-    };
-
-    if (onSetBookingSuccessData) {
-      onSetBookingSuccessData(successData);
-    }
     
-    // Nếu chọn MoMo/VNPAY giả lập chuyển cổng thanh toán
-    if (paymentMethod === 'MOMO' || paymentMethod === 'VNPAY') {
-      toast.loading(`Đang kết nối cổng thanh toán an toàn ${paymentMethod}...`);
-    }
+    try {
+      toast.loading('Đang khởi tạo đơn đặt sân...', { id: 'booking-loading' });
 
-    // Điều hướng sang trang thành công
-    onNavigate?.('booking-success');
+      const payload = {
+        sportsPitchId: activeCourt?.id?.toString(),
+        bookingDate: selectedDate,
+        slotId: selectedSlotId?.toString(),
+        paymentMethod: paymentMethod,
+        paymentOption: paymentMethod === 'CASH' ? 'CASH' : paymentOption,
+        products: products
+          .filter(p => p.qty > 0)
+          .map(p => ({ productId: p.id.toString(), quantity: p.qty })),
+        promoCode: appliedPromo ? appliedPromo.code : undefined,
+      };
+
+      const res = await fetch(`${API}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401) {
+        toast.dismiss('booking-loading');
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Có lỗi xảy ra khi đặt sân.');
+      }
+
+      const booking = await res.json();
+      toast.dismiss('booking-loading');
+      toast.success('Đặt sân thành công!');
+
+      const successData = {
+        bookingCode: booking.bookingCode,
+        courtName: `${location?.name || 'Cơ sở'} - ${activeCourt?.name || ''}`,
+        sport: activeCourt?.category || 'Thể thao',
+        location: location ? `${location.address}, ${location.district}, ${location.city}` : '',
+        bookingDate: selectedDate,
+        startTime: chosenSlot?.timeRange.split(' ')[0] || '18:00',
+        endTime: chosenSlot?.timeRange.split(' ')[2] || '20:00',
+        paymentMethod: paymentMethod,
+        finalPrice: finalPrice,
+        products: products.filter(p => p.qty > 0).map(p => ({ name: p.name, qty: p.qty, price: p.price }))
+      };
+
+      if (onSetBookingSuccessData) {
+        onSetBookingSuccessData(successData);
+      }
+
+      onNavigate?.('booking-success');
+    } catch (err: any) {
+      toast.dismiss('booking-loading');
+      toast.error(err.message || 'Lỗi đặt sân.');
+    }
   };
 
   const handleDirectMessage = async () => {
@@ -861,21 +939,55 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       <span className="font-mono text-white font-semibold">{vat.toLocaleString()}đ</span>
                     </div>
                     
-                    <div className="border-t border-dashed border-slate-800 pt-3 flex justify-between items-baseline">
-                      <span className="font-bold text-white text-xs uppercase tracking-wider">Tổng tiền phải trả:</span>
-                      <span className="text-2xl font-black text-amber-400 font-mono">
-                        {finalPrice.toLocaleString()}đ
-                      </span>
+                    <div className="border-t border-dashed border-slate-800 pt-3 space-y-1">
+                      {paymentMethod !== 'CASH' && paymentMethod !== 'BANK_TRANSFER' && paymentOption === 'PARTIAL' && (
+                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
+                          <span>Còn lại (Trả tại sân):</span>
+                          <span className="font-mono text-slate-300 font-semibold">{Math.round(finalPrice * 0.7).toLocaleString()}đ</span>
+                        </div>
+                      )}
+                      {paymentMethod === 'BANK_TRANSFER' && paymentOption === 'PARTIAL' && (
+                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
+                          <span>Còn lại (Trả tại sân):</span>
+                          <span className="font-mono text-slate-300 font-semibold">{Math.round(finalPrice * 0.7).toLocaleString()}đ</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-baseline">
+                        <span className="font-bold text-white text-xs uppercase tracking-wider">Tổng tiền hóa đơn:</span>
+                        <span className="text-lg font-black text-slate-200 font-mono">
+                          {finalPrice.toLocaleString()}đ
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-baseline pt-1">
+                        <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider">Thanh toán ngay:</span>
+                        <span className="text-xl font-black text-amber-400 font-mono">
+                          {paymentMethod === 'CASH' 
+                            ? '0' 
+                            : paymentOption === 'PARTIAL' 
+                              ? Math.round(finalPrice * 0.3).toLocaleString() 
+                              : finalPrice.toLocaleString()
+                          }đ
+                        </span>
+                      </div>
+
+                      {paymentMethod === 'CASH' && (
+                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
+                          <span>Số tiền trả tại sân:</span>
+                          <span className="font-mono text-slate-300 font-semibold">{finalPrice.toLocaleString()}đ</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Cổng thanh toán */}
+                  {/* Phương thức thanh toán */}
                   <div className="space-y-2 border-t border-slate-800/80 pt-4 text-left">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">4. Cổng thanh toán liên kết</span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['VNPAY', 'MOMO', 'CASH'] as const).map(method => (
+                    <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">4. Phương thức thanh toán</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['BANK_TRANSFER', 'CASH'] as const).map(method => (
                         <button
                           key={method}
+                          type="button"
                           onClick={() => setPaymentMethod(method)}
                           className={`py-2.5 text-[9px] font-extrabold rounded-xl border transition cursor-pointer text-center ${
                             paymentMethod === method
@@ -883,11 +995,84 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                               : 'bg-slate-955 border-slate-855 text-slate-500 hover:text-slate-350'
                           }`}
                         >
-                          {method === 'VNPAY' ? 'VNPAY' : method === 'MOMO' ? 'Ví MoMo' : 'Tại sân'}
+                          {method === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Lựa chọn thanh toán (nếu chọn cổng trực tuyến hoặc chuyển khoản) */}
+                  {paymentMethod !== 'CASH' && (
+                    <div className="space-y-2 border-t border-slate-800/80 pt-4 text-left">
+                      <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">5. Lựa chọn thanh toán</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['FULL', 'PARTIAL'] as const).map(option => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setPaymentOption(option)}
+                            className={`py-2 text-[9px] font-extrabold rounded-xl border transition cursor-pointer text-center ${
+                              paymentOption === option
+                                ? 'bg-amber-500/10 border-amber-500 text-amber-400 shadow-md shadow-amber-500/5'
+                                : 'bg-slate-955 border-slate-855 text-slate-500 hover:text-slate-350'
+                            }`}
+                          >
+                            {option === 'FULL' ? 'Thanh toán 100%' : 'Thanh toán cọc 30%'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hướng dẫn chuyển khoản VietQR */}
+                  {paymentMethod === 'BANK_TRANSFER' && (
+                    <div className="space-y-3 border-t border-slate-800/80 pt-4 text-left">
+                      <span className="text-amber-500 font-extrabold text-[10px] uppercase tracking-wider block">6. Quét mã VietQR chuyển khoản</span>
+                      {location?.partner?.bankAccountNumber ? (
+                        <div className="bg-slate-905 border border-slate-800/60 rounded-2xl p-4 space-y-4">
+                          <div className="text-xs space-y-2 text-slate-300 font-sans">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Ngân hàng:</span>
+                              <span className="font-extrabold text-white">{location.partner.bankName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Số tài khoản:</span>
+                              <span className="font-extrabold text-white font-mono">{location.partner.bankAccountNumber}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Chủ tài khoản:</span>
+                              <span className="font-extrabold text-white uppercase">{location.partner.bankAccountName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Số tiền chuyển:</span>
+                              <span className="font-extrabold text-amber-400 font-mono">
+                                {(paymentOption === 'PARTIAL' ? Math.round(finalPrice * 0.3) : finalPrice).toLocaleString()}đ
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Nội dung chuyển:</span>
+                              <span className="font-extrabold text-amber-500 font-mono">
+                                DAT SAN {userPhone || 'QUET QR'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-3 rounded-2xl flex flex-col items-center justify-center space-y-2 max-w-[180px] mx-auto shadow-md">
+                            <img
+                              src={`https://img.vietqr.io/image/${getBankId(location.partner.bankName)}-${location.partner.bankAccountNumber}-compact2.png?amount=${paymentOption === 'PARTIAL' ? Math.round(finalPrice * 0.3) : finalPrice}&addInfo=${encodeURIComponent(`DAT SAN ${userPhone || 'QUET QR'}`)}&accountName=${encodeURIComponent(location.partner.bankAccountName)}`}
+                              alt="VietQR code"
+                              className="w-36 h-36 object-contain"
+                            />
+                            <span className="text-[8px] text-slate-800 font-black tracking-wider uppercase">Chuyển khoản an toàn</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3.5 bg-rose-950/20 border border-rose-900/30 rounded-xl text-[10px] text-rose-450 font-semibold leading-relaxed">
+                          ⚠️ Đối tác này chưa cập nhật thông tin tài khoản ngân hàng để nhận chuyển khoản. Vui lòng chọn phương thức khác.
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Button checkout */}
                   <div className="pt-2">

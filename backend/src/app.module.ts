@@ -13,6 +13,7 @@ import { ProductsModule } from './products/products.module';
 import { PublicModule } from './public/public.module';
 import { MatchmakingModule } from './matchmaking/matchmaking.module';
 import { ChatModule } from './chat/chat.module';
+import { BookingsModule } from './bookings/bookings.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ChatModule } from './chat/chat.module';
     PublicModule,
     MatchmakingModule,
     ChatModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

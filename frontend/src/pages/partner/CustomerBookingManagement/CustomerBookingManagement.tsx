@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { CalendarRange, Search, Check, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CalendarRange, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { PartnerFilterBar } from '../components/PartnerFilterBar';
 
 interface BookingItem {
   id: string;
@@ -12,34 +13,153 @@ interface BookingItem {
   timeSlot: string;
   totalPrice: number;
   status: 'pending' | 'approved' | 'cancelled';
+  paymentMethod?: string;
+  paymentStatus?: string;
 }
 
 export const CustomerBookingManagement: React.FC = () => {
-  // Danh sách lịch hẹn khách hàng đặt tại cụm sân này
-  const [bookings, setBookings] = useState<BookingItem[]>([
-    { id: 'BK001', customerName: 'Nguyễn Văn Hải', customerPhone: '0909111222', fieldName: 'Sân Cầu Lông Pro A1', sportType: 'Cầu lông', date: '2026-05-30', timeSlot: '17:00 - 19:00', totalPrice: 160000, status: 'approved' },
-    { id: 'BK002', customerName: 'Phạm Minh Quân', customerPhone: '0912333444', fieldName: 'Sân Bóng Đá 5 Người B1', sportType: 'Bóng đá', date: '2026-05-30', timeSlot: '18:00 - 20:00', totalPrice: 500000, status: 'pending' },
-    { id: 'BK003', customerName: 'Trần Hoàng Long', customerPhone: '0977888999', fieldName: 'Sân Cầu Lông Pro A2', sportType: 'Cầu lông', date: '2026-05-31', timeSlot: '08:00 - 10:00', totalPrice: 160000, status: 'pending' },
-    { id: 'BK004', customerName: 'Vũ Thị Hạnh', customerPhone: '0966444555', fieldName: 'Sân Cầu Lông Pro A3', sportType: 'Cầu lông', date: '2026-05-29', timeSlot: '19:00 - 21:00', totalPrice: 160000, status: 'cancelled' },
-  ]);
+  // Danh sách lịch hẹn khách hàng đặt tải từ backend
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Tải danh sách đơn đặt từ backend
+  useEffect(() => {
+    const fetchPartnerBookings = async () => {
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/bookings/partner-bookings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.dispatchEvent(new CustomEvent('user-force-logout'));
+            return;
+          }
+          throw new Error('Không thể tải danh sách đặt sân.');
+        }
+        const data = await res.json();
+        
+        const mapped: BookingItem[] = data.map((b: any) => {
+          let uiStatus: 'pending' | 'approved' | 'cancelled' = 'pending';
+          if (b.status === 'CONFIRMED' || b.status === 'COMPLETED') {
+            uiStatus = 'approved';
+          } else if (b.status === 'CANCELLED') {
+            uiStatus = 'cancelled';
+          }
+
+          return {
+            id: b.id,
+            customerName: b.user?.fullName || 'Khách hàng',
+            customerPhone: b.user?.phone || 'N/A',
+            fieldName: b.sportsPitch?.name || 'Sân đấu',
+            sportType: b.sportsPitch?.category === 'badminton' ? 'Cầu lông' : (b.sportsPitch?.category === 'football' ? 'Bóng đá' : 'Tennis'),
+            date: b.bookingDate,
+            timeSlot: `${b.startTime} - ${b.endTime}`,
+            totalPrice: b.finalPrice,
+            status: uiStatus,
+            paymentMethod: b.paymentMethod,
+            paymentStatus: b.paymentStatus,
+          };
+        });
+
+        setBookings(mapped);
+      } catch (err: any) {
+        console.error('Lỗi tải dữ liệu đặt sân:', err);
+      }
+    };
+
+    fetchPartnerBookings();
+  }, [refreshTrigger]);
 
   // Tìm kiếm & Lọc
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'cancelled'>('all');
 
   // Xử lý phê duyệt lịch đặt
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
     if (window.confirm('Bạn có chắc muốn PHÊ DUYỆT lịch đặt sân này của khách hàng?')) {
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved' } : b));
-      toast.success('Đã phê duyệt lịch đặt sân');
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: 'CONFIRMED' }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Phê duyệt thất bại.');
+        }
+
+        toast.success('Đã phê duyệt lịch đặt sân');
+        setRefreshTrigger(prev => prev + 1);
+      } catch (err: any) {
+        toast.error(err.message || 'Lỗi phê duyệt.');
+      }
     }
   };
 
   // Xử lý hủy lịch đặt
-  const handleCancel = (id: string) => {
+  const handleCancel = async (id: string) => {
     if (window.confirm('Bạn có chắc muốn HỦY lịch đặt sân này của khách hàng?')) {
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b));
-      toast.info('Đã hủy lịch đặt sân');
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: 'CANCELLED' }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Hủy lịch thất bại.');
+        }
+
+        toast.info('Đã hủy lịch đặt sân');
+        setRefreshTrigger(prev => prev + 1);
+      } catch (err: any) {
+        toast.error(err.message || 'Lỗi khi hủy lịch.');
+      }
+    }
+  };
+
+  // Xác nhận đã nhận chuyển khoản ngân hàng
+  const handleConfirmBankPayment = async (id: string, nextStatus: 'PAID' | 'PARTIALLY_PAID') => {
+    if (window.confirm(`Bạn xác nhận đã nhận đủ tiền chuyển khoản cho đơn đặt sân này (${nextStatus === 'PAID' ? 'Trả hết 100%' : 'Đặt cọc 30%'})?`)) {
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`http://localhost:3000/bookings/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ paymentStatus: nextStatus }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Không thể cập nhật trạng thái thanh toán.');
+        }
+
+        toast.success('Đã xác nhận thanh toán thành công!');
+        setRefreshTrigger(prev => prev + 1);
+      } catch (err: any) {
+        toast.error(err.message || 'Lỗi xác nhận thanh toán.');
+      }
     }
   };
 
@@ -67,32 +187,14 @@ export const CustomerBookingManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Bộ lọc */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sz-panel p-4">
-        <div className="md:col-span-2 flex items-center gap-3 bg-slate-950 border border-slate-850 rounded-lg px-3.5 py-2 w-full focus-within:border-amber-500/50">
-          <Search className="w-4 h-4 text-slate-500 shrink-0" />
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên khách, số điện thoại, tên sân..." 
-            className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none placeholder-slate-700 w-full"
-          />
-        </div>
-        <div className="flex items-center bg-slate-950 border border-slate-850 rounded-lg px-2 py-1 focus-within:border-amber-500/50">
-          <span className="text-[10px] text-slate-500 font-bold uppercase px-2">Trạng thái:</span>
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-transparent border-0 text-xs text-white focus:outline-none cursor-pointer font-bold w-full"
-          >
-            <option value="all">Tất Cả</option>
-            <option value="pending">⏳ Chờ phê duyệt</option>
-            <option value="approved">🟢 Đã phê duyệt</option>
-            <option value="cancelled">🔴 Đã hủy bỏ</option>
-          </select>
-        </div>
-      </div>
+      {/* Bộ lọc dùng chung */}
+      <PartnerFilterBar
+        mode="bookings"
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusValue={statusFilter}
+        onStatusChange={(val) => setStatusFilter(val as any)}
+      />
 
       {/* Bảng đặt lịch */}
       <div className="admin-table-container">
@@ -133,8 +235,21 @@ export const CustomerBookingManagement: React.FC = () => {
                         <p className="m-0 text-[10px] text-slate-500">{b.date}</p>
                       </div>
                     </td>
-                    <td className="admin-table-td text-right font-black text-white font-mono">
-                      {b.totalPrice.toLocaleString('vi-VN')}đ
+                    <td className="admin-table-td text-right">
+                      <div className="font-mono text-right">
+                        <p className="m-0 font-black text-white">{b.totalPrice.toLocaleString('vi-VN')}đ</p>
+                        <span className={`text-[9px] font-bold block mt-0.5 ${
+                          b.paymentStatus === 'PAID' ? 'text-emerald-400' :
+                          b.paymentStatus === 'PARTIALLY_PAID' ? 'text-blue-400' :
+                          b.paymentStatus === 'REFUNDED' ? 'text-slate-400' : 'text-amber-500'
+                        }`}>
+                          {b.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
+                           b.paymentMethod === 'CASH' ? 'Tiền mặt' : b.paymentMethod || ''} 
+                          {b.paymentStatus === 'PAID' ? ' (Đã thu)' :
+                           b.paymentStatus === 'PARTIALLY_PAID' ? ' (Đã cọc)' :
+                           b.paymentStatus === 'REFUNDED' ? ' (Đã hoàn)' : ' (Chưa thu)'}
+                        </span>
+                      </div>
                     </td>
                     <td className="admin-table-td text-center">
                       {b.status === 'approved' && (
@@ -178,6 +293,15 @@ export const CustomerBookingManagement: React.FC = () => {
                         )}
                         {b.status === 'cancelled' && (
                           <span className="text-[10px] text-slate-600 font-bold">Lịch đã hủy</span>
+                        )}
+                        {b.paymentMethod === 'BANK_TRANSFER' && b.paymentStatus !== 'PAID' && b.status !== 'cancelled' && (
+                          <button
+                            onClick={() => handleConfirmBankPayment(b.id, 'PAID')}
+                            className="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500 hover:text-slate-950 text-[9px] font-bold text-emerald-400 rounded border border-emerald-500/25 transition cursor-pointer"
+                            title="Xác nhận đã nhận đủ tiền chuyển khoản"
+                          >
+                            Xác nhận CK
+                          </button>
                         )}
                       </div>
                     </td>

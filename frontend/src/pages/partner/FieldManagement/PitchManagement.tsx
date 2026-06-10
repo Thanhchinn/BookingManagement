@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Search, Edit3, Trash2, MapPin, Settings, Save, ArrowLeft, HelpCircle, X, Filter } from 'lucide-react';
+import { Trophy, Plus, Edit3, Trash2, MapPin, Settings, Save, ArrowLeft, HelpCircle, X, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { PartnerFilterBar } from '../components/PartnerFilterBar';
 
 interface LocationItem {
   id: string;
@@ -688,50 +689,18 @@ export const PitchManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Tìm kiếm và Bộ lọc */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Tìm kiếm text */}
-        <div className="md:col-span-6 sz-panel p-4 flex items-center gap-3 focus-within:border-amber-500/50">
-          <Search className="w-4.5 h-4.5 text-slate-500 shrink-0" />
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên sân hoặc tên cơ sở..." 
-            className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none placeholder-slate-700 w-full"
-          />
-        </div>
-
-        {/* Lọc cơ sở */}
-        <div className="md:col-span-3 sz-panel px-3 py-1 flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-500 shrink-0" />
-          <select
-            value={selectedLocationFilter}
-            onChange={(e) => setSelectedLocationFilter(e.target.value)}
-            className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none w-full h-full cursor-pointer py-3"
-          >
-            <option value="all">Tất cả cơ sở</option>
-            {locations.map(loc => (
-              <option key={loc.id} value={loc.id.toString()}>{loc.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Lọc bộ môn */}
-        <div className="md:col-span-3 sz-panel px-3 py-1 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-slate-500 shrink-0" />
-          <select
-            value={selectedCategoryFilter}
-            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-            className="bg-transparent border-0 text-xs text-slate-200 focus:outline-none w-full h-full cursor-pointer py-3"
-          >
-            <option value="all">Tất cả bộ môn</option>
-            {Array.from(new Set(pitches.map(p => p.category))).map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* Bộ lọc dùng chung */}
+      <PartnerFilterBar
+        mode="pitches"
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        locationValue={selectedLocationFilter}
+        onLocationChange={setSelectedLocationFilter}
+        locationsList={locations}
+        categoryValue={selectedCategoryFilter}
+        onCategoryChange={setSelectedCategoryFilter}
+        categoriesList={Array.from(new Set(pitches.map(p => p.category)))}
+      />
 
       {/* Grid Danh sách các sân */}
       {isLoading ? (

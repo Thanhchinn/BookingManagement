@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, MapPin, Trophy } from 'lucide-react';
-import { CATEGORIES } from './CategoryList';
+import { useCategories } from '../../../hooks/useCategories';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -21,6 +21,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onCategoryChange,
   onSearchSubmit,
 }) => {
+  const { categories } = useCategories();
+
   return (
     <div className="w-full max-w-5xl">
       <div className="bg-white/95 backdrop-blur-xl shadow-2xl rounded-lg p-2 flex flex-col md:flex-row items-stretch md:items-center gap-1 border border-white/40 transition-all duration-300 ring-1 ring-slate-900/5">
@@ -63,7 +65,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         {/* Vạch chia ngăn dọc */}
         <div className="hidden md:block w-px h-7 bg-slate-200 shrink-0"></div>
 
-        {/* 3. Lọc theo danh mục */}
+        {/* 3. Lọc theo danh mục (từ DB) */}
         <div className="flex items-center gap-2.5 px-4 py-2.5 w-full md:w-44 shrink-0 relative rounded-lg hover:bg-slate-50">
           <Trophy className="w-4.5 h-4.5 text-slate-400 shrink-0" />
           <select
@@ -72,14 +74,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             className="w-full bg-transparent text-slate-700 focus:outline-none text-sm font-semibold appearance-none cursor-pointer border-none focus:ring-0 p-0 pr-6"
           >
             <option value="all" className="text-slate-800">Tất cả bộ môn</option>
-            {CATEGORIES.map(category => {
-              if (category.id === 'all') return null;
-              return (
-                <option key={category.id} value={category.id} className="text-slate-800">
-                  {category.name}
-                </option>
-              );
-            })}
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.slug} className="text-slate-800">
+                {cat.name}
+              </option>
+            ))}
           </select>
           <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-slate-400">
             <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

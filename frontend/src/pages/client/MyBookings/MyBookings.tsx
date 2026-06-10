@@ -25,76 +25,81 @@ interface MyBookingsProps {
 }
 
 export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, onLogout }) => {
-  // Mock State để có thể tương tác đầy đủ trên giao diện
-  const [bookings, setBookings] = useState<BookingItem[]>([
-    {
-      id: '1',
-      bookingCode: 'BKG-COURT501',
-      courtName: 'Sân Cầu Lông Trong Nhà ProZone - Sân 1',
-      sport: 'Cầu Lông',
-      location: 'Số 12 Chu Văn An, Bình Thạnh, TP. HCM',
-      bookingDate: '2026-06-02',
-      startTime: '18:00',
-      endTime: '20:00',
-      price: 320000,
-      status: 'CONFIRMED',
-      paymentStatus: 'FULLY_PAID',
-      products: [
-        { name: 'Nước uống Revive', qty: 2, price: 15000 },
-        { name: 'Thuê vợt Pro Kennex', qty: 2, price: 30000 }
-      ]
-    },
-    {
-      id: '2',
-      bookingCode: 'BKG-STADIUM802',
-      courtName: 'Sân Bóng Đá Cỏ Nhân Tạo Stadium A - Sân 5',
-      sport: 'Bóng Đá',
-      location: 'Đường Song Hành, An Phú, Quận 2, TP. HCM',
-      bookingDate: '2026-05-30',
-      startTime: '19:00',
-      endTime: '20:30',
-      price: 550000,
-      status: 'COMPLETED',
-      paymentStatus: 'FULLY_PAID',
-      products: [
-        { name: 'Nước uống Sting', qty: 5, price: 15000 }
-      ],
-      reviewed: false,
-      disputed: false
-    },
-    {
-      id: '3',
-      bookingCode: 'BKG-TENNIS991',
-      courtName: 'Sân Tennis Đất Nện Đạt Chuẩn ATP - Sân VIP',
-      sport: 'Tennis',
-      location: 'Khu Phú Mỹ Hưng, Quận 7, TP. HCM',
-      bookingDate: '2026-06-05',
-      startTime: '08:00',
-      endTime: '10:00',
-      price: 600000,
-      status: 'PENDING',
-      paymentStatus: 'UNPAID',
-      products: []
-    },
-    {
-      id: '4',
-      bookingCode: 'BKG-BADMINTON111',
-      courtName: 'Sân Cầu Lông Trong Nhà ProZone - Sân 3',
-      sport: 'Cầu Lông',
-      location: 'Số 12 Chu Văn An, Bình Thạnh, TP. HCM',
-      bookingDate: '2026-05-15',
-      startTime: '15:00',
-      endTime: '17:00',
-      price: 240000,
-      status: 'CANCELLED',
-      paymentStatus: 'REFUNDED',
-      products: []
-    }
-  ]);
-
+  // Danh sách đơn đặt sân tải từ backend
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'APPLIED'>('ALL');
   const [matchBookings, setMatchBookings] = useState<BookingItem[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Tải danh sách đơn đặt sân của user từ backend
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/bookings/my-bookings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('user_info');
+            onLogout?.();
+            onNavigate?.('auth', 'login');
+            throw new Error('Hết hạn phiên đăng nhập.');
+          }
+          throw new Error('Không thể tải lịch đặt sân.');
+        }
+        const data = await res.json();
+        
+        const mappedBookings: BookingItem[] = data.map((b: any) => {
+          let paymentStatusLabel = 'CHƯA THANH TOÁN';
+          if (b.paymentStatus === 'PAID') {
+            paymentStatusLabel = 'ĐÃ THANH TOÁN';
+          } else if (b.paymentStatus === 'PARTIALLY_PAID') {
+            paymentStatusLabel = 'ĐÃ ĐẶT CỌC 30%';
+          } else if (b.paymentStatus === 'REFUNDED') {
+            paymentStatusLabel = 'ĐÃ HOÀN TIỀN';
+          }
+
+          const courtName = b.sportsPitch 
+            ? `${b.sportsPitch.location?.name || 'Cơ sở'} - ${b.sportsPitch.name}`
+            : 'Sân đấu';
+
+          return {
+            id: b.id,
+            bookingCode: b.bookingCode,
+            courtName,
+            sport: b.sportsPitch?.category === 'badminton' ? 'Cầu Lông' : (b.sportsPitch?.category === 'football' ? 'Bóng Đá' : 'Tennis'),
+            location: b.sportsPitch?.location 
+              ? `${b.sportsPitch.location.address}, ${b.sportsPitch.location.district}, ${b.sportsPitch.location.city}`
+              : '',
+            bookingDate: b.bookingDate,
+            startTime: b.startTime,
+            endTime: b.endTime,
+            price: b.finalPrice,
+            status: b.status,
+            paymentStatus: paymentStatusLabel,
+            products: b.bookingDetails?.map((d: any) => ({
+              name: d.product?.name || 'Sản phẩm',
+              qty: d.quantity,
+              price: d.price
+            })) || [],
+            payments: b.payments || [],
+          };
+        });
+
+        setBookings(mappedBookings);
+      } catch (err: any) {
+        console.error('Lỗi tải dữ liệu đặt sân:', err);
+      }
+    };
+
+    fetchMyBookings();
+  }, [userName, refreshTrigger]);
 
   // Tải danh sách ghép kèo mà user tham gia từ backend
   useEffect(() => {
@@ -185,24 +190,48 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   });
 
   // Hủy đặt sân
-  const handleCancelBooking = () => {
+  const handleCancelBooking = async () => {
     if (!selectedBooking) return;
-    setBookings(prev => prev.map(b => {
-      if (b.id === selectedBooking.id) {
-        return { 
-          ...b, 
-          status: 'CANCELLED', 
-          paymentStatus: b.paymentStatus === 'FULLY_PAID' ? 'REFUNDED' : 'UNPAID'
-        };
+
+    const token = localStorage.getItem('user_token');
+    if (!token) return;
+
+    try {
+      toast.loading('Đang xử lý hủy lịch...', { id: 'cancel-loading' });
+
+      const res = await fetch(`http://localhost:3000/bookings/${selectedBooking.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+
+      if (res.status === 401) {
+        toast.dismiss('cancel-loading');
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+        return;
       }
-      return b;
-    }));
-    setShowCancelModal(false);
-    setSelectedBooking(null);
-    setCancelReason('');
-    toast.success('Đã hủy đơn đặt lịch thành công', {
-      description: 'Tiền cọc hoặc thanh toán trước sẽ được hoàn trả theo quy định.',
-    });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Hủy lịch thất bại.');
+      }
+
+      toast.dismiss('cancel-loading');
+      toast.success('Đã hủy đơn đặt lịch thành công', {
+        description: 'Tiền cọc hoặc thanh toán trước sẽ được hoàn trả theo quy định.',
+      });
+
+      setRefreshTrigger(prev => prev + 1);
+      setShowCancelModal(false);
+      setSelectedBooking(null);
+      setCancelReason('');
+    } catch (err: any) {
+      toast.dismiss('cancel-loading');
+      toast.error(err.message || 'Lỗi khi hủy lịch.');
+    }
   };
 
   // Đăng đánh giá

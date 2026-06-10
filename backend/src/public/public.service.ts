@@ -8,6 +8,14 @@ export function serializePublicLocation(loc: any) {
     id: loc.id.toString(),
     partnerId: loc.partnerId?.toString(),
     partnerUserId: loc.partner?.userId?.toString() || null,
+    partner: loc.partner ? {
+      id: loc.partner.id.toString(),
+      userId: loc.partner.userId.toString(),
+      businessName: loc.partner.businessName,
+      bankName: loc.partner.bankName || null,
+      bankAccountNumber: loc.partner.bankAccountNumber || null,
+      bankAccountName: loc.partner.bankAccountName || null,
+    } : null,
     latitude: loc.latitude ? parseFloat(loc.latitude.toString()) : null,
     longitude: loc.longitude ? parseFloat(loc.longitude.toString()) : null,
     locationAmenities: loc.locationAmenities?.map((la: any) => ({

@@ -10,6 +10,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
+import { useCategories } from '../../../hooks/useCategories';
 interface HomeProps {
   onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
@@ -39,12 +40,7 @@ const getPitchImage = (pitch: any) => {
   return 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=800&auto=format&fit=crop';
 };
 
-// Bảng ánh xạ từ ID Category sang tên Tiếng Việt trong dữ liệu Mock
-const CATEGORY_MAP: Record<string, string> = {
-  'football': 'Bóng Đá',
-  'badminton': 'Cầu Lông',
-  'tennis': 'Tennis'
-};
+
 
 export const Home: React.FC<HomeProps> = ({ 
   onNavigate, 
@@ -63,6 +59,9 @@ export const Home: React.FC<HomeProps> = ({
 
   const [dbPitches, setDbPitches] = useState<any[]>([]);
   const [pitchCategory, setPitchCategory] = useState('all');
+
+  // Lấy danh sách bộ môn từ DB
+  const { categories, getNameBySlug } = useCategories();
 
   // Fetch danh sách sân đấu thực tế từ DB
   useEffect(() => {
@@ -85,12 +84,12 @@ export const Home: React.FC<HomeProps> = ({
 
   // Logic lọc dữ liệu sân hiển thị nhanh ở trang chủ theo Tabs
   const homeFilteredFields = MOCK_FIELDS.filter(court => {
-    const categoryName = CATEGORY_MAP[homeCategory];
+    const categoryName = getNameBySlug(homeCategory);
     return homeCategory === 'all' || court.sport.toLowerCase() === categoryName?.toLowerCase();
   });
 
   const filteredPitches = dbPitches.filter(pitch => {
-    const categoryName = CATEGORY_MAP[pitchCategory];
+    const categoryName = getNameBySlug(pitchCategory);
     return pitchCategory === 'all' || pitch.category.toLowerCase().includes(categoryName?.toLowerCase());
   });
 
@@ -233,19 +232,31 @@ export const Home: React.FC<HomeProps> = ({
           </p>
         </div>
 
-        {/* Categories/Tabs lọc Sân đấu */}
-        <div className="flex justify-center gap-2">
-          {['all', 'football', 'badminton', 'tennis'].map((cat) => (
+        {/* Categories/Tabs lọc Sân đấu (từ DB) */}
+        <div className="flex justify-center gap-2 flex-wrap">
+          {/* Nút Tất cả */}
+          <button
+            onClick={() => setPitchCategory('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+              pitchCategory === 'all'
+                ? 'bg-teal-500/10 border-teal-500 text-teal-300 shadow-md shadow-teal-500/5 font-extrabold'
+                : 'bg-slate-950 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            🏆 Tất cả
+          </button>
+          {/* Các tab từ DB */}
+          {categories.map(cat => (
             <button
-              key={cat}
-              onClick={() => setPitchCategory(cat)}
+              key={cat.id}
+              onClick={() => setPitchCategory(cat.slug)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                pitchCategory === cat
+                pitchCategory === cat.slug
                   ? 'bg-teal-500/10 border-teal-500 text-teal-300 shadow-md shadow-teal-500/5 font-extrabold'
                   : 'bg-slate-950 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              {cat === 'all' ? 'Tất cả' : CATEGORY_MAP[cat] || cat}
+              {cat.icon} {cat.name}
             </button>
           ))}
         </div>

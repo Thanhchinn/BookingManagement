@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Calendar, 
@@ -24,6 +24,7 @@ interface ProductItem {
 
 interface Booking {
   id: string;
+  realId: string;
   userName: string;
   userEmail: string;
   userPhone: string;
@@ -46,132 +47,75 @@ interface Booking {
   cancellationReason?: string;
 }
 
-const INITIAL_BOOKINGS: Booking[] = [
-  {
-    id: 'BKG-908721',
-    userName: 'Nguyễn Minh Hải',
-    userEmail: 'minhhai@gmail.com',
-    userPhone: '0901234567',
-    facilityName: 'Minh Sport Arena',
-    courtName: 'Sân bóng đá 5 người A',
-    sport: 'Bóng Đá',
-    bookingDate: '2026-06-05',
-    startTime: '18:00',
-    endTime: '20:00',
-    basePrice: 600000,
-    discountAmount: 60000,
-    vat: 54000,
-    finalPrice: 594000,
-    commissionAmount: 59400,
-    paymentMethod: 'VNPAY',
-    paymentStatus: 'PAID',
-    transactionId: 'VNP98302183',
-    createdAt: '2026-06-04 10:15:20',
-    products: [
-      { name: 'Nước suối Aquafina', qty: 4, price: 10000 },
-      { name: 'Áo pitch xanh', qty: 5, price: 15000 }
-    ]
-  },
-  {
-    id: 'BKG-871239',
-    userName: 'Lê Hoàng Long',
-    userEmail: 'hoanglong@gmail.com',
-    userPhone: '0934567890',
-    facilityName: 'CLB Cầu Lông ProZone',
-    courtName: 'Sân Số 3',
-    sport: 'Cầu Lông',
-    bookingDate: '2026-06-05',
-    startTime: '19:00',
-    endTime: '21:00',
-    basePrice: 160000,
-    discountAmount: 0,
-    vat: 16000,
-    finalPrice: 176000,
-    commissionAmount: 17600,
-    paymentMethod: 'MOMO',
-    paymentStatus: 'PAID',
-    transactionId: 'MMO82910381',
-    createdAt: '2026-06-04 09:30:11',
-    products: [
-      { name: 'Thuê vợt Proace', qty: 2, price: 20000 }
-    ]
-  },
-  {
-    id: 'BKG-765123',
-    userName: 'Trần Thị Mai',
-    userEmail: 'maitran@gmail.com',
-    userPhone: '0978654321',
-    facilityName: 'Hoàng Gia Sport Center',
-    courtName: 'Sân Tennis B',
-    sport: 'Tennis',
-    bookingDate: '2026-06-06',
-    startTime: '08:00',
-    endTime: '10:00',
-    basePrice: 400000,
-    discountAmount: 50000,
-    vat: 35000,
-    finalPrice: 385000,
-    commissionAmount: 38500,
-    paymentMethod: 'CASH',
-    paymentStatus: 'UNPAID',
-    transactionId: null,
-    createdAt: '2026-06-04 14:20:00',
-    products: []
-  },
-  {
-    id: 'BKG-654321',
-    userName: 'Phạm Văn Nam',
-    userEmail: 'vannam@gmail.com',
-    userPhone: '0912345987',
-    facilityName: 'CLB Sân Sông Hàn',
-    courtName: 'Sân bóng đá 7 người',
-    sport: 'Bóng Đá',
-    bookingDate: '2026-06-04',
-    startTime: '17:00',
-    endTime: '19:00',
-    basePrice: 800000,
-    discountAmount: 100000,
-    vat: 70000,
-    finalPrice: 770000,
-    commissionAmount: 77000,
-    paymentMethod: 'VNPAY',
-    paymentStatus: 'CANCELLED',
-    transactionId: 'VNP82910321',
-    createdAt: '2026-06-03 16:00:00',
-    products: [],
-    cancellationReason: 'Đối tác báo sân đang bảo trì hệ thống chiếu sáng đột xuất'
-  },
-  {
-    id: 'BKG-543210',
-    userName: 'Nguyễn Thị Hồng',
-    userEmail: 'hongnguyen@gmail.com',
-    userPhone: '0956789123',
-    facilityName: 'Minh Sport Arena',
-    courtName: 'Sân bóng đá 5 người B',
-    sport: 'Bóng Đá',
-    bookingDate: '2026-06-07',
-    startTime: '16:00',
-    endTime: '18:00',
-    basePrice: 500000,
-    discountAmount: 0,
-    vat: 50000,
-    finalPrice: 550000,
-    commissionAmount: 55000,
-    paymentMethod: 'VNPAY',
-    paymentStatus: 'REFUNDED',
-    transactionId: 'VNP12930219',
-    createdAt: '2026-06-03 11:10:00',
-    products: [],
-    cancellationReason: 'Khách hàng yêu cầu hoàn tiền do có việc bận đột xuất'
-  }
-];
-
 export const BookingMonitor: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sportFilter, setSportFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Fetch admin bookings
+  useEffect(() => {
+    const fetchAdminBookings = async () => {
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:3000/bookings/admin-all', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.dispatchEvent(new CustomEvent('user-force-logout'));
+            return;
+          }
+          throw new Error('Không thể tải danh sách đặt sân.');
+        }
+        const data = await res.json();
+        
+        const mapped: Booking[] = data.map((b: any) => {
+          const firstPayment = b.payments?.[0];
+          return {
+            id: b.bookingCode,
+            realId: b.id,
+            userName: b.user?.fullName || 'Khách hàng',
+            userEmail: b.user?.email || 'N/A',
+            userPhone: b.user?.phone || 'N/A',
+            facilityName: b.sportsPitch?.location?.name || 'Cơ sở',
+            courtName: b.sportsPitch?.name || 'Sân đấu',
+            sport: b.sportsPitch?.category === 'badminton' ? 'Cầu Lông' : (b.sportsPitch?.category === 'football' ? 'Bóng Đá' : 'Tennis'),
+            bookingDate: b.bookingDate,
+            startTime: b.startTime,
+            endTime: b.endTime,
+            basePrice: b.basePrice,
+            discountAmount: b.discountAmount,
+            vat: Math.round(b.basePrice * 0.1),
+            finalPrice: b.finalPrice,
+            commissionAmount: b.commissionAmount,
+            paymentMethod: firstPayment?.paymentMethod || 'CASH',
+            paymentStatus: b.paymentStatus,
+            transactionId: firstPayment?.transactionId || null,
+            createdAt: new Date(b.createdAt).toLocaleString('vi-VN'),
+            products: b.bookingDetails?.map((d: any) => ({
+              name: d.product?.name || 'Sản phẩm',
+              qty: d.quantity,
+              price: d.price
+            })) || [],
+            cancellationReason: b.cancellationReason || undefined
+          };
+        });
+
+        setBookings(mapped);
+      } catch (err: any) {
+        console.error('Lỗi tải danh sách đặt sân của hệ thống:', err);
+      }
+    };
+
+    fetchAdminBookings();
+  }, [refreshTrigger]);
 
   // Tính toán số liệu tổng quan
   const totalBookings = bookings.length;
@@ -186,32 +130,39 @@ export const BookingMonitor: React.FC = () => {
     .reduce((sum, b) => sum + b.finalPrice, 0);
 
   // Xử lý hoàn tiền khẩn cấp
-  const handleRefund = (id: string) => {
+  const handleRefund = async (id: string, realId: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn thực hiện hoàn trả tiền cho mã đặt sân ${id} này?`)) {
-      setBookings(prev =>
-        prev.map(b => {
-          if (b.id === id) {
-            toast.success(`Hoàn tiền thành công cho mã đặt sân ${id}!`);
-            return {
-              ...b,
-              paymentStatus: 'REFUNDED' as const,
-              cancellationReason: 'Admin hoàn tiền khẩn cấp do lỗi kỹ thuật của hệ thống'
-            };
-          }
-          return b;
-        })
-      );
-      // Cập nhật lại thông tin trong modal chi tiết nếu đang mở
-      setSelectedBooking(prev => {
-        if (prev && prev.id === id) {
-          return {
-            ...prev,
+      const token = localStorage.getItem('user_token');
+      if (!token) return;
+
+      try {
+        toast.loading('Đang xử lý hoàn tiền...', { id: 'refund-loading' });
+
+        const res = await fetch(`http://localhost:3000/bookings/${realId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
             paymentStatus: 'REFUNDED',
             cancellationReason: 'Admin hoàn tiền khẩn cấp do lỗi kỹ thuật của hệ thống'
-          };
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Hoàn tiền thất bại.');
         }
-        return prev;
-      });
+
+        toast.dismiss('refund-loading');
+        toast.success(`Hoàn tiền thành công cho mã đặt sân ${id}!`);
+        
+        setRefreshTrigger(prev => prev + 1);
+        setSelectedBooking(null);
+      } catch (err: any) {
+        toast.dismiss('refund-loading');
+        toast.error(err.message || 'Lỗi khi hoàn tiền.');
+      }
     }
   };
 
@@ -417,7 +368,7 @@ export const BookingMonitor: React.FC = () => {
                         </button>
                         {b.paymentStatus === 'PAID' && (
                           <button
-                            onClick={() => handleRefund(b.id)}
+                            onClick={() => handleRefund(b.id, b.realId)}
                             className="p-1.5 bg-rose-950/35 hover:bg-rose-900 border border-rose-900/30 text-rose-400 hover:text-white rounded-lg cursor-pointer transition flex items-center justify-center"
                             title="Hoàn tiền khẩn cấp"
                           >
@@ -586,7 +537,7 @@ export const BookingMonitor: React.FC = () => {
                       Thanh toán an toàn qua cổng {selectedBooking.paymentMethod}
                     </p>
                     <span className="text-[10px] text-slate-500 block">
-                      {selectedBooking.paymentStatus !== 'UNPAID' ? `${selectedBooking.createdAt.split(' ')[0]} ${parseInt(selectedBooking.createdAt.split(' ')[1].split(':')[0]) + 1}:${selectedBooking.createdAt.split(' ')[1].split(':')[1]}` : 'Chờ khách hàng thanh toán...'}
+                      {selectedBooking.paymentStatus !== 'UNPAID' ? selectedBooking.createdAt : 'Chờ khách hàng thanh toán...'}
                     </span>
                   </div>
                   {selectedBooking.paymentStatus === 'REFUNDED' && (
@@ -619,7 +570,7 @@ export const BookingMonitor: React.FC = () => {
               </button>
               {selectedBooking.paymentStatus === 'PAID' && (
                 <button
-                  onClick={() => handleRefund(selectedBooking.id)}
+                  onClick={() => handleRefund(selectedBooking.id, selectedBooking.realId)}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-xs font-black text-white rounded-xl transition border-0 cursor-pointer flex items-center gap-1.5"
                 >
                   <AlertTriangle className="w-3.5 h-3.5" /> Hoàn Tiền Khẩn Cấp

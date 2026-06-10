@@ -4,6 +4,7 @@ import { SearchBar } from '../../../features/sports-field/components/SearchBar';
 import { CategoryList } from '../../../features/sports-field/components/CategoryList';
 import { FieldList } from '../../../features/sports-field/components/FieldList';
 import { Sparkles, ArrowLeft } from 'lucide-react';
+import { useCategories } from '../../../hooks/useCategories';
 
 interface SearchProps {
   onNavigate?: (page: any, authMode?: any) => void;
@@ -17,12 +18,6 @@ interface SearchProps {
   onUpdateFilters: (filters: { query: string; address: string; category: string }) => void;
 }
 
-const CATEGORY_MAP: Record<string, string> = {
-  'football': 'Bóng Đá',
-  'badminton': 'Cầu Lông',
-  'tennis': 'Tennis'
-};
-
 const API = 'http://localhost:3000';
 
 export const Search: React.FC<SearchProps> = ({
@@ -34,13 +29,16 @@ export const Search: React.FC<SearchProps> = ({
 
   const [filteredFields, setFilteredFields] = useState<any[]>([]);
 
+  // Lấy danh sách bộ môn từ DB
+  const { getNameBySlug } = useCategories();
+
   // Gọi API lấy danh sách đã lọc từ backend
   useEffect(() => {
-    const categoryName = CATEGORY_MAP[category] || '';
+    const categoryName = getNameBySlug(category);
     const params = new URLSearchParams();
     if (query.trim()) params.append('search', query.trim());
     if (address && address !== 'all') params.append('city', address);
-    if (categoryName) params.append('category', categoryName);
+    if (categoryName && category !== 'all') params.append('category', categoryName);
 
     fetch(`${API}/public/locations?${params.toString()}`)
       .then(r => r.ok ? r.json() : [])
@@ -64,7 +62,7 @@ export const Search: React.FC<SearchProps> = ({
         setFilteredFields(mapped);
       })
       .catch(console.error);
-  }, [query, address, category]);
+  }, [query, address, category, getNameBySlug]);
 
   // Cập nhật từng bộ lọc
   const handleQueryChange = (val: string) => {
