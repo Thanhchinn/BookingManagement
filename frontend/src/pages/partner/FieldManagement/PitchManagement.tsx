@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Edit3, Trash2, MapPin, Settings, Save, ArrowLeft, HelpCircle, X, Filter } from 'lucide-react';
+import { Plus, Edit3, Trash2, MapPin, Settings, Save, ArrowLeft, HelpCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PartnerFilterBar } from '../components/PartnerFilterBar';
 

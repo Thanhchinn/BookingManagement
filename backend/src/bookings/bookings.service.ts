@@ -1,87 +1,11 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-function serializeBooking(booking: any) {
-  if (!booking) return null;
-  return {
-    id: booking.id.toString(),
-    bookingCode: booking.bookingCode,
-    userId: booking.userId.toString(),
-    sportsPitchId: booking.sportsPitchId.toString(),
-    promoId: booking.promoId ? booking.promoId.toString() : null,
-    bookingDate: booking.bookingDate.toISOString().split('T')[0],
-    startTime: booking.startTime.toISOString().substring(11, 16),
-    endTime: booking.endTime.toISOString().substring(11, 16),
-    basePrice: parseFloat(booking.basePrice.toString()),
-    discountAmount: parseFloat(booking.discountAmount.toString()),
-    finalPrice: parseFloat(booking.finalPrice.toString()),
-    commissionAmount: parseFloat(booking.commissionAmount.toString()),
-    cancellationReason: booking.cancellationReason || null,
-    status: booking.status,
-    paymentStatus: booking.paymentStatus,
-    createdAt: booking.createdAt,
-    sportsPitch: booking.sportsPitch ? {
-      id: booking.sportsPitch.id.toString(),
-      name: booking.sportsPitch.name,
-      category: booking.sportsPitch.category,
-      location: booking.sportsPitch.location ? {
-        id: booking.sportsPitch.location.id.toString(),
-        name: booking.sportsPitch.location.name,
-        address: booking.sportsPitch.location.address,
-        ward: booking.sportsPitch.location.ward,
-        district: booking.sportsPitch.location.district,
-        city: booking.sportsPitch.location.city,
-      } : undefined
-    } : undefined,
-    user: booking.user ? {
-      id: booking.user.id.toString(),
-      fullName: booking.user.fullName,
-      phone: booking.user.phone,
-      email: booking.user.email,
-    } : undefined,
-    bookingDetails: booking.bookingDetails ? booking.bookingDetails.map((d: any) => ({
-      id: d.id.toString(),
-      productId: d.productId.toString(),
-      quantity: d.quantity,
-      price: parseFloat(d.price.toString()),
-      product: d.product ? {
-        id: d.product.id.toString(),
-        name: d.product.name,
-        category: d.product.category,
-      } : undefined
-    })) : [],
-    payments: booking.payments ? booking.payments.map((p: any) => ({
-      id: p.id.toString(),
-      amount: parseFloat(p.amount.toString()),
-      paymentMethod: p.paymentMethod,
-      paymentType: p.paymentType,
-      status: p.status,
-      createdAt: p.createdAt
-    })) : [],
-  };
-}
-
 @Injectable()
 export class BookingsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // 1. Tạo mới một booking
-  async createBooking(userIdStr: string, body: any) {
-    const {
-      sportsPitchId,
-      bookingDate,
-      slotId,
-      paymentMethod, // 'CASH' | 'MOMO' | 'VNPAY'
-      paymentOption, // 'CASH' | 'FULL' | 'PARTIAL'
-      products,      // array of { productId: string, quantity: number }
-      promoCode,
-    } = body;
-
-    const userId = BigInt(userIdStr);
-    const pitchId = BigInt(sportsPitchId);
-    const slotBigIntId = BigInt(slotId);
-
-    // Lấy thông tin Sân đấu
+  private async validateSlotAvailability(pitchId: bigint, slotBigIntId: bigint, bookingDate: Date) {
     const sportsPitch = await this.prisma.sportsPitch.findUnique({
       where: { id: pitchId },
       include: { location: true },
@@ -90,7 +14,6 @@ export class BookingsService {
       throw new NotFoundException('Không tìm thấy sân đấu yêu cầu.');
     }
 
-    // Lấy ca đấu (TimeSlot)
     const timeSlot = await this.prisma.timeSlot.findUnique({
       where: { id: slotBigIntId },
     });
@@ -98,12 +21,10 @@ export class BookingsService {
       throw new NotFoundException('Không tìm thấy ca đấu yêu cầu.');
     }
 
-    // Kiểm tra xem trùng lịch hay chưa
-    const parsedDate = new Date(bookingDate);
     const booked = await this.prisma.booking.findMany({
       where: {
         sportsPitchId: pitchId,
-        bookingDate: parsedDate,
+        bookingDate,
         status: { in: ['CONFIRMED', 'PENDING'] },
       },
     });
@@ -114,21 +35,25 @@ export class BookingsService {
       throw new BadRequestException('Khung giờ này đã được đặt trước. Vui lòng chọn ca đấu khác.');
     }
 
-    // Tính toán thời lượng ca đấu (durationHours)
+    return { sportsPitch, timeSlot };
+  }
+
+  private calculateCourtPrice(sportsPitch: any, timeSlot: any): number {
     const startIso = timeSlot.startTime.toISOString().substring(11, 16);
     const endIso = timeSlot.endTime.toISOString().substring(11, 16);
     const [startH, startM] = startIso.split(':').map(Number);
     const [endH, endM] = endIso.split(':').map(Number);
     const durationHours = (endH * 60 + endM - (startH * 60 + startM)) / 60;
 
-    // Tính toán tiền sân cơ bản
     const basePricePerHour = parseFloat(sportsPitch.basePricePerHour.toString());
     const priceModifier = parseFloat(timeSlot.priceModifier.toString());
-    const courtCost = Math.round(basePricePerHour * priceModifier * durationHours);
+    return Math.round(basePricePerHour * priceModifier * durationHours);
+  }
 
-    // Tính tiền dịch vụ đi kèm
+  private async calculateProductsCost(products?: { productId: string; quantity: number }[]) {
     let serviceCost = 0;
     const validatedProducts: { productId: bigint; quantity: number; price: number }[] = [];
+
     if (products && Array.isArray(products) && products.length > 0) {
       for (const item of products) {
         const prod = await this.prisma.product.findUnique({
@@ -146,12 +71,10 @@ export class BookingsService {
       }
     }
 
-    // Tổng phụ trước thuế & giảm giá
-    const subtotal = courtCost + serviceCost;
-    const vat = Math.round(subtotal * 0.1);
-    let totalBeforePromo = subtotal + vat;
+    return { serviceCost, validatedProducts };
+  }
 
-    // Tính mã giảm giá
+  private async applyPromotionDiscount(promoCode?: string, totalBeforePromo = 0) {
     let promoId: bigint | null = null;
     let discountAmount = 0;
 
@@ -183,20 +106,54 @@ export class BookingsService {
       }
     }
 
+    return { promoId, discountAmount };
+  }
+
+  // 1. Tạo mới một booking
+  async createBooking(userIdStr: string, body: any) {
+    const {
+      sportsPitchId,
+      bookingDate,
+      slotId,
+      paymentMethod, // 'CASH' | 'MOMO' | 'VNPAY'
+      paymentOption, // 'CASH' | 'FULL' | 'PARTIAL'
+      products,      // array of { productId: string, quantity: number }
+      promoCode,
+    } = body;
+
+    const userId = BigInt(userIdStr);
+    const pitchId = BigInt(sportsPitchId);
+    const slotBigIntId = BigInt(slotId);
+    const parsedDate = new Date(bookingDate);
+
+    // 1. Validate availability
+    const { sportsPitch, timeSlot } = await this.validateSlotAvailability(pitchId, slotBigIntId, parsedDate);
+
+    // 2. Calculate court price
+    const courtCost = this.calculateCourtPrice(sportsPitch, timeSlot);
+
+    // 3. Calculate products cost
+    const { serviceCost, validatedProducts } = await this.calculateProductsCost(products);
+
+    // 4. Calculate total and promotions
+    const subtotal = courtCost + serviceCost;
+    const vat = Math.round(subtotal * 0.1);
+    const totalBeforePromo = subtotal + vat;
+
+    const { promoId, discountAmount } = await this.applyPromotionDiscount(promoCode, totalBeforePromo);
     const finalPrice = Math.max(0, totalBeforePromo - discountAmount);
 
-    // Tạo mã code đặt sân ngẫu nhiên
+    // 5. Booking code & initial payment status
     const bookingCode = 'BKG-' + Math.floor(Math.random() * 900000 + 100000);
-
-    // Xác định trạng thái thanh toán ban đầu
+    
     let paymentStatus = 'UNPAID';
     if (paymentMethod === 'MOMO' || paymentMethod === 'VNPAY') {
       paymentStatus = paymentOption === 'PARTIAL' ? 'PARTIALLY_PAID' : 'PAID';
     }
 
-    // Thực hiện giao dịch lưu database
+    // 6. DB Transaction
     const bookingResult = await this.prisma.$transaction(async (tx) => {
-      // 1. Tạo Booking
+      // Create Booking
       const newBooking = await tx.booking.create({
         data: {
           bookingCode,
@@ -212,12 +169,12 @@ export class BookingsService {
           commissionType: 'PERCENTAGE',
           commissionRate: 10,
           commissionAmount: Math.round(finalPrice * 0.1),
-          status: 'CONFIRMED', // Giả lập thành công ngay
+          status: 'CONFIRMED',
           paymentStatus,
         },
       });
 
-      // 2. Tạo BookingDetails
+      // Create BookingDetails
       for (const vp of validatedProducts) {
         await tx.bookingDetail.create({
           data: {
@@ -229,31 +186,30 @@ export class BookingsService {
         });
       }
 
-      // 3. Tạo thanh toán Payment tương ứng
+      // Create Payment log
       let payAmount = 0;
       let payType = 'CASH';
       let payStatus = 'PENDING';
 
       if (paymentMethod === 'MOMO' || paymentMethod === 'VNPAY') {
-        payStatus = 'SUCCESS'; // Giả lập thanh toán trực tuyến thành công
+        payStatus = 'SUCCESS';
         if (paymentOption === 'PARTIAL') {
-          payAmount = Math.round(finalPrice * 0.3); // cọc 30%
+          payAmount = Math.round(finalPrice * 0.3);
           payType = 'DEPOSIT';
         } else {
-          payAmount = finalPrice; // trả hết 100%
+          payAmount = finalPrice;
           payType = 'FULL';
         }
       } else if (paymentMethod === 'BANK_TRANSFER') {
-        payStatus = 'PENDING'; // Chờ chủ sân kiểm tra bank
+        payStatus = 'PENDING';
         if (paymentOption === 'PARTIAL') {
-          payAmount = Math.round(finalPrice * 0.3); // cọc 30%
+          payAmount = Math.round(finalPrice * 0.3);
           payType = 'DEPOSIT';
         } else {
-          payAmount = finalPrice; // trả hết 100%
+          payAmount = finalPrice;
           payType = 'FULL';
         }
       } else {
-        // Tiền mặt tại sân
         payAmount = 0;
         payType = 'CASH';
         payStatus = 'PENDING';
@@ -270,7 +226,7 @@ export class BookingsService {
         },
       });
 
-      // Nếu áp dụng mã giảm giá, tăng lượt sử dụng
+      // Update Promotion Used Count if applicable
       if (promoId) {
         await tx.promotion.update({
           where: { id: promoId },
@@ -281,7 +237,7 @@ export class BookingsService {
       return newBooking;
     });
 
-    // Lấy đầy đủ thông tin để trả về
+    // Get fully populated booking
     const fullBooking = await this.prisma.booking.findUnique({
       where: { id: bookingResult.id },
       include: {
@@ -296,7 +252,7 @@ export class BookingsService {
       },
     });
 
-    return serializeBooking(fullBooking);
+    return fullBooking;
   }
 
   // 2. Lấy danh sách lịch đặt sân của khách hàng
@@ -316,7 +272,7 @@ export class BookingsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return list.map(serializeBooking);
+    return list;
   }
 
   // 3. Lấy danh sách lịch đặt sân của cơ sở thuộc chủ đối tác
@@ -352,7 +308,7 @@ export class BookingsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return list.map(serializeBooking);
+    return list;
   }
 
   // 4. Phê duyệt/Hủy đặt sân / Hoàn tiền
@@ -437,7 +393,7 @@ export class BookingsService {
       });
     }
 
-    return serializeBooking(updated);
+    return updated;
   }
 
   // 5. Lấy danh sách toàn bộ đặt sân dành cho Admin
@@ -466,6 +422,6 @@ export class BookingsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return list.map(serializeBooking);
+    return list;
   }
 }

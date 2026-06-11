@@ -3,7 +3,7 @@ import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import {
   User, Mail, Phone, MapPin, Lock, Save, Camera,
-  ShieldCheck, Edit3, X, Home, Calendar, Sparkles, Trophy, Clock, ArrowLeft
+  ShieldCheck, Edit3, X, Home, Calendar, Sparkles, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddressSelector } from '../../../components/ui/AddressSelector';
@@ -412,7 +412,7 @@ export const Profile: React.FC<ProfileProps> = ({
                     )}
                   </div>
 
-                  <InfoRow icon={<Sparkles className="w-4 h-4 text-slate-500" />} label="Tiểu sử / Lời giới thiệu" value={userInfo.bio} className="sm:col-span-2" />
+                  <InfoRow icon={<Sparkles className="w-4 h-4 text-slate-500" />} label="Tiểu sử / Lời giới thiệu" value={userInfo.bio || ''} className="sm:col-span-2" />
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../../services/apiClient';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { Button } from '../../../components/ui/Button';
@@ -34,26 +35,9 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   // Tải danh sách đơn đặt sân của user từ backend
   useEffect(() => {
     const fetchMyBookings = async () => {
-      const token = localStorage.getItem('user_token');
-      if (!token) return;
-
       try {
-        const res = await fetch('http://localhost:3000/bookings/my-bookings', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('user_token');
-            localStorage.removeItem('user_info');
-            onLogout?.();
-            onNavigate?.('auth', 'login');
-            throw new Error('Hết hạn phiên đăng nhập.');
-          }
-          throw new Error('Không thể tải lịch đặt sân.');
-        }
-        const data = await res.json();
+        const res = await apiClient.get('/bookings/my-bookings');
+        const data = res.data;
         
         const mappedBookings: BookingItem[] = data.map((b: any) => {
           let paymentStatusLabel = 'CHƯA THANH TOÁN';
@@ -104,26 +88,9 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   // Tải danh sách ghép kèo mà user tham gia từ backend
   useEffect(() => {
     const fetchJoinedMatches = async () => {
-      const token = localStorage.getItem('user_token');
-      if (!token) return;
-
       try {
-        const res = await fetch('http://localhost:3000/matchmaking/posts/joined', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('user_token');
-            localStorage.removeItem('user_info');
-            onLogout?.();
-            onNavigate?.('auth', 'login');
-            throw new Error('Tài khoản của bạn đã bị khóa hoặc phiên đăng nhập hết hạn.');
-          }
-          throw new Error('Không thể tải lịch ghép cặp.');
-        }
-        const data = await res.json();
+        const res = await apiClient.get('/matchmaking/posts/joined');
+        const data = res.data;
         
         const infoStr = localStorage.getItem('user_info');
         let currentUserId = '';
@@ -193,31 +160,12 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   const handleCancelBooking = async () => {
     if (!selectedBooking) return;
 
-    const token = localStorage.getItem('user_token');
-    if (!token) return;
-
     try {
       toast.loading('Đang xử lý hủy lịch...', { id: 'cancel-loading' });
 
-      const res = await fetch(`http://localhost:3000/bookings/${selectedBooking.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: 'CANCELLED' }),
+      await apiClient.patch(`/bookings/${selectedBooking.id}/status`, {
+        status: 'CANCELLED',
       });
-
-      if (res.status === 401) {
-        toast.dismiss('cancel-loading');
-        window.dispatchEvent(new CustomEvent('user-force-logout'));
-        return;
-      }
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Hủy lịch thất bại.');
-      }
 
       toast.dismiss('cancel-loading');
       toast.success('Đã hủy đơn đặt lịch thành công', {

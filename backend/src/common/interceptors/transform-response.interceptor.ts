@@ -2,7 +2,7 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-function transformValue(val: any): any {
+function transformValue(val: any, key?: string): any {
   if (val === null || val === undefined) {
     return val;
   }
@@ -24,20 +24,36 @@ function transformValue(val: any): any {
 
   // Handle Arrays
   if (Array.isArray(val)) {
-    return val.map(transformValue);
+    return val.map((v) => transformValue(v, key));
   }
 
-  // Handle Date objects (keep them intact)
+  // Handle Date objects
   if (val instanceof Date) {
+    if (key === 'bookingDate' || key === 'playDate' || key === 'date') {
+      try {
+        return val.toISOString().split('T')[0];
+      } catch {
+        return val;
+      }
+    }
+    if (key === 'startTime' || key === 'endTime') {
+      try {
+        return val.toISOString().substring(11, 16);
+      } catch {
+        const hours = val.getUTCHours().toString().padStart(2, '0');
+        const minutes = val.getUTCMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+    }
     return val;
   }
 
   // Handle general Objects
   if (typeof val === 'object') {
     const transformed: any = {};
-    for (const key in val) {
-      if (Object.prototype.hasOwnProperty.call(val, key)) {
-        transformed[key] = transformValue(val[key]);
+    for (const k in val) {
+      if (Object.prototype.hasOwnProperty.call(val, k)) {
+        transformed[k] = transformValue(val[k], k);
       }
     }
     return transformed;
@@ -52,3 +68,4 @@ export class TransformResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(map((data) => transformValue(data)));
   }
 }
+

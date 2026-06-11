@@ -83,7 +83,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetUserId: match.userId.toString() })
+        body: JSON.stringify({ targetUserId: match.userId ? match.userId.toString() : '' })
       });
 
       if (res.ok) {

@@ -4,6 +4,9 @@ import { InputField } from '../../../components/ui/InputField';
 import { MailCheck, ShieldAlert, Clock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+
 interface RegisterFormProps {
   onSwitchMode: () => void;
   onSuccess: (name: string) => void;
@@ -62,7 +65,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/send-otp', {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +116,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

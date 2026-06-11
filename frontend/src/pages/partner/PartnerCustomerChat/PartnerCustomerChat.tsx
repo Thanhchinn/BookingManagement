@@ -240,7 +240,7 @@ export const PartnerCustomerChat: React.FC<PartnerCustomerChatProps> = ({ partne
                 <MessageSquare className="w-5 h-5 text-amber-500" />
                 Hội Thoại Khách Hàng
               </h3>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Liên lạc trực tiếp với khách thuê sân</span>
+              <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Liên lạc trực tiếp với khách thuê sân của {partnerName}</span>
             </div>
 
             <div className="relative">

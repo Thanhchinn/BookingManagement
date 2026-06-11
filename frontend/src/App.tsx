@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 // Import các trang theo đúng cấu trúc tối ưu chuẩn Senior
 import { Home } from './pages/client/Home';
 import { AuthPage } from './pages/client/AuthPage';
@@ -20,10 +21,14 @@ import 'aos/dist/aos.css';
 import './App.css';
 import { Toaster, toast } from 'sonner';
 import { LockedAccountView } from './pages/client/LockedAccount';
+import { useAuthStore } from './store/useAuthStore';
+import { useAppStore } from './store/useAppStore';
 
 function App() {
-  // 1. QUẢN LÝ ĐƯỜNG DẪN URL TRÊN TRÌNH DUYỆT (NATIVE PATH ROUTING)
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  // 1. QUẢN LÝ ĐƯỜNG DẪN URL TRÊN TRÌNH DUYỆT BẰNG REACT ROUTER DOM
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   
   // Trạng thái trang client phụ, được tính toán tự động dựa trên URL hiện tại để đồng bộ 100%
   const currentPage = (() => {
@@ -47,41 +52,30 @@ function App() {
     return '404';
   })();
 
+  // 2. KẾT NỐI VỚI ZUSTAND STORES ĐỂ QUẢN LÝ TRẠNG THÁI TOÀN CỤC
+  const { 
+    userName, 
+    partnerName, 
+    isAdminLoggedIn, 
+    logoutUser, 
+    loginAdmin, 
+    logoutAdmin, 
+    loginPartner, 
+    logoutPartner,
+    setUserName
+  } = useAuthStore();
+
+  const {
+    searchFilters,
+    setSearchFilters,
+    bookingSuccessData,
+    setBookingSuccessData,
+    selectedLocationId,
+    setSelectedLocationId
+  } = useAppStore();
+
   // Chế độ đăng nhập hay đăng ký của client
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  
-  // Trạng thái bộ lọc tìm kiếm toàn cục
-  const [searchFilters, setSearchFilters] = useState({
-    query: '',
-    address: 'all',
-    category: 'all'
-  });
-
-  // Trạng thái đăng nhập Client (Khách hàng)
-  const [userName, setUserName] = useState<string | null>(() => {
-    const saved = localStorage.getItem('user_info');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.fullName || null;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
-
-  // Trạng thái đăng nhập Admin
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-
-  // Trạng thái đăng nhập Partner (Chủ sân)
-  const [partnerName, setPartnerName] = useState<string | null>(null);
-
-  // Lưu trữ tạm dữ liệu đặt vé thành công
-  const [bookingSuccessData, setBookingSuccessData] = useState<any>(null);
-
-  // Lưu locationId được chọn từ FieldCard để truyền vào CourtDetails
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
 
   // Trạng thái tài khoản Client bị khóa
   const [isUserLocked, setIsUserLocked] = useState(false);
@@ -144,23 +138,9 @@ function App() {
       once: true
     });
 
-    // Tự động khôi phục phiên đăng nhập Admin từ localStorage
-    const token = localStorage.getItem('admin_token');
-    const profile = localStorage.getItem('admin_profile');
-    if (token && profile) {
-      setIsAdminLoggedIn(true);
-    }
-
-    const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
-    };
-    window.addEventListener('popstate', handleLocationChange);
-
     // Lắng nghe sự kiện buộc đăng xuất do hết hạn phiên làm việc
     const handleAdminForceLogout = () => {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_profile');
-      setIsAdminLoggedIn(false);
+      logoutAdmin();
       navigateTo('/admin');
       toast.error('Phiên làm việc quản trị đã hết hạn.', {
         description: 'Vui lòng đăng nhập lại.',
@@ -169,10 +149,7 @@ function App() {
     };
 
     const handleUserForceLogout = () => {
-      localStorage.removeItem('user_token');
-      localStorage.removeItem('user_info');
-      setUserName(null);
-      setPartnerName(null);
+      logoutUser();
       navigateTo('/');
       toast.error('Phiên làm việc đã hết hạn.', {
         description: 'Vui lòng đăng nhập lại để tiếp tục.',
@@ -184,7 +161,6 @@ function App() {
     window.addEventListener('user-force-logout', handleUserForceLogout);
 
     return () => {
-      window.removeEventListener('popstate', handleLocationChange);
       window.removeEventListener('admin-force-logout', handleAdminForceLogout);
       window.removeEventListener('user-force-logout', handleUserForceLogout);
     };
@@ -197,8 +173,7 @@ function App() {
 
   // Hàm chuyển trang đồng thời cập nhật thanh địa chỉ URL
   const navigateTo = (path: string) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
+    navigate(path);
   };
 
   const handleNavigate = (
@@ -225,19 +200,17 @@ function App() {
   };
 
   const handleAdminLoginSuccess = () => {
-    setIsAdminLoggedIn(true);
+    loginAdmin(localStorage.getItem('admin_token') || '', {});
     navigateTo('/admin');
   };
 
   const handlePartnerLoginSuccess = (name: string) => {
-    setPartnerName(name);
+    loginPartner(name);
     navigateTo('/partner');
   };
 
   const handleClientLogout = () => {
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user_info');
-    setUserName(null);
+    logoutUser();
     navigateTo('/');
   };
 
@@ -269,10 +242,7 @@ function App() {
             currentPath={currentPath}
             navigateTo={navigateTo}
             onLogout={() => {
-              // Đăng xuất hoàn toàn, xóa token an toàn
-              localStorage.removeItem('admin_token');
-              localStorage.removeItem('admin_profile');
-              setIsAdminLoggedIn(false);
+              logoutAdmin();
               toast.success('Đăng xuất thành công!', {
                 description: 'Phiên làm việc quản trị đã được hủy an toàn.',
                 duration: 3000,
@@ -299,7 +269,7 @@ function App() {
             currentPath={currentPath}
             navigateTo={navigateTo}
             onLogout={() => {
-              setPartnerName(null);
+              logoutPartner();
               navigateTo('/');
             }}
           />
