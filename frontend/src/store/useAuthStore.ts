@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>((set) => {
 
   return {
     userName: getInitialUser(),
-    partnerName: null,
+    partnerName: localStorage.getItem('partner_name') || null,
     isAdminLoggedIn: getInitialAdmin(),
 
     loginUser: (name, token, userInfo) => {
@@ -52,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => {
     logoutUser: () => {
       localStorage.removeItem('user_token');
       localStorage.removeItem('user_info');
+      localStorage.removeItem('partner_name');
       set({ userName: null, partnerName: null });
     },
 
@@ -72,10 +73,12 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     loginPartner: (name) => {
+      localStorage.setItem('partner_name', name);
       set({ partnerName: name });
     },
 
     logoutPartner: () => {
+      localStorage.removeItem('partner_name');
       set({ partnerName: null });
     },
   };

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -48,5 +48,11 @@ export class BookingsController {
       paymentStatus,
       cancellationReason,
     );
+  }
+
+  // 6. Xóa lịch đặt khi đã bị hủy (chỉ dành cho Chủ sân/Đối tác hoặc Admin)
+  @Delete(':id')
+  async deleteBooking(@Request() req: any, @Param('id') bookingId: string) {
+    return this.bookingsService.deleteBooking(req.user.userId, bookingId);
   }
 }

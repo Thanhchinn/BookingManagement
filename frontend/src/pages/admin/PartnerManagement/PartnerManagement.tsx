@@ -317,7 +317,8 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                     <th className="admin-table-th">Chủ sở hữu</th>
                     <th className="admin-table-th">Liên hệ</th>
                     <th className="admin-table-th w-28 text-center">Số sân liên kết</th>
-                    <th className="admin-table-th w-32 text-center">Bộ môn</th>
+                     <th className="admin-table-th w-32 text-center">Bộ môn</th>
+                    <th className="admin-table-th w-36 text-center">Chiết khấu / Hoa hồng</th>
                     <th className="admin-table-th w-32 text-center">Trạng thái</th>
                     <th className="admin-table-th w-40 text-center">Thao tác</th>
                   </tr>
@@ -325,7 +326,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                 <tbody className="admin-table-tbody">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center">
+                      <td colSpan={8} className="py-16 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
                           <span className="text-slate-500 text-sm">Đang tải dữ liệu từ máy chủ...</span>
@@ -378,6 +379,20 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                             )) : (
                               <span className="text-[10px] text-slate-400 italic">Chưa cập nhật</span>
                             )}
+                          </div>
+                        </td>
+
+                        {/* CHIẾT KHẤU / HOA HỒNG */}
+                        <td className="admin-table-td text-center">
+                          <div className="font-mono text-xs font-bold text-teal-400">
+                            {partner.commissionType === 'PERCENTAGE' || partner.commissionType === 'PERCENT' ? (
+                              <span>{partner.commissionRate}%</span>
+                            ) : (
+                              <span>{partner.commissionFixedAmount.toLocaleString()}đ</span>
+                            )}
+                            <span className="text-[9px] text-slate-500 block font-sans font-normal mt-0.5">
+                              {partner.commissionType === 'PERCENTAGE' || partner.commissionType === 'PERCENT' ? 'Theo doanh thu' : 'Cố định/đơn'}
+                            </span>
                           </div>
                         </td>
 
@@ -452,7 +467,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
+                      <td colSpan={8} className="py-12 text-center text-slate-500 font-medium">
                         Không tìm thấy thông tin đối tác nào phù hợp.
                       </td>
                     </tr>

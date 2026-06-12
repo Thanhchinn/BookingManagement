@@ -66,6 +66,7 @@ export const PartnerFilterBar: React.FC<PartnerFilterBarProps> = ({
             <option value="all" className="bg-slate-950 text-white">Tất Cả</option>
             <option value="pending" className="bg-slate-950 text-white">⏳ Chờ phê duyệt</option>
             <option value="approved" className="bg-slate-950 text-white">🟢 Đã phê duyệt</option>
+            <option value="completed" className="bg-slate-950 text-white">✅ Đã hoàn thành</option>
             <option value="cancelled" className="bg-slate-950 text-white">🔴 Đã hủy bỏ</option>
           </select>
         </div>

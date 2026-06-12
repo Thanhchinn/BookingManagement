@@ -19,6 +19,17 @@ import { ReviewBookingModal } from './ReviewBookingModal';
 import { DisputeBookingModal } from './DisputeBookingModal';
 import { toast } from 'sonner';
 
+const getSportTypeName = (cat: string) => {
+  if (!cat) return 'N/A';
+  const val = cat.toLowerCase().trim();
+  if (val === 'badminton' || val === 'cầu lông') return 'Cầu Lông';
+  if (val === 'football' || val === 'soccer' || val === 'bóng đá') return 'Bóng Đá';
+  if (val === 'tennis' || val === 'quần vợt') return 'Tennis';
+  if (val === 'basketball' || val === 'bóng rổ') return 'Bóng Rổ';
+  if (val === 'volleyball' || val === 'bóng chuyền') return 'Bóng Chuyền';
+  return cat.charAt(0).toUpperCase() + cat.slice(1);
+};
+
 interface MyBookingsProps {
   onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
@@ -57,7 +68,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
             id: b.id,
             bookingCode: b.bookingCode,
             courtName,
-            sport: b.sportsPitch?.category === 'badminton' ? 'Cầu Lông' : (b.sportsPitch?.category === 'football' ? 'Bóng Đá' : 'Tennis'),
+            sport: getSportTypeName(b.sportsPitch?.category),
             location: b.sportsPitch?.location 
               ? `${b.sportsPitch.location.address}, ${b.sportsPitch.location.district}, ${b.sportsPitch.location.city}`
               : '',

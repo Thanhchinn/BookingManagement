@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -8,7 +8,11 @@ export class BookingsService {
   private async validateSlotAvailability(pitchId: bigint, slotBigIntId: bigint, bookingDate: Date) {
     const sportsPitch = await this.prisma.sportsPitch.findUnique({
       where: { id: pitchId },
-      include: { location: true },
+      include: {
+        location: {
+          include: { partner: true }
+        }
+      },
     });
     if (!sportsPitch) {
       throw new NotFoundException('Không tìm thấy sân đấu yêu cầu.');
@@ -143,12 +147,36 @@ export class BookingsService {
     const { promoId, discountAmount } = await this.applyPromotionDiscount(promoCode, totalBeforePromo);
     const finalPrice = Math.max(0, totalBeforePromo - discountAmount);
 
-    // 5. Booking code & initial payment status
+    // 5. Booking code & initial payment status and booking status
     const bookingCode = 'BKG-' + Math.floor(Math.random() * 900000 + 100000);
     
     let paymentStatus = 'UNPAID';
+    let bookingStatus = 'PENDING';
+
     if (paymentMethod === 'MOMO' || paymentMethod === 'VNPAY') {
       paymentStatus = paymentOption === 'PARTIAL' ? 'PARTIALLY_PAID' : 'PAID';
+      bookingStatus = 'CONFIRMED';
+    } else if (paymentMethod === 'CASH') {
+      bookingStatus = 'CONFIRMED';
+      paymentStatus = 'UNPAID';
+    } else if (paymentMethod === 'BANK_TRANSFER') {
+      bookingStatus = 'PENDING';
+      paymentStatus = 'UNPAID';
+    }
+
+    // Dynamic commission calculation based on partner profile
+    const partner = sportsPitch.location?.partner;
+    const commissionType = partner?.commissionType || 'PERCENTAGE';
+    let commissionRate: number | null = null;
+    let commissionFixedAmount: number | null = null;
+    let commissionAmount = 0;
+
+    if (commissionType === 'PERCENTAGE') {
+      commissionRate = partner ? parseFloat(partner.commissionRate.toString()) : 10;
+      commissionAmount = Math.round(finalPrice * (commissionRate / 100));
+    } else {
+      commissionFixedAmount = partner ? parseFloat(partner.commissionFixedAmount.toString()) : 0;
+      commissionAmount = commissionFixedAmount;
     }
 
     // 6. DB Transaction
@@ -166,10 +194,11 @@ export class BookingsService {
           basePrice: courtCost,
           discountAmount,
           finalPrice,
-          commissionType: 'PERCENTAGE',
-          commissionRate: 10,
-          commissionAmount: Math.round(finalPrice * 0.1),
-          status: 'CONFIRMED',
+          commissionType,
+          commissionRate,
+          commissionFixedAmount,
+          commissionAmount,
+          status: bookingStatus,
           paymentStatus,
         },
       });
@@ -423,5 +452,48 @@ export class BookingsService {
     });
 
     return list;
+  }
+
+  // 6. Xóa lịch đặt khi đã bị hủy (Chủ sân/Đối tác hoặc Admin)
+  async deleteBooking(userIdStr: string, bookingIdStr: string) {
+    const bookingId = BigInt(bookingIdStr);
+    const userId = BigInt(userIdStr);
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        sportsPitch: {
+          include: { location: true },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Không tìm thấy đơn đặt sân.');
+    }
+
+    const partnerProfile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+    });
+    const adminUser = await this.prisma.admin.findUnique({
+      where: { id: userId },
+    });
+
+    const isOwnerPartner = partnerProfile && booking.sportsPitch.location.partnerId === partnerProfile.id;
+    const isAdmin = !!adminUser;
+
+    if (!isOwnerPartner && !isAdmin) {
+      throw new ForbiddenException('Bạn không có quyền xóa lịch đặt này.');
+    }
+
+    if (booking.status !== 'CANCELLED') {
+      throw new BadRequestException('Chỉ có thể xóa lịch đặt khi trạng thái là ĐÃ HỦY (CANCELLED).');
+    }
+
+    await this.prisma.booking.delete({
+      where: { id: bookingId },
+    });
+
+    return { message: 'Đã xóa lịch đặt thành công.' };
   }
 }

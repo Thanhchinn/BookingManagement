@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   BarChart3, 
@@ -11,7 +12,9 @@ import {
   LogOut,
   MessageSquare,
   CalendarRange,
-  ClipboardCheck
+  ClipboardCheck,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -23,6 +26,43 @@ interface AdminSidebarProps {
   onCloseMobile: () => void;
 }
 
+// Static MENU_GROUPS definition
+const MENU_GROUPS = [
+  {
+    title: 'Hệ thống & Báo cáo',
+    items: [
+      { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
+      { id: 'analytics', name: 'Thống kê sâu', icon: BarChart3 },
+    ]
+  },
+  {
+    title: 'Quản lý tài khoản',
+    items: [
+      { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
+      { id: 'users', name: 'Quản lý người dùng', icon: Users },
+      { id: 'chats', name: 'Tin nhắn đối tác', icon: MessageSquare },
+    ]
+  },
+  {
+    title: 'Vận hành & Lịch đặt',
+    items: [
+      { id: 'bookings', name: 'Giám sát đặt sân', icon: CalendarRange },
+      { id: 'matchmaking', name: 'Duyệt ghép đôi', icon: ClipboardCheck },
+      { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
+    ]
+  },
+  {
+    title: 'Tài chính & Khiếu nại',
+    items: [
+      { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
+      { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },
+      { id: 'disputes', name: 'Giải quyết khiếu nại', icon: Scale },
+    ]
+  }
+];
+
+const LOCAL_STORAGE_KEY = 'sportzone_admin_sidebar_collapsed_groups';
+
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
   currentTab, 
   onSelectTab, 
@@ -31,20 +71,41 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   isMobileOpen,
   onCloseMobile
 }) => {
-  // Danh sách menu chính
-  const menuItems = [
-    { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
-    { id: 'bookings', name: 'Giám sát đặt sân', icon: CalendarRange },
-    { id: 'sports', name: 'Quản lý bộ môn', icon: Dumbbell },
-    { id: 'partners', name: 'Quản lý đối tác', icon: Handshake },
-    { id: 'users', name: 'Quản lý người dùng', icon: Users },
-    { id: 'matchmaking', name: 'Duyệt ghép đôi', icon: ClipboardCheck },
-    { id: 'disputes', name: 'Giải quyết khiếu nại', icon: Scale },
-    { id: 'payouts', name: 'Duyệt rút tiền', icon: Coins },
-    { id: 'reconciliation', name: 'Đối soát tài chính', icon: Landmark },
-    { id: 'analytics', name: 'Thống kê sâu', icon: BarChart3 },
-    { id: 'chats', name: 'Tin nhắn đối tác', icon: MessageSquare },
-  ];
+  // Load state from localStorage
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Auto expand active group only when tab changes
+  useEffect(() => {
+    const activeGroup = MENU_GROUPS.find(g => g.items.some(item => item.id === currentTab));
+    if (activeGroup) {
+      setCollapsedGroups(prev => {
+        if (!prev[activeGroup.title]) return prev; // already expanded
+        const next = { ...prev, [activeGroup.title]: false };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [currentTab]);
+
+  const toggleGroup = (title: string) => {
+    setCollapsedGroups(prev => {
+      const next = { ...prev, [title]: !prev[title] };
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const isGroupCollapsed = (title: string) => {
+    if (isCollapsed) return false;
+    return !!collapsedGroups[title];
+  };
 
   return (
     <>
@@ -63,9 +124,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         } ${isCollapsed ? 'w-20' : 'w-64'}`}
       >
         
-        {/* PHẦN ĐẦU: LOGO CHUẨN ĐỒNG BỘ CHIỀU CAO H-16 TRÊN DI ĐỘNG & H-20 TRÊN MÁY TÍNH */}
+        {/* PHẦN ĐẦU: LOGO */}
         <div className="h-16 lg:h-20 border-b border-slate-800 flex items-center px-6 sm:px-5 justify-between shrink-0">
-          {/* BRANDING LOGO */}
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="bg-teal-600 text-white p-2 rounded-lg text-lg shadow-sm shrink-0 select-none">
               🏆
@@ -78,7 +138,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </div>
 
-          {/* NÚT ĐÓNG SIDEBAR TRÊN DI ĐỘNG (X) */}
           <button 
             onClick={onCloseMobile}
             className="lg:hidden p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer border-0"
@@ -87,32 +146,65 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </button>
         </div>
 
-        {/* PHẦN THÂN: DANH SÁCH MENU ĐIỀU HƯỚNG CÓ THỂ CUỘN */}
-        <div className="flex-grow overflow-y-auto p-6 sm:p-5 text-left">
-          <nav className="space-y-1.5">
-            {menuItems.map(item => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              
+        {/* PHẦN THÂN: DANH SÁCH MENU */}
+        <div className="flex-grow overflow-y-auto p-6 sm:p-5 text-left custom-scrollbar">
+          <nav className="space-y-5">
+            {MENU_GROUPS.map((group, groupIdx) => {
+              const collapsed = isGroupCollapsed(group.title);
               return (
-                <button
-                   key={item.id}
-                   onClick={() => {
-                     onSelectTab(item.id);
-                     onCloseMobile(); // Tự động đóng trên mobile khi chọn xong
-                   }}
-                   title={isCollapsed ? item.name : undefined}
-                   className={`w-full flex items-center rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer border-0 ${
-                     isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'
-                   } ${
-                     isActive 
-                       ? 'bg-slate-950 text-white border border-slate-800 shadow-inner' 
-                       : 'bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
-                   }`}
-                >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-500'}`} />
-                  {!isCollapsed && <span className="transition-opacity duration-200">{item.name}</span>}
-                </button>
+                <div key={groupIdx} className="space-y-1.5">
+                  {/* Tiêu đề nhóm */}
+                  {!isCollapsed ? (
+                    <button
+                      onClick={() => toggleGroup(group.title)}
+                      className="w-full flex items-center justify-between text-[9px] font-black text-slate-500 hover:text-slate-300 tracking-wide uppercase px-2 mb-2 select-none bg-transparent border-0 cursor-pointer outline-none transition-all duration-150 whitespace-nowrap"
+                    >
+                      <span className="mr-2">{group.title}</span>
+                      {collapsed ? (
+                        <ChevronRight className="w-3 h-3 text-slate-500 shrink-0 ml-1" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 text-slate-500 shrink-0 ml-1" />
+                      )}
+                    </button>
+                  ) : (
+                    groupIdx > 0 && <div className="border-t border-slate-800/60 my-3" />
+                  )}
+                  
+                  {/* Các menu thuộc nhóm */}
+                  <div className={`grid transition-all duration-300 ease-in-out ${
+                    collapsed 
+                      ? 'grid-rows-[0fr] opacity-0 pointer-events-none' 
+                      : 'grid-rows-[1fr] opacity-100'
+                  }`}>
+                    <div className="overflow-hidden space-y-1.5">
+                      {group.items.map(item => {
+                        const Icon = item.icon;
+                        const isActive = currentTab === item.id;
+                        
+                        return (
+                          <button
+                             key={item.id}
+                             onClick={() => {
+                               onSelectTab(item.id);
+                               onCloseMobile();
+                             }}
+                             title={isCollapsed ? item.name : undefined}
+                             className={`w-full flex items-center rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer border-0 ${
+                               isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'
+                             } ${
+                               isActive 
+                                 ? 'bg-slate-950 text-white border border-slate-800 shadow-inner' 
+                                 : 'bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
+                             }`}
+                          >
+                            <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-500'}`} />
+                            {!isCollapsed && <span className="transition-opacity duration-200 whitespace-nowrap">{item.name}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </nav>

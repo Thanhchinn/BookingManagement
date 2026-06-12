@@ -118,6 +118,7 @@ model PartnerProfile {
   disputes          Dispute[]
   promotions        Promotion[]
   adminPartnerMessages AdminPartnerMessage[]
+  productCategories    ProductCategory[]
 
   @@map("partner_profiles")
 }
@@ -254,6 +255,19 @@ model Product {
   bookingDetails BookingDetail[]
 
   @@map("products")
+}
+
+model ProductCategory {
+  id          BigInt    @id @default(autoincrement())
+  partnerId   BigInt    @map("partner_id")
+  name        String    @db.VarChar(100)
+  icon        String?   @default("📦") @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  partner     PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("product_categories")
 }
 
 // ============================================================================
