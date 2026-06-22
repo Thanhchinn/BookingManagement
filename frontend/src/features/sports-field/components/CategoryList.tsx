@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trophy } from 'lucide-react';
 import { useCategories } from '../../../hooks/useCategories';
 
 interface CategoryListProps {
@@ -10,17 +11,17 @@ export const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, on
   const { categories, isLoading } = useCategories();
 
   return (
-    <div className="flex items-center justify-start sm:justify-center gap-3 overflow-x-auto pb-2 select-none scrollbar-none">
+    <div className="flex items-center justify-start sm:justify-center gap-2.5 overflow-x-auto pb-2 select-none scrollbar-none">
       {/* Nút "Tất cả sân" luôn hiển thị cố định */}
       <button
         onClick={() => onSelectCategory('all')}
-        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition duration-200 cursor-pointer shrink-0 border ${
+        className={`flex min-h-10 items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition duration-200 cursor-pointer shrink-0 border ${
           selectedCategory === 'all'
             ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20 border-teal-500'
-            : 'bg-slate-900/80 border-slate-800 hover:border-teal-500/40 hover:text-white text-slate-300'
+            : 'bg-slate-900/80 border-slate-800 hover:border-teal-500/40 hover:bg-slate-850/80 hover:text-white text-slate-300'
         }`}
       >
-        <span className="text-sm">🏆</span>
+        <Trophy className="w-4 h-4" />
         <span>Tất cả sân</span>
       </button>
 
@@ -34,10 +35,10 @@ export const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, on
             <button
               key={cat.id}
               onClick={() => onSelectCategory(cat.slug)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition duration-200 cursor-pointer shrink-0 border ${
+              className={`flex min-h-10 items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition duration-200 cursor-pointer shrink-0 border ${
                 isActive
                   ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20 border-teal-500'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-teal-500/40 hover:text-white text-slate-300'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-teal-500/40 hover:bg-slate-850/80 hover:text-white text-slate-300'
               }`}
             >
               <span className="text-sm">{cat.icon}</span>

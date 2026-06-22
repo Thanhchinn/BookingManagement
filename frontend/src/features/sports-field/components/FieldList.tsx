@@ -1,4 +1,5 @@
 import React from 'react';
+import { SearchX } from 'lucide-react';
 import { FieldCard } from './FieldCard';
 import type { SportField } from './FieldCard';
 
@@ -69,8 +70,8 @@ export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS, onNa
   if (fields.length === 0) {
     return (
       <div className="sz-empty flex flex-col items-center justify-center py-16 px-4 text-slate-400 space-y-4">
-        <div className="w-16 h-16 rounded-lg bg-slate-800/50 flex items-center justify-center text-3xl">
-          🔍
+        <div className="w-16 h-16 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-center text-teal-300">
+          <SearchX className="w-7 h-7" />
         </div>
         <div className="text-center space-y-1">
           <p className="text-lg font-bold text-slate-300">Không tìm thấy sân phù hợp</p>
@@ -83,7 +84,7 @@ export const FieldList: React.FC<FieldListProps> = ({ fields = MOCK_FIELDS, onNa
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
       {fields.map(court => (
         <FieldCard key={court.id} court={court} onNavigate={onNavigate} />
       ))}

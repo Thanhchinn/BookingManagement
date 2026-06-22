@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Menu, X, Sun, Moon, 
-  User, Settings, Key, Calendar, Heart, Building, LogOut, ChevronDown, ChevronUp 
+  User, Settings, Key, Calendar, Heart, Building, LogOut, ChevronDown, ChevronUp, Trophy
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -38,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const [avatar, setAvatar] = useState('👤');
+  const [avatar, setAvatar] = useState('');
 
   useEffect(() => {
     const updateAvatar = () => {
@@ -49,13 +49,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           if (u && u.avatarUrl) {
             setAvatar(u.avatarUrl);
           } else {
-            setAvatar('👤');
+            setAvatar('');
           }
         } catch {
-          setAvatar('👤');
+          setAvatar('');
         }
       } else {
-        setAvatar('👤');
+        setAvatar('');
       }
     };
 
@@ -98,8 +98,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
           className="flex items-center space-x-3 cursor-pointer group"
         >
           {/* Biểu tượng logo thể thao */}
-          <div className="bg-emerald-500 text-white p-2.5 rounded-xl shadow-md shadow-emerald-500/20 text-lg transition-transform group-hover:scale-110 duration-200">
-            🏆
+          <div className="bg-emerald-500 text-white p-2.5 rounded-xl shadow-md shadow-emerald-500/20 transition-transform group-hover:scale-110 duration-200">
+            <Trophy className="w-5 h-5" />
           </div>
           <div>
             <span className="text-lg font-black text-slate-100 tracking-tight">{t('common.sportsZone')}</span>
@@ -206,7 +206,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                     {avatar.startsWith('http') ? (
                       <img src={avatar} alt="Avatar" className="w-full h-full object-cover animate-fade-in" />
                     ) : (
-                      <span className="text-base select-none">{avatar}</span>
+                      <User className="w-4 h-4" />
                     )}
                   </div>
                   <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400 max-w-[80px] sm:max-w-[120px] truncate">
@@ -237,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, userName, onLogout }
                         {avatar.startsWith('http') ? (
                           <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="select-none">{avatar}</span>
+                          <User className="w-7 h-7 text-slate-500 dark:text-slate-300" />
                         )}
                       </div>
                       <span className="text-[10px] font-black tracking-wider text-indigo-500 dark:text-indigo-400 uppercase mb-0.5 block">

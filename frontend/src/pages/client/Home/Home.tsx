@@ -11,6 +11,7 @@ import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { useCategories } from '../../../hooks/useCategories';
+import { BadgePercent, Building2, CalendarDays, MapPin, ShieldCheck, Trophy, Zap } from 'lucide-react';
 interface HomeProps {
   onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
@@ -106,7 +107,7 @@ export const Home: React.FC<HomeProps> = ({
           backgroundImage: "url('/stadium_hero_bg.png')" 
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/82 to-slate-950/10 z-10"></div>
+        <div className="absolute inset-0 sz-hero-vignette z-10"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(20,184,166,0.18),transparent_28rem)] z-10"></div>
 
         <div className="relative z-20 max-w-4xl space-y-6 pt-12 pb-12" data-aos="fade-right" data-aos-duration="1000">
@@ -129,9 +130,7 @@ export const Home: React.FC<HomeProps> = ({
                 variant="primary" 
                 className="px-7 py-3.5 bg-teal-600 hover:bg-teal-500 active:scale-[0.98] text-sm font-extrabold rounded-lg shadow-lg shadow-teal-600/20 text-white transition-all cursor-pointer flex items-center gap-2"
               >
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <CalendarDays className="w-4.5 h-4.5" />
                 Book a Court
               </Button>
             </a>
@@ -140,7 +139,7 @@ export const Home: React.FC<HomeProps> = ({
               variant="secondary"
               className="px-7 py-3.5 bg-white/8 border border-white/15 hover:bg-white/12 active:scale-[0.98] text-sm font-extrabold rounded-lg text-slate-100 transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <span className="text-emerald-400 text-base font-bold">+</span> List your Venue
+              <Building2 className="w-4.5 h-4.5 text-emerald-300" /> List your Venue
             </Button>
           </div>
 
@@ -188,7 +187,7 @@ export const Home: React.FC<HomeProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="100">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
-                ⚡
+                <Zap className="w-6 h-6" />
               </div>
               <h4 className="text-lg font-bold text-white m-0">Đặt Sân Real-time</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -198,7 +197,7 @@ export const Home: React.FC<HomeProps> = ({
 
             <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="200">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
-                ⭐
+                <ShieldCheck className="w-6 h-6" />
               </div>
               <h4 className="text-lg font-bold text-white m-0">Chất Lượng Kiểm Duyệt</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -208,7 +207,7 @@ export const Home: React.FC<HomeProps> = ({
 
             <div className="sz-card p-6 space-y-4 transition-all duration-300" data-aos="fade-up" data-aos-delay="300">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-2xl text-emerald-400">
-                💰
+                <BadgePercent className="w-6 h-6" />
               </div>
               <h4 className="text-lg font-bold text-white m-0">Ưu Đãi Độc Quyền</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -237,20 +236,20 @@ export const Home: React.FC<HomeProps> = ({
           {/* Nút Tất cả */}
           <button
             onClick={() => setPitchCategory('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
               pitchCategory === 'all'
                 ? 'bg-teal-500/10 border-teal-500 text-teal-300 shadow-md shadow-teal-500/5 font-extrabold'
                 : 'bg-slate-950 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
-            🏆 Tất cả
+            <Trophy className="w-4 h-4" /> Tất cả
           </button>
           {/* Các tab từ DB */}
           {categories.map(cat => (
             <button
               key={cat.id}
               onClick={() => setPitchCategory(cat.slug)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                 pitchCategory === cat.slug
                   ? 'bg-teal-500/10 border-teal-500 text-teal-300 shadow-md shadow-teal-500/5 font-extrabold'
                   : 'bg-slate-950 border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-200'
@@ -273,10 +272,10 @@ export const Home: React.FC<HomeProps> = ({
               return (
                 <div 
                   key={pitch.id}
-                  className="bg-slate-900/50 border border-slate-800 hover:border-teal-500/35 transition-all duration-300 rounded-3xl overflow-hidden flex flex-col justify-between group shadow-lg"
+                  className="sz-card-lift bg-slate-900/50 border border-slate-800 hover:border-teal-500/35 transition-all duration-300 rounded-lg overflow-hidden flex flex-col justify-between group shadow-lg"
                 >
                   {/* Ảnh và tag */}
-                  <div className="h-44 overflow-hidden relative">
+                  <div className="sz-card-media overflow-hidden relative">
                     <img 
                       src={image} 
                       alt={pitch.name} 
@@ -299,11 +298,11 @@ export const Home: React.FC<HomeProps> = ({
 
                     <div className="space-y-1.5 text-xs text-slate-400">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-slate-500">🏢</span>
+                        <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                         <span className="line-clamp-1 font-semibold text-slate-300">{pitch.locationName || 'Cơ sở thành viên'}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <span>📍</span>
+                        <MapPin className="w-3.5 h-3.5 shrink-0" />
                         <span>{pitch.locationDistrict ? `${pitch.locationDistrict}, ` : ''}{pitch.locationCity || ''}</span>
                       </div>
                     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { SearchBar } from '../../../features/sports-field/components/SearchBar';
 import { CategoryList } from '../../../features/sports-field/components/CategoryList';
@@ -22,6 +23,8 @@ const API = 'http://localhost:3000';
 
 export const Search: React.FC<SearchProps> = ({
   onNavigate,
+  userName,
+  onLogout,
   searchFilters,
   onUpdateFilters,
 }) => {
@@ -83,9 +86,10 @@ export const Search: React.FC<SearchProps> = ({
 
   return (
     <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
+      <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
       {/* 2. MAIN HUB TÌM KIẾM */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-10 text-left">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-grow w-full space-y-8 sm:space-y-10 text-left">
         
         {/* Nút quay lại trang chủ và Tiêu đề */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
@@ -119,7 +123,7 @@ export const Search: React.FC<SearchProps> = ({
         </div>
 
         {/* 3. THANH TÌM KIẾM CO GỌN NỔI BẬT */}
-        <div className="sz-panel p-5 backdrop-blur-md flex justify-center">
+        <div className="sz-panel p-3 sm:p-5 backdrop-blur-md flex justify-center">
           <SearchBar
             searchQuery={query}
             onSearchChange={handleQueryChange}
@@ -152,7 +156,7 @@ export const Search: React.FC<SearchProps> = ({
           <FieldList fields={filteredFields} onNavigate={onNavigate} />
         </div>
 
-      </div>
+      </main>
 
       {/* 6. CHÂN TRANG DÙNG CHUNG */}
       <Footer />
