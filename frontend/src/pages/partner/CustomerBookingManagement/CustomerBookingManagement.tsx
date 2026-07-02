@@ -3,12 +3,11 @@ import { CalendarRange, Check, X, Eye, Trash2, CheckCircle, RefreshCw, DollarSig
 import { toast } from 'sonner';
 import { PartnerFilterBar } from '../components/PartnerFilterBar';
 import { ConfirmModal } from '../components/ConfirmModal';
-
 const getSportTypeName = (cat: string) => {
   if (!cat) return 'N/A';
   const val = cat.toLowerCase().trim();
-  if (val === 'badminton' || val === 'cầu lông') return 'Cầu lông';
-  if (val === 'football' || val === 'soccer' || val === 'bóng đá') return 'Bóng đá';
+  if (val === 'badminton' || val === 'cầu lông' || val === 'cau-long') return 'Cầu lông';
+  if (val === 'football' || val === 'soccer' || val === 'bóng đá' || val === 'bong-da') return 'Bóng đá';
   if (val === 'tennis' || val === 'quần vợt') return 'Tennis';
   if (val === 'basketball' || val === 'bóng rổ') return 'Bóng rổ';
   if (val === 'volleyball' || val === 'bóng chuyền') return 'Bóng chuyền';

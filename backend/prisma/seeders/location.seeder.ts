@@ -50,9 +50,9 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Cụm sân cầu lông ProSport sở hữu 10 thảm PVC Alsaflor cao cấp chống trơn trượt tuyệt đối. Ánh sáng dịu mắt chống chói, khu vực khán đài rộng và canteen phục vụ tận tình.',
       amenities: ['Wifi tốc độ cao', 'Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Hệ thống đèn LED đạt chuẩn'],
       courts: [
-        { name: 'Sân Cầu Lông Số 1 (Vip)', category: 'Cầu Lông', subType: 'Sân thảm PVC', price: 90000 },
-        { name: 'Sân Cầu Lông Số 2', category: 'Cầu Lông', subType: 'Sân thảm PVC', price: 80000 },
-        { name: 'Sân Cầu Lông Số 3', category: 'Cầu Lông', subType: 'Sân thảm PVC', price: 80000 },
+        { name: 'Sân Cầu Lông Số 1 (Vip)', category: 'cau-long', subType: 'Sân thảm PVC', price: 90000 },
+        { name: 'Sân Cầu Lông Số 2', category: 'cau-long', subType: 'Sân thảm PVC', price: 80000 },
+        { name: 'Sân Cầu Lông Số 3', category: 'cau-long', subType: 'Sân thảm PVC', price: 80000 },
       ]
     },
     {
@@ -71,9 +71,9 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân bóng mini cỏ nhân tạo Thành Phát được nâng cấp mặt cỏ định kỳ, cao su đàn hồi tốt chống chấn thương. Phù hợp cho các trận bóng 5 người và 7 người sôi động.',
       amenities: ['Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Phòng tắm nóng lạnh', 'Khán đài có mái che'],
       courts: [
-        { name: 'Sân Bóng 5 Người (Sân A)', category: 'Bóng Đá', subType: 'Sân cỏ 5 người', price: 150000 },
-        { name: 'Sân Bóng 5 Người (Sân B)', category: 'Bóng Đá', subType: 'Sân cỏ 5 người', price: 150000 },
-        { name: 'Sân Bóng 7 Người (Vip)', category: 'Bóng Đá', subType: 'Sân cỏ 7 người', price: 280000 },
+        { name: 'Sân Bóng 5 Người (Sân A)', category: 'bong-da', subType: 'Sân cỏ 5 người', price: 150000 },
+        { name: 'Sân Bóng 5 Người (Sân B)', category: 'bong-da', subType: 'Sân cỏ 5 người', price: 150000 },
+        { name: 'Sân Bóng 7 Người (Vip)', category: 'bong-da', subType: 'Sân cỏ 7 người', price: 280000 },
       ]
     },
     {
@@ -92,8 +92,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân Tennis Grand Slam mang lại trải nghiệm chuẩn quốc tế với cả sân cứng và sân đất nện cao cấp. Có huấn luyện viên chuyên nghiệp hướng dẫn và hỗ trợ nhặt bóng.',
       amenities: ['Wifi tốc độ cao', 'Bãi đỗ xe ô tô', 'Phòng tắm nóng lạnh', 'Thuê vợt & dụng cụ'],
       courts: [
-        { name: 'Sân Tennis Cứng Số 1', category: 'Tennis', subType: 'Sân cứng Acrylic', price: 200000 },
-        { name: 'Sân Tennis Đất Nện Vip', category: 'Tennis', subType: 'Sân đất nện', price: 250000 },
+        { name: 'Sân Tennis Cứng Số 1', category: 'tennis', subType: 'Sân cứng Acrylic', price: 200000 },
+        { name: 'Sân Tennis Đất Nện Vip', category: 'tennis', subType: 'Sân đất nện', price: 250000 },
       ]
     },
     {
@@ -112,8 +112,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân cầu lông máy lạnh mát mẻ quanh năm tại trung tâm Hà Nội. Cam kết chất lượng ánh sáng, thảm lót êm ái chống rung cho đầu gối và gót chân.',
       amenities: ['Wifi tốc độ cao', 'Căng tin giải khát', 'Hệ thống quạt làm mát', 'Hệ thống đèn LED đạt chuẩn'],
       courts: [
-        { name: 'Sân Cầu Lông Cao Cấp A1', category: 'Cầu Lông', subType: 'Sân thảm thi đấu', price: 100000 },
-        { name: 'Sân Cầu Lông Cao Cấp A2', category: 'Cầu Lông', subType: 'Sân thảm thi đấu', price: 100000 },
+        { name: 'Sân Cầu Lông Cao Cấp A1', category: 'cau-long', subType: 'Sân thảm thi đấu', price: 100000 },
+        { name: 'Sân Cầu Lông Cao Cấp A2', category: 'cau-long', subType: 'Sân thảm thi đấu', price: 100000 },
       ]
     },
     {
@@ -132,8 +132,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân bóng đá phủi nổi tiếng Hà Đông với dàn đèn LED sáng như ban ngày, khu vực nghỉ ngơi thoáng rộng và nước nôi dịch vụ giá cả cực kỳ học sinh sinh viên.',
       amenities: ['Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Khán đài có mái che', 'Hệ thống đèn LED đạt chuẩn'],
       courts: [
-        { name: 'Sân Bóng Đêm Đèn Led A', category: 'Bóng Đá', subType: 'Sân cỏ nhân tạo', price: 180000 },
-        { name: 'Sân Bóng Đêm Đèn Led B', category: 'Bóng Đá', subType: 'Sân cỏ nhân tạo', price: 180000 },
+        { name: 'Sân Bóng Đêm Đèn Led A', category: 'bong-da', subType: 'Sân cỏ nhân tạo', price: 180000 },
+        { name: 'Sân Bóng Đêm Đèn Led B', category: 'bong-da', subType: 'Sân cỏ nhân tạo', price: 180000 },
       ]
     },
     {
@@ -152,8 +152,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Khu vực tổ hợp thể thao đẳng cấp nhất Hải Phòng gồm cụm sân tennis, cầu lông ngoài trời và trong nhà. Không gian rộng rãi, thoáng mát, đỗ xe thuận tiện.',
       amenities: ['Wifi tốc độ cao', 'Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Thuê vợt & dụng cụ'],
       courts: [
-        { name: 'Sân Tennis VMC 1', category: 'Tennis', subType: 'Sân tiêu chuẩn', price: 220000 },
-        { name: 'Sân Cầu Lông Trong Nhà VMC 2', category: 'Cầu Lông', subType: 'Sân thảm silicon', price: 90000 },
+        { name: 'Sân Tennis VMC 1', category: 'tennis', subType: 'Sân tiêu chuẩn', price: 220000 },
+        { name: 'Sân Cầu Lông Trong Nhà VMC 2', category: 'cau-long', subType: 'Sân thảm silicon', price: 90000 },
       ]
     },
     {
@@ -172,8 +172,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân nằm sát bờ sông Hàn lộng gió mát mẻ tự nhiên. Mặt cỏ xịn, hệ thống thoát nước hiện đại chơi được tốt ngay cả sau các cơn mưa lớn.',
       amenities: ['Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Phòng tắm nóng lạnh', 'Khán đài có mái che'],
       courts: [
-        { name: 'Sân Sông Hàn A', category: 'Bóng Đá', subType: 'Sân 5 người cỏ mềm', price: 140000 },
-        { name: 'Sân Sông Hàn B', category: 'Bóng Đá', subType: 'Sân 5 người cỏ mềm', price: 140000 },
+        { name: 'Sân Sông Hàn A', category: 'bong-da', subType: 'Sân 5 người cỏ mềm', price: 140000 },
+        { name: 'Sân Sông Hàn B', category: 'bong-da', subType: 'Sân 5 người cỏ mềm', price: 140000 },
       ]
     },
     {
@@ -192,8 +192,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Cụm sân cầu lông sát biển Nha Trang vừa chơi cầu lông vừa hít gió biển trong lành. Thảm lót cao cấp, có phục vụ nước dừa tươi nguyên chất giải khát.',
       amenities: ['Wifi tốc độ cao', 'Căng tin giải khát', 'Hệ thống quạt làm mát', 'Hệ thống đèn LED đạt chuẩn'],
       courts: [
-        { name: 'Sân Cầu Lông Hoàng Gia 1', category: 'Cầu Lông', subType: 'Sân thảm PVC', price: 85000 },
-        { name: 'Sân Cầu Lông Hoàng Gia 2', category: 'Cầu Lông', subType: 'Sân thảm PVC', price: 85000 },
+        { name: 'Sân Cầu Lông Hoàng Gia 1', category: 'cau-long', subType: 'Sân thảm PVC', price: 85000 },
+        { name: 'Sân Cầu Lông Hoàng Gia 2', category: 'cau-long', subType: 'Sân thảm PVC', price: 85000 },
       ]
     },
     {
@@ -212,8 +212,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Học viện đào tạo quần vợt với các lớp học cơ bản và nâng cao cho mọi lứa tuổi. Sân đấu mái che râm mát, thiết bị luyện tập công nghệ cao hỗ trợ tối đa.',
       amenities: ['Wifi tốc độ cao', 'Bãi đỗ xe ô tô', 'Thuê vợt & dụng cụ', 'Khán đài có mái che'],
       courts: [
-        { name: 'Sân Đào Tạo Basic A', category: 'Tennis', subType: 'Sân Acrylic cao cấp', price: 210000 },
-        { name: 'Sân Đào Tạo Basic B', category: 'Tennis', subType: 'Sân Acrylic cao cấp', price: 210000 },
+        { name: 'Sân Đào Tạo Basic A', category: 'tennis', subType: 'Sân Acrylic cao cấp', price: 210000 },
+        { name: 'Sân Đào Tạo Basic B', category: 'tennis', subType: 'Sân Acrylic cao cấp', price: 210000 },
       ]
     },
     {
@@ -232,8 +232,8 @@ export async function seedLocations(prisma: PrismaClient) {
       description: 'Sân phủi chất lượng hàng đầu miền Tây sông nước. Mặt cỏ lót tấm đệm cao su giảm chấn lực, chỗ ngồi mát mẻ ngắm hoàng hôn sông nước sau giờ đá bóng căng thẳng.',
       amenities: ['Bãi đỗ xe ô tô', 'Căng tin giải khát', 'Hệ thống đèn LED đạt chuẩn', 'Phòng tắm nóng lạnh'],
       courts: [
-        { name: 'Sân Bóng Ninh Kiều 1', category: 'Bóng Đá', subType: 'Sân cỏ 5 người', price: 130000 },
-        { name: 'Sân Bóng Ninh Kiều 2', category: 'Bóng Đá', subType: 'Sân cỏ 5 người', price: 130000 },
+        { name: 'Sân Bóng Ninh Kiều 1', category: 'bong-da', subType: 'Sân cỏ 5 người', price: 130000 },
+        { name: 'Sân Bóng Ninh Kiều 2', category: 'bong-da', subType: 'Sân cỏ 5 người', price: 130000 },
       ]
     }
   ];

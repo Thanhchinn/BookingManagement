@@ -91,12 +91,11 @@ export const FieldFormModal: React.FC<FieldFormModalProps> = ({
                 onChange={(e) => setFormSportType(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3 py-2.5 rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer"
               >
-                <option value="Cầu lông">🏸 Cầu lông</option>
-                <option value="Bóng đá">⚽ Bóng đá</option>
-                <option value="Pickleball">🏓 Pickleball</option>
-                <option value="Tennis">🎾 Tennis</option>
-              </select>
-            </div>
+                <option value="cau-long">🏸 Cầu lông</option>
+                <option value="bong-da">⚽ Bóng đá</option>
+                <option value="pickleball">🏓 Pickleball</option>
+                <option value="tennis">🎾 Tennis</option>
+              </select>            </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Đơn giá / Giờ</label>
               <input 

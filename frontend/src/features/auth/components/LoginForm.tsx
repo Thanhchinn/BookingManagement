@@ -34,7 +34,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
 
       const data = response.data;
 
-      // Lưu trữ thông tin người dùng vào localStorage làm fallback
+      // Lưu trữ thông tin người dùng và token vào localStorage
+      localStorage.setItem('user_token', data.access_token);
       localStorage.setItem('user_info', JSON.stringify(data.user));
 
       onSuccess(data.user.fullName);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Plus, Trash2, Edit3, HelpCircle, X } from 'lucide-react';
+import { getCategoryLabel } from '../../../utils/formatters';
 import { toast } from 'sonner';
 
 interface CourtManagementPageProps {
@@ -33,6 +34,8 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
 }) => {
   const token = localStorage.getItem('user_token');
 
+
+
   // Trạng thái view nội bộ của trang quản lý sân:
   // - 'list': hiển thị danh sách sân
   // - 'add': form thêm mới sân đấu
@@ -47,7 +50,7 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
 
   // States biểu mẫu (Court Form)
   const [courtName, setCourtName] = useState('');
-  const [courtCategory, setCourtCategory] = useState('Bóng đá');
+  const [courtCategory, setCourtCategory] = useState('bong-da');
   const [courtSubType, setCourtSubType] = useState('Sân 5 người');
   const [courtPrice, setCourtPrice] = useState(100000);
   const [courtDesc, setCourtDesc] = useState('');
@@ -99,11 +102,10 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
     fetchCourtsAndCategories();
   }, [locationId, courtView]);
 
-  // Kích hoạt form thêm sân mới
   const handleOpenAddCourt = () => {
     setEditingCourtId(null);
     setCourtName('');
-    setCourtCategory(systemCategories[0]?.name || 'Bóng đá');
+    setCourtCategory(systemCategories[0]?.slug || 'bong-da');
     setCourtSubType('Sân 5 người');
     setCourtPrice(100000);
     setCourtDesc('');
@@ -371,9 +373,8 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-black text-white">{c.name}</span>
                       <span className="text-[9px] font-extrabold px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-900">
-                        {c.category}
-                      </span>
-                    </div>
+                        {getCategoryLabel(c.category)}
+                      </span>                    </div>
                     {c.subType && (
                       <span className="text-[9px] text-slate-500 font-semibold block">{c.subType}</span>
                     )}
@@ -480,10 +481,9 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
                   className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3 py-2.5 rounded-xl focus:border-amber-500 focus:outline-none font-semibold cursor-pointer"
                 >
                   {systemCategories.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
                   ))}
-                </select>
-              </div>
+                </select>              </div>
 
               <div className="space-y-1.5">
                 <label className="text-[9px] font-bold text-slate-500 uppercase block">Phân loại sân (Kích thước)</label>

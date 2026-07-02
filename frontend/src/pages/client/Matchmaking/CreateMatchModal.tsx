@@ -13,8 +13,8 @@ interface CreateMatchModalProps {
   onSubmit: (e: React.FormEvent) => void;
   newTitle: string;
   setNewTitle: (val: string) => void;
-  newSport: 'Cầu Lông' | 'Bóng Đá' | 'Pickleball' | 'Tennis' | 'Bóng Rổ';
-  setNewSport: (val: any) => void;
+  newSport: string;
+  setNewSport: (val: string) => void;
   newSkill: 'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp';
   setNewSkill: (val: any) => void;
   selectedPitchId: string;
@@ -58,6 +58,17 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const getSportTypeName = (type?: string): string => {
+    if (!type) return 'Thể thao';
+    const t = type.toLowerCase().trim();
+    if (t === 'cau-long' || t === 'badminton' || t === 'cầu lông') return 'Cầu Lông';
+    if (t === 'bong-da' || t === 'football' || t === 'soccer' || t === 'bóng đá') return 'Bóng Đá';
+    if (t === 'tennis' || t === 'quần vợt') return 'Tennis';
+    if (t === 'pickleball') return 'Pickleball';
+    if (t === 'bong-ro' || t === 'basketball' || t === 'bóng rổ') return 'Bóng Rổ';
+    return type;
+  };
+
   // Lọc danh sách sân theo môn thể thao đã chọn
   const filteredPitches = sportsPitches.filter(
     (pitch) => pitch.category.toLowerCase() === newSport.toLowerCase()
@@ -100,16 +111,16 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
               <select
                 value={newSport}
                 onChange={(e) => {
-                  setNewSport(e.target.value as any);
+                  setNewSport(e.target.value);
                   setSelectedPitchId(''); // Reset pitch selection when sport changes
                 }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 outline-none"
               >
-                <option value="Cầu Lông">Cầu Lông</option>
-                <option value="Bóng Đá">Bóng Đá</option>
-                <option value="Pickleball">Pickleball</option>
-                <option value="Tennis">Tennis</option>
-                <option value="Bóng Rổ">Bóng Rổ</option>
+                <option value="cau-long">Cầu Lông</option>
+                <option value="bong-da">Bóng Đá</option>
+                <option value="pickleball">Pickleball</option>
+                <option value="tennis">Tennis</option>
+                <option value="bong-ro">Bóng Rổ</option>
               </select>
             </div>
 
@@ -138,7 +149,7 @@ export const CreateMatchModal: React.FC<CreateMatchModalProps> = ({
               onChange={(e) => setSelectedPitchId(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 outline-none"
             >
-              <option value="">-- Chọn sân ({newSport}) --</option>
+              <option value="">-- Chọn sân ({getSportTypeName(newSport)}) --</option>
               {filteredPitches.map((pitch) => (
                 <option key={pitch.id} value={pitch.id}>
                   {pitch.locationName} - {pitch.name}

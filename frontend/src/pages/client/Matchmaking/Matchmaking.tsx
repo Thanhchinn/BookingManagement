@@ -32,9 +32,19 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
 
   // Bộ lọc
   const [searchQuery, setSearchQuery] = useState('');
-  const [sportFilter, setSportFilter] = useState<'ALL' | 'Cầu Lông' | 'Bóng Đá' | 'Pickleball' | 'Tennis'>('ALL');
+  const [sportFilter, setSportFilter] = useState<string>('ALL');
   const [skillFilter, setSkillFilter] = useState<'ALL' | 'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp'>('ALL');
 
+  const getSportTypeName = (type?: string): string => {
+    if (!type) return 'Thể thao';
+    const t = type.toLowerCase().trim();
+    if (t === 'cau-long' || t === 'badminton' || t === 'cầu lông') return 'Cầu Lông';
+    if (t === 'bong-da' || t === 'football' || t === 'soccer' || t === 'bóng đá') return 'Bóng Đá';
+    if (t === 'tennis' || t === 'quần vợt') return 'Tennis';
+    if (t === 'pickleball') return 'Pickleball';
+    if (t === 'bong-ro' || t === 'basketball' || t === 'bóng rổ') return 'Bóng Rổ';
+    return type;
+  };
   // Modals state
   const [selectedMatch, setSelectedMatch] = useState<MatchPost | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
@@ -218,12 +228,29 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   };
 
   const getSportIcon = (sport: string) => {
-    switch (sport) {
-      case 'Cầu Lông': return '🏸';
-      case 'Bóng Đá': return '⚽';
-      case 'Pickleball': return '🏓';
-      case 'Tennis': return '🎾';
-      default: return '🏆';
+    if (!sport) return '🏆';
+    const val = sport.toLowerCase().trim();
+    switch (val) {
+      case 'cau-long':
+      case 'badminton':
+      case 'cầu lông':
+        return '🏸';
+      case 'bong-da':
+      case 'football':
+      case 'soccer':
+      case 'bóng đá':
+        return '⚽';
+      case 'pickleball':
+        return '🏓';
+      case 'tennis':
+      case 'quần vợt':
+        return '🎾';
+      case 'bong-ro':
+      case 'basketball':
+      case 'bóng rổ':
+        return '🏀';
+      default:
+        return '🏆';
     }
   };
 
@@ -323,10 +350,10 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
                 className="bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300 px-3 py-2 rounded-xl outline-none"
               >
                 <option value="ALL">Tất cả môn</option>
-                <option value="Cầu Lông">Cầu Lông</option>
-                <option value="Bóng Đá">Bóng Đá</option>
-                <option value="Pickleball">Pickleball</option>
-                <option value="Tennis">Tennis</option>
+                <option value="cau-long">Cầu Lông</option>
+                <option value="bong-da">Bóng Đá</option>
+                <option value="pickleball">Pickleball</option>
+                <option value="tennis">Tennis</option>
               </select>
             </div>
 
@@ -373,7 +400,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
                   <div className="space-y-3.5 flex-grow">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className="text-2xl select-none">{getSportIcon(m.sport)}</span>
-                      <span className="text-xs bg-slate-950 border border-slate-850 px-2 py-0.5 rounded text-emerald-400 font-bold uppercase">{m.sport}</span>
+                      <span className="text-xs bg-slate-950 border border-slate-850 px-2 py-0.5 rounded text-emerald-400 font-bold uppercase">{getSportTypeName(m.sport)}</span>
                       <span className="text-[10px] text-slate-500">Trình độ: <strong className="text-slate-300 font-medium">{m.skillLevel}</strong></span>
                       
                       {m.status === 'PENDING' ? (

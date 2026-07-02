@@ -14,6 +14,17 @@ import {
 import { toast } from 'sonner';
 import { Badge } from '../../../components/ui/Badge';
 
+const getSportTypeName = (type?: string): string => {
+  if (!type) return 'Thể thao';
+  const t = type.toLowerCase().trim();
+  if (t === 'cau-long' || t === 'badminton' || t === 'cầu lông') return 'Cầu Lông';
+  if (t === 'bong-da' || t === 'football' || t === 'soccer' || t === 'bóng đá') return 'Bóng Đá';
+  if (t === 'tennis' || t === 'quần vợt') return 'Tennis';
+  if (t === 'pickleball') return 'Pickleball';
+  if (t === 'bong-ro' || t === 'basketball' || t === 'bóng rổ') return 'Bóng Rổ';
+  return type;
+};
+
 export const MatchmakingModeration: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -305,7 +316,7 @@ export const MatchmakingModeration: React.FC = () => {
                     {/* Sport */}
                     <td className="p-4 text-center">
                       <span className="text-xs bg-slate-950 border border-slate-800 px-2.5 py-0.5 rounded text-emerald-400 font-bold uppercase inline-block">
-                        {post.sport}
+                        {getSportTypeName(post.sport)}
                       </span>
                     </td>
 

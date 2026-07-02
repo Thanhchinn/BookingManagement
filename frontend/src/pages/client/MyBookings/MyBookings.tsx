@@ -22,8 +22,8 @@ import { toast } from 'sonner';
 const getSportTypeName = (cat: string) => {
   if (!cat) return 'N/A';
   const val = cat.toLowerCase().trim();
-  if (val === 'badminton' || val === 'cầu lông') return 'Cầu Lông';
-  if (val === 'football' || val === 'soccer' || val === 'bóng đá') return 'Bóng Đá';
+  if (val === 'badminton' || val === 'cầu lông' || val === 'cau-long') return 'Cầu Lông';
+  if (val === 'football' || val === 'soccer' || val === 'bóng đá' || val === 'bong-da') return 'Bóng Đá';
   if (val === 'tennis' || val === 'quần vợt') return 'Tennis';
   if (val === 'basketball' || val === 'bóng rổ') return 'Bóng Rổ';
   if (val === 'volleyball' || val === 'bóng chuyền') return 'Bóng Chuyền';

@@ -39,7 +39,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
 
       const data = response.data;
 
-      // Lưu Thông tin Admin vào localStorage làm fallback
+      // Lưu Thông tin Admin và token vào localStorage
+      localStorage.setItem('admin_token', data.access_token);
       localStorage.setItem('admin_profile', JSON.stringify(data.admin));
 
       // Thông báo đăng nhập thành công bằng Toast

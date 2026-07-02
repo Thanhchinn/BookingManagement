@@ -202,7 +202,10 @@ function App() {
   };
 
   const handleClientLoginSuccess = (name: string) => {
-    setUserName(name);
+    const token = localStorage.getItem('user_token') || '';
+    const infoStr = localStorage.getItem('user_info');
+    const info = infoStr ? JSON.parse(infoStr) : {};
+    loginUser(name, token, info);
     toast.success('Đăng nhập thành công!', {
       description: `Chào mừng ${name} quay trở lại.`,
       duration: 3000,
@@ -211,7 +214,10 @@ function App() {
   };
 
   const handleAdminLoginSuccess = () => {
-    loginAdmin(localStorage.getItem('admin_token') || '', {});
+    const token = localStorage.getItem('admin_token') || '';
+    const profileStr = localStorage.getItem('admin_profile');
+    const profile = profileStr ? JSON.parse(profileStr) : {};
+    loginAdmin(token, profile);
     navigateTo('/admin');
   };
 

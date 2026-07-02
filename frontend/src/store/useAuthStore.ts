@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => {
     isAdminLoggedIn: getInitialAdmin(),
 
     loginUser: (name, token, userInfo) => {
+      localStorage.setItem('user_token', token);
       localStorage.setItem('user_info', JSON.stringify(userInfo));
       set({ userName: name });
     },
@@ -61,6 +62,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     loginAdmin: (token, profile) => {
+      localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_profile', JSON.stringify(profile));
       set({ isAdminLoggedIn: true });
     },

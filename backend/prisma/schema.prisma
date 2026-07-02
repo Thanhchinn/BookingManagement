@@ -191,6 +191,8 @@ model Category {
   isActive    Boolean   @default(true) @map("is_active")
   sortOrder   Int       @default(0) @map("sort_order")
 
+  sportsPitches SportsPitch[]
+
   @@map("categories")
 }
 
@@ -208,6 +210,7 @@ model SportsPitch {
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
 
   location          Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  categoryRelation  Category  @relation(fields: [category], references: [slug], onDelete: Restrict)
   timeSlots         TimeSlot[]
   slotOverrides     SlotOverride[]
   bookings          Booking[]
@@ -215,7 +218,7 @@ model SportsPitch {
   reviews           Review[]
 
   @@index([category], name: "idx_sports_pitches_category")
-  @@map("sportspitch")
+  @@map("sports_pitches")
 }
 
 model Amenity {

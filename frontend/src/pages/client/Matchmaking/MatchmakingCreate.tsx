@@ -34,7 +34,7 @@ export const MatchmakingCreate: React.FC<MatchmakingCreateProps> = ({ onNavigate
 
   // States của form
   const [newTitle, setNewTitle] = useState('');
-  const [newSport, setNewSport] = useState<'Cầu Lông' | 'Bóng Đá' | 'Pickleball' | 'Tennis' | 'Bóng Rổ'>('Cầu Lông');
+  const [newSport, setNewSport] = useState<string>('cau-long');
   const [newDate, setNewDate] = useState('');
   const [newStart, setNewStart] = useState('18:00');
   const [newEnd, setNewEnd] = useState('20:00');
@@ -188,19 +188,18 @@ export const MatchmakingCreate: React.FC<MatchmakingCreateProps> = ({ onNavigate
                 <select
                   value={newSport}
                   onChange={(e) => {
-                    setNewSport(e.target.value as any);
+                    setNewSport(e.target.value);
                     setSelectedLocationId('');
                     setSelectedPitchId('');
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-emerald-500/50 transition cursor-pointer"
                 >
-                  <option value="Cầu Lông">Cầu Lông</option>
-                  <option value="Bóng Đá">Bóng Đá</option>
-                  <option value="Pickleball">Pickleball</option>
-                  <option value="Tennis">Tennis</option>
-                  <option value="Bóng Rổ">Bóng Rổ</option>
-                </select>
-              </div>
+                  <option value="cau-long">Cầu Lông</option>
+                  <option value="bong-da">Bóng Đá</option>
+                  <option value="pickleball">Pickleball</option>
+                  <option value="tennis">Tennis</option>
+                  <option value="bong-ro">Bóng Rổ</option>
+                </select>              </div>
 
               <div className="space-y-2">
                 <label className="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-1.5">

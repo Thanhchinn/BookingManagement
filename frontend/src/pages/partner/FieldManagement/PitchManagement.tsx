@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, MapPin, Settings, Save, ArrowLeft, HelpCircle, X } from 'lucide-react';
+import { getCategoryLabel } from '../../../utils/formatters';
 import { toast } from 'sonner';
 import { PartnerFilterBar } from '../components/PartnerFilterBar';
 
@@ -62,7 +63,7 @@ const getDayName = (dayNum: number) => {
 export const PitchManagement: React.FC = () => {
   const token = localStorage.getItem('user_token');
 
-  // Trạng thái view chính:
+
   // - 'list': danh sách tất cả các sân
   // - 'add': form thêm sân mới
   // - 'edit': form chỉnh sửa thông tin & khung giờ sân
@@ -131,7 +132,7 @@ export const PitchManagement: React.FC = () => {
         const cats = await catRes.json();
         setSystemCategories(cats);
         if (cats.length > 0) {
-          setPitchCategory(cats[0].name);
+          setPitchCategory(cats[0].slug);
         }
       }
     } catch (err: any) {
@@ -167,7 +168,7 @@ export const PitchManagement: React.FC = () => {
     }
     setEditingPitchId(null);
     setPitchName('');
-    setPitchCategory(systemCategories[0]?.name || 'Bóng đá');
+    setPitchCategory(systemCategories[0]?.slug || 'bong-da');
     setPitchSubType('Sân 5 người');
     setPitchPrice(100000);
     setPitchDesc('');
@@ -432,7 +433,7 @@ export const PitchManagement: React.FC = () => {
                     className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3 py-2.5 rounded-xl focus:border-amber-500 focus:outline-none font-semibold cursor-pointer"
                   >
                     {systemCategories.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      <option key={cat.id} value={cat.slug}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
@@ -811,9 +812,8 @@ export const PitchManagement: React.FC = () => {
                   <div className="flex justify-between items-start gap-2">
                     <span className="text-sm font-black text-white line-clamp-1">{pitch.name}</span>
                     <span className="text-[8px] font-extrabold px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-900 uppercase shrink-0">
-                      {pitch.category}
-                    </span>
-                  </div>
+                      {getCategoryLabel(pitch.category)}
+                    </span>                  </div>
 
                   <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-amber-500" />
