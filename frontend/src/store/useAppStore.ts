@@ -10,10 +10,12 @@ interface AppState {
   searchFilters: SearchFilters;
   bookingSuccessData: any | null;
   selectedLocationId: string | null;
+  selectedCourtId: string | null;
 
   setSearchFilters: (filters: Partial<SearchFilters>) => void;
   setBookingSuccessData: (data: any) => void;
   setSelectedLocationId: (locationId: string | null) => void;
+  setSelectedCourtId: (courtId: string | null) => void;
   resetBookingData: () => void;
 }
 
@@ -25,6 +27,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
   bookingSuccessData: null,
   selectedLocationId: null,
+  selectedCourtId: null,
 
   setSearchFilters: (filters) =>
     set((state) => ({
@@ -33,5 +36,6 @@ export const useAppStore = create<AppState>((set) => ({
 
   setBookingSuccessData: (data) => set({ bookingSuccessData: data }),
   setSelectedLocationId: (locationId) => set({ selectedLocationId: locationId }),
-  resetBookingData: () => set({ bookingSuccessData: null, selectedLocationId: null }),
+  setSelectedCourtId: (courtId) => set({ selectedCourtId: courtId }),
+  resetBookingData: () => set({ bookingSuccessData: null, selectedLocationId: null, selectedCourtId: null }),
 }));

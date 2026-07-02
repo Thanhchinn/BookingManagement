@@ -181,8 +181,8 @@ export class PublicService {
     return serializePublicService(service);
   }
 
-  // Lấy các slot khả dụng của sân theo ngày cụ thể
-  async getAvailableSlots(serviceId: string, date: string) {
+  // Lấy các slot khả dụng của sân theo ngày cụ thể và thời lượng chơi mong muốn
+  async getAvailableSlots(serviceId: string, date: string, duration: number = 1.5) {
     const service = await this.prisma.sportsPitch.findFirst({
       where: { id: BigInt(serviceId), isActive: true },
       select: { basePricePerHour: true },
@@ -190,7 +190,7 @@ export class PublicService {
     if (!service) return [];
 
     const dateObj = new Date(date);
-    const dayOfWeek = dateObj.getDay(); // 0 = Sun, 1 = Mon, ...
+    const dayOfWeek = dateObj.getUTCDay(); // 0 = Sun, 1 = Mon, ... timezone-safe
 
     // Lấy tất cả timeslots của ngày trong tuần đó
     const timeSlots = await this.prisma.timeSlot.findMany({
@@ -198,7 +198,7 @@ export class PublicService {
       orderBy: { startTime: 'asc' },
     });
 
-    // Lấy các booking đã được xác nhận trong ngày đó
+    // Lấy các booking đã được xác nhận hoặc đang chờ duyệt trong ngày đó
     const bookedSlots = await this.prisma.booking.findMany({
       where: {
         sportsPitchId: BigInt(serviceId),
@@ -210,35 +210,60 @@ export class PublicService {
 
     const basePricePerHour = parseFloat(service.basePricePerHour.toString());
 
-    return timeSlots.map((ts: any) => {
-      const startStr = ts.startTime.toISOString().substring(11, 16); // HH:mm
-      const endStr = ts.endTime.toISOString().substring(11, 16);
+    // Tìm giờ đóng cửa lớn nhất của ngày đó trong các timeslots
+    let maxCloseMinutes = 0;
+    timeSlots.forEach((ts: any) => {
+      const endIso = ts.endTime.toISOString().substring(11, 16);
+      const [endH, endM] = endIso.split(':').map(Number);
+      const endMinutes = endH * 60 + endM;
+      if (endMinutes > maxCloseMinutes) {
+        maxCloseMinutes = endMinutes;
+      }
+    });
 
-      // Kiểm tra xem slot này đã bị đặt chưa
+    const availableSlots: any[] = [];
+    const durMinutes = duration * 60;
+
+    timeSlots.forEach((ts: any) => {
+      const startIso = ts.startTime.toISOString().substring(11, 16); // HH:mm
+      const [startH, startM] = startIso.split(':').map(Number);
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = startMinutes + durMinutes;
+
+      // Nếu ca đấu vượt quá giờ đóng cửa lớn nhất của sân, bỏ qua
+      if (endMinutes > maxCloseMinutes) return;
+
+      const endH = Math.floor(endMinutes / 60);
+      const endM = endMinutes % 60;
+      const endStr = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+
+      // Kiểm tra xem ca virtual này có bị trùng với booking nào không
+      const virtualStartStr = `${startIso}:00`;
+      const virtualEndStr = `${endStr}:00`;
+
       const isBooked = bookedSlots.some((b: any) => {
-        const bStart = b.startTime.toISOString().substring(11, 16);
-        return bStart === startStr;
+        const bStart = b.startTime.toISOString().substring(11, 19);
+        const bEnd = b.endTime.toISOString().substring(11, 19);
+        return virtualStartStr < bEnd && virtualEndStr > bStart;
       });
 
-      // Tính giờ chơi
-      const [startH, startM] = startStr.split(':').map(Number);
-      const [endH, endM] = endStr.split(':').map(Number);
-      const durationHours = (endH * 60 + endM - (startH * 60 + startM)) / 60;
       const priceModifier = parseFloat(ts.priceModifier.toString());
-      const finalPrice = Math.round(basePricePerHour * priceModifier * durationHours);
+      const finalPrice = Math.round(basePricePerHour * priceModifier * duration);
 
-      return {
-        id: ts.id.toString(),
+      availableSlots.push({
+        id: `${ts.id.toString()}_${duration}`,
         dayOfWeek: ts.dayOfWeek,
-        startTime: startStr,
+        startTime: startIso,
         endTime: endStr,
         priceModifier,
         isAvailable: ts.isAvailable,
         isBooked,
-        durationHours,
+        durationHours: duration,
         finalPrice,
-      };
+      });
     });
+
+    return availableSlots;
   }
 
   // Lấy sản phẩm bán kèm của cơ sở

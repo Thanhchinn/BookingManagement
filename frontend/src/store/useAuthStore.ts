@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import apiClient from '../services/apiClient';
 
 interface AuthState {
   userName: string | null;
@@ -33,9 +34,8 @@ export const useAuthStore = create<AuthState>((set) => {
 
   // Khôi phục admin từ localStorage
   const getInitialAdmin = () => {
-    const token = localStorage.getItem('admin_token');
     const profile = localStorage.getItem('admin_profile');
-    return !!(token && profile);
+    return !!profile;
   };
 
   return {
@@ -44,7 +44,6 @@ export const useAuthStore = create<AuthState>((set) => {
     isAdminLoggedIn: getInitialAdmin(),
 
     loginUser: (name, token, userInfo) => {
-      localStorage.setItem('user_token', token);
       localStorage.setItem('user_info', JSON.stringify(userInfo));
       set({ userName: name });
     },
@@ -53,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => {
       localStorage.removeItem('user_token');
       localStorage.removeItem('user_info');
       localStorage.removeItem('partner_name');
+      apiClient.post('/auth/logout').catch(() => {});
       set({ userName: null, partnerName: null });
     },
 
@@ -61,7 +61,6 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     loginAdmin: (token, profile) => {
-      localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_profile', JSON.stringify(profile));
       set({ isAdminLoggedIn: true });
     },
@@ -69,6 +68,7 @@ export const useAuthStore = create<AuthState>((set) => {
     logoutAdmin: () => {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_profile');
+      apiClient.post('/auth/logout').catch(() => {});
       set({ isAdminLoggedIn: false });
     },
 

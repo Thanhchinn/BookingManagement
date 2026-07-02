@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../../../services/apiClient';
 
 interface AdminLoginPageProps {
   onLoginSuccess: (adminName: string) => void;
@@ -31,24 +32,14 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+      const response = await apiClient.post('/auth/admin/login', {
+        username: username.trim(),
+        password: password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        // Nhận thông báo lỗi từ ValidationPipe hoặc UnauthorizedException của Backend
-        const errorMessage = Array.isArray(data.message) ? data.message[0] : data.message;
-        throw new Error(errorMessage || 'Sai tài khoản hoặc mật khẩu.');
-      }
-
-      // Lưu Token và Thông tin Admin vào localStorage
-      localStorage.setItem('admin_token', data.access_token);
+      // Lưu Thông tin Admin vào localStorage làm fallback
       localStorage.setItem('admin_profile', JSON.stringify(data.admin));
 
       // Thông báo đăng nhập thành công bằng Toast
@@ -60,7 +51,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
       // Kích hoạt callback đăng nhập thành công truyền tên Admin lên App.tsx
       onLoginSuccess(data.admin.fullName);
     } catch (err: any) {
-      const msg = err.message || 'Kết nối tới máy chủ thất bại.';
+      const msg = err.response?.data?.message || err.message || 'Kết nối tới máy chủ thất bại.';
       setError(msg);
       // Thông báo lỗi bằng Toast
       toast.error('Đăng nhập thất bại', {

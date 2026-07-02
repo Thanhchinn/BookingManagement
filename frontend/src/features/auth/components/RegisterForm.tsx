@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
 import { MailCheck, ShieldAlert, Clock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -65,21 +66,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/send-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-        }),
+      const response = await apiClient.post('/auth/send-otp', {
+        email: email.trim(),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Không thể gửi mã OTP xác thực.');
-      }
+      const data = response.data;
 
       setIsOtpSent(true);
       setOtpCountdown(60); // 60 giây chờ gửi lại
@@ -90,7 +81,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
         setDevOtpSuggestion(data.devOtp);
       }
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi khi gửi mã xác thực.');
+      const msg = err.response?.data?.message || err.message || 'Đã xảy ra lỗi khi gửi mã xác thực.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -116,29 +108,18 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          email: email.trim(),
-          password: password,
-          otpCode: otpCode.trim(),
-        }),
+      await apiClient.post('/auth/register', {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password: password,
+        otpCode: otpCode.trim(),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Đăng ký tài khoản thất bại.');
-      }
 
       toast.success('Đăng ký tài khoản thành công! Vui lòng sử dụng thông tin đăng nhập của bạn.');
       onSwitchMode();
     } catch (err: any) {
-      setError(err.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại mã OTP.');
+      const msg = err.response?.data?.message || err.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại mã OTP.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

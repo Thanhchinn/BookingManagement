@@ -71,7 +71,9 @@ function App() {
     bookingSuccessData,
     setBookingSuccessData,
     selectedLocationId,
-    setSelectedLocationId
+    setSelectedLocationId,
+    selectedCourtId,
+    setSelectedCourtId
   } = useAppStore();
 
   // Chế độ đăng nhập hay đăng ký của client
@@ -180,9 +182,14 @@ function App() {
     page: 'home' | 'auth' | 'admin' | 'partner' | 'my-bookings' | 'field-details' | 'booking-success' | 'matchmaking' | 'matchmaking/create' | 'chat' | 'search' | 'profile' | 'change-password',
     data?: any
   ) => {
-    // data có thể là string (authMode cũ) hoặc object { locationId }
+    // data có thể là string (authMode cũ) hoặc object { locationId, courtId }
     if (typeof data === 'string') setAuthMode(data as 'login' | 'register');
     if (data?.locationId) setSelectedLocationId(data.locationId);
+    if (data?.courtId) {
+      setSelectedCourtId(data.courtId.toString());
+    } else {
+      setSelectedCourtId(null);
+    }
     if (page === 'admin') {
       navigateTo('/admin');
     } else if (page === 'partner') {
@@ -196,6 +203,10 @@ function App() {
 
   const handleClientLoginSuccess = (name: string) => {
     setUserName(name);
+    toast.success('Đăng nhập thành công!', {
+      description: `Chào mừng ${name} quay trở lại.`,
+      duration: 3000,
+    });
     navigateTo('/');
   };
 
@@ -206,11 +217,19 @@ function App() {
 
   const handlePartnerLoginSuccess = (name: string) => {
     loginPartner(name);
+    toast.success('Đăng nhập đối tác thành công!', {
+      description: `Chào mừng ${name} đến với trang quản lý cơ sở.`,
+      duration: 3000,
+    });
     navigateTo('/partner');
   };
 
   const handleClientLogout = () => {
     logoutUser();
+    toast.success('Đăng xuất thành công!', {
+      description: 'Hẹn gặp lại bạn lần sau.',
+      duration: 3000,
+    });
     navigateTo('/');
   };
 
@@ -270,6 +289,10 @@ function App() {
             navigateTo={navigateTo}
             onLogout={() => {
               logoutPartner();
+              toast.success('Đăng xuất thành công!', {
+                description: 'Phiên làm việc đối tác đã được hủy an toàn.',
+                duration: 3000,
+              });
               navigateTo('/');
             }}
           />
@@ -336,6 +359,7 @@ function App() {
         {currentPage === 'field-details' && (
           <CourtDetails 
             locationId={selectedLocationId}
+            initialCourtId={selectedCourtId}
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}

@@ -44,14 +44,16 @@ export class PublicController {
   }
 
   // Lấy slot khả dụng của sân theo ngày
-  // GET /public/services/:id/available-slots?date=2026-06-10
+  // GET /public/services/:id/available-slots?date=2026-06-10&duration=1.5
   @Get('services/:id/available-slots')
   async getAvailableSlots(
     @Param('id') id: string,
     @Query('date') date: string,
+    @Query('duration') duration?: string,
   ) {
     const targetDate = date || new Date().toISOString().split('T')[0];
-    return this.publicService.getAvailableSlots(id, targetDate);
+    const parsedDuration = duration ? parseFloat(duration) : undefined;
+    return this.publicService.getAvailableSlots(id, targetDate, parsedDuration);
   }
 
   // Lấy sản phẩm bán kèm của cơ sở

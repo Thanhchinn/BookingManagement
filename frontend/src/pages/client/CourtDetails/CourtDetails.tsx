@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 
 interface CourtDetailsProps {
   locationId?: string | null;
+  initialCourtId?: string | null;
   onNavigate?: (page: any, data?: any) => void;
   userName?: string;
   onLogout?: () => void;
@@ -67,6 +68,7 @@ const getPeriod = (h: number): 'morning' | 'afternoon' | 'evening' =>
 
 export const CourtDetails: React.FC<CourtDetailsProps> = ({
   locationId,
+  initialCourtId,
   onNavigate,
   userName,
   onLogout,
@@ -106,6 +108,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
   // ── Bộ lọc ca ──
   const [periodFilter, setPeriodFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [hourFilter, setHourFilter] = useState<'all' | 'even' | 'odd'>('all');
+  const [selectedDuration, setSelectedDuration] = useState<number>(1.5);
+  const [timeSearch, setTimeSearch] = useState<string>('');
 
   // ── Fetch thông tin cơ sở + danh sách sân ──
   useEffect(() => {
@@ -118,12 +122,19 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
           setLocation(data);
           const svc = data.services || [];
           setCourts(svc);
-          if (svc.length > 0) setSelectedCourtId(svc[0].id);
+          if (svc.length > 0) {
+            const hasInitial = svc.some((s: any) => s.id.toString() === initialCourtId?.toString());
+            if (hasInitial && initialCourtId) {
+              setSelectedCourtId(initialCourtId.toString());
+            } else {
+              setSelectedCourtId(svc[0].id.toString());
+            }
+          }
         }
       })
       .catch(console.error)
       .finally(() => setIsFetchingLocation(false));
-  }, [locationId]);
+  }, [locationId, initialCourtId]);
 
   // ── Fetch sản phẩm bán kèm ──
   useEffect(() => {
@@ -136,12 +147,12 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
       .catch(console.error);
   }, [locationId]);
 
-  // ── Fetch available slots khi đổi sân hoặc ngày ──
+  // ── Fetch available slots khi đổi sân, ngày hoặc thời lượng chơi ──
   useEffect(() => {
     if (!selectedCourtId) return;
     setIsFetchingSlots(true);
     setSelectedSlotId(null);
-    fetch(`${API}/public/services/${selectedCourtId}/available-slots?date=${selectedDate}`)
+    fetch(`${API}/public/services/${selectedCourtId}/available-slots?date=${selectedDate}&duration=${selectedDuration}`)
       .then(r => r.ok ? r.json() : [])
       .then((data: any[]) => {
         const mapped = data.map(s => ({
@@ -158,7 +169,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
       })
       .catch(console.error)
       .finally(() => setIsFetchingSlots(false));
-  }, [selectedCourtId, selectedDate]);
+  }, [selectedCourtId, selectedDate, selectedDuration]);
 
   const handleSelectCourt = (courtId: string) => {
     setSelectedCourtId(courtId);
@@ -356,13 +367,15 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     }
   };
 
-  // Lọc Ca đấu (Làm gọn) theo Buổi & Giờ Chẵn/Lẻ
+  // Lọc Ca đấu (Làm gọn) theo Buổi & Giờ Chẵn/Lẻ & Từ khóa giờ tìm kiếm
   const filteredSlots = slots.filter(s => {
     // 1. Lọc buổi
     if (periodFilter !== 'all' && s.period !== periodFilter) return false;
     // 2. Lọc giờ chẵn/lẻ
     if (hourFilter === 'even' && s.startHour % 2 !== 0) return false;
     if (hourFilter === 'odd' && s.startHour % 2 === 0) return false;
+    // 3. Lọc theo tìm kiếm từ khóa giờ
+    if (timeSearch.trim() && !s.timeRange.includes(timeSearch.trim())) return false;
     return true;
   });
 
@@ -589,6 +602,20 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                         <SlidersHorizontal className="w-3 h-3 text-slate-500" />
                         Lọc ca:
                       </div>
+
+                      {/* Thời lượng */}
+                      <select 
+                        value={selectedDuration} 
+                        onChange={(e) => {
+                          setSelectedDuration(parseFloat(e.target.value));
+                          setSelectedSlotId(null);
+                        }}
+                        className="bg-slate-950 border border-amber-500/30 hover:border-amber-500/50 text-[10px] text-amber-400 font-extrabold px-2 py-1 rounded-lg outline-none cursor-pointer"
+                      >
+                        <option value="1">⏱️ Thuê 1.0 Giờ</option>
+                        <option value="1.5">⏱️ Thuê 1.5 Giờ</option>
+                        <option value="2">⏱️ Thuê 2.0 Giờ</option>
+                      </select>
                       
                       {/* Filter Buổi */}
                       <select 
@@ -612,6 +639,15 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                         <option value="even">⏱️ Giờ chẵn (06h, 08h...)</option>
                         <option value="odd">⏱️ Giờ lẻ (07h, 17h...)</option>
                       </select>
+
+                      {/* Tìm giờ bằng ô input */}
+                      <input 
+                        type="text"
+                        placeholder="Tìm giờ (ví dụ: 17:00)..."
+                        value={timeSearch}
+                        onChange={(e) => setTimeSearch(e.target.value)}
+                        className="bg-slate-950 border border-slate-850 hover:border-slate-750 text-[10px] text-white px-2.5 py-1 rounded-lg outline-none placeholder-slate-700 w-32 font-bold focus:border-amber-500/50"
+                      />
                     </div>
                   </div>
 

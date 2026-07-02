@@ -1,9 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -14,12 +15,24 @@ export class AuthController {
   // ==========================================
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
-  async loginAdmin(@Body() loginAdminDto: LoginAdminDto) {
+  async loginAdmin(
+    @Body() loginAdminDto: LoginAdminDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const admin = await this.authService.validateAdmin(
       loginAdminDto.username,
       loginAdminDto.password,
     );
-    return this.authService.loginAdmin(admin);
+    const result = await this.authService.loginAdmin(admin);
+
+    res.cookie('admin_token', result.access_token, {
+      httpOnly: true,
+      secure: false, // false cho local dev HTTP, set true khi chạy HTTPS
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+    });
+
+    return result;
   }
 
   // ==========================================
@@ -27,12 +40,35 @@ export class AuthController {
   // ==========================================
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async loginUser(@Body() loginUserDto: LoginUserDto) {
+  async loginUser(
+    @Body() loginUserDto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const user = await this.authService.validateUser(
       loginUserDto.email,
       loginUserDto.password,
     );
-    return this.authService.loginUser(user);
+    const result = await this.authService.loginUser(user);
+
+    res.cookie('user_token', result.access_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+    });
+
+    return result;
+  }
+
+  // ==========================================
+  // ĐĂNG XUẤT (XÓA COOKIES)
+  // ==========================================
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('user_token');
+    res.clearCookie('admin_token');
+    return { message: 'Đăng xuất thành công' };
   }
 
   // ==========================================

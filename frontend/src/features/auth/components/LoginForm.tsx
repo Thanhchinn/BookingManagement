@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
+import apiClient from '../../../services/apiClient';
 
 interface LoginFormProps {
   onSwitchMode: () => void;
@@ -26,30 +27,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchMode, onSuccess })
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-        }),
+      const response = await apiClient.post('/auth/login', {
+        email: email.trim(),
+        password: password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Email hoặc mật khẩu không chính xác.');
-      }
-
-      // Lưu trữ token và thông tin người dùng vào localStorage
-      localStorage.setItem('user_token', data.access_token);
+      // Lưu trữ thông tin người dùng vào localStorage làm fallback
       localStorage.setItem('user_info', JSON.stringify(data.user));
 
       onSuccess(data.user.fullName);
     } catch (err: any) {
-      setError(err.message || 'Không thể đăng nhập. Vui lòng kiểm tra lại thông tin.');
+      const msg = err.response?.data?.message || err.message || 'Không thể đăng nhập. Vui lòng kiểm tra lại thông tin.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

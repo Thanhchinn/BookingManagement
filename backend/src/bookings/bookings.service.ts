@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class BookingsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async validateSlotAvailability(pitchId: bigint, slotBigIntId: bigint, bookingDate: Date) {
+  private async validateSlotAvailability(pitchId: bigint, slotIdStr: string, bookingDate: Date) {
     const sportsPitch = await this.prisma.sportsPitch.findUnique({
       where: { id: pitchId },
       include: {
@@ -18,12 +18,37 @@ export class BookingsService {
       throw new NotFoundException('Không tìm thấy sân đấu yêu cầu.');
     }
 
+    let baseSlotId: bigint;
+    let durationHours = 1.5;
+
+    if (slotIdStr.includes('_')) {
+      const [idPart, durPart] = slotIdStr.split('_');
+      baseSlotId = BigInt(idPart);
+      durationHours = parseFloat(durPart);
+    } else {
+      baseSlotId = BigInt(slotIdStr);
+    }
+
     const timeSlot = await this.prisma.timeSlot.findUnique({
-      where: { id: slotBigIntId },
+      where: { id: baseSlotId },
     });
     if (!timeSlot) {
       throw new NotFoundException('Không tìm thấy ca đấu yêu cầu.');
     }
+
+    const startIso = timeSlot.startTime.toISOString().substring(11, 16);
+    const [startH, startM] = startIso.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = startMinutes + durationHours * 60;
+
+    const endH = Math.floor(endMinutes / 60);
+    const endM = endMinutes % 60;
+
+    const dynamicStartTime = new Date('1970-01-01T00:00:00Z');
+    dynamicStartTime.setUTCHours(startH, startM, 0, 0);
+
+    const dynamicEndTime = new Date('1970-01-01T00:00:00Z');
+    dynamicEndTime.setUTCHours(endH, endM, 0, 0);
 
     const booked = await this.prisma.booking.findMany({
       where: {
@@ -33,13 +58,27 @@ export class BookingsService {
       },
     });
 
-    const slotStartStr = timeSlot.startTime.toISOString().substring(11, 16);
-    const isBooked = booked.some((b) => b.startTime.toISOString().substring(11, 16) === slotStartStr);
+    const newStartStr = dynamicStartTime.toISOString().substring(11, 19);
+    const newEndStr = dynamicEndTime.toISOString().substring(11, 19);
+
+    const isBooked = booked.some((b) => {
+      const bStart = b.startTime.toISOString().substring(11, 19);
+      const bEnd = b.endTime.toISOString().substring(11, 19);
+      return newStartStr < bEnd && newEndStr > bStart;
+    });
+
     if (isBooked) {
-      throw new BadRequestException('Khung giờ này đã được đặt trước. Vui lòng chọn ca đấu khác.');
+      throw new BadRequestException('Khung giờ này đã được đặt trước hoặc trùng giờ với một lịch đặt khác. Vui lòng chọn ca đấu khác.');
     }
 
-    return { sportsPitch, timeSlot };
+    return { 
+      sportsPitch, 
+      timeSlot: {
+        ...timeSlot,
+        startTime: dynamicStartTime,
+        endTime: dynamicEndTime,
+      } 
+    };
   }
 
   private calculateCourtPrice(sportsPitch: any, timeSlot: any): number {
@@ -47,7 +86,13 @@ export class BookingsService {
     const endIso = timeSlot.endTime.toISOString().substring(11, 16);
     const [startH, startM] = startIso.split(':').map(Number);
     const [endH, endM] = endIso.split(':').map(Number);
-    const durationHours = (endH * 60 + endM - (startH * 60 + startM)) / 60;
+
+    let endMinutes = endH * 60 + endM;
+    const startMinutes = startH * 60 + startM;
+    if (endMinutes < startMinutes) {
+      endMinutes += 1440; // Xử lý qua đêm: cộng thêm 24 giờ (1440 phút)
+    }
+    const durationHours = (endMinutes - startMinutes) / 60;
 
     const basePricePerHour = parseFloat(sportsPitch.basePricePerHour.toString());
     const priceModifier = parseFloat(timeSlot.priceModifier.toString());
@@ -127,11 +172,11 @@ export class BookingsService {
 
     const userId = BigInt(userIdStr);
     const pitchId = BigInt(sportsPitchId);
-    const slotBigIntId = BigInt(slotId);
+    const slotIdStr = slotId.toString();
     const parsedDate = new Date(bookingDate);
 
     // 1. Validate availability
-    const { sportsPitch, timeSlot } = await this.validateSlotAvailability(pitchId, slotBigIntId, parsedDate);
+    const { sportsPitch, timeSlot } = await this.validateSlotAvailability(pitchId, slotIdStr, parsedDate);
 
     // 2. Calculate court price
     const courtCost = this.calculateCourtPrice(sportsPitch, timeSlot);

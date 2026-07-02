@@ -6,9 +6,12 @@ import { TransformResponseInterceptor } from './common/interceptors/transform-re
 import * as express from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   // Đảm bảo thư mục uploads tồn tại và cấu hình tĩnh để truy cập ảnh đại diện
   const uploadsDir = join(process.cwd(), 'uploads');

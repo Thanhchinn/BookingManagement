@@ -92,6 +92,10 @@ export const PitchManagement: React.FC = () => {
   const [pitchLocationId, setPitchLocationId] = useState('');
   const [pitchSlots, setPitchSlots] = useState<any[]>([]);
 
+  // States lọc danh sách ca chi tiết của sân
+  const [slotDayFilter, setSlotDayFilter] = useState<string>('all');
+  const [slotTimeSearch, setSlotTimeSearch] = useState<string>('');
+
   // States của Smart Slots Generator
   const [autoType, setAutoType] = useState<'even' | 'odd' | '1h' | '1.5h'>('even');
   const [autoStartHour, setAutoStartHour] = useState(5);
@@ -607,7 +611,52 @@ export const PitchManagement: React.FC = () => {
 
             {/* List of Time Slots */}
             <div className="space-y-3 pt-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">📅 Danh sách khung giờ chi tiết ({pitchSlots.length})</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">
+                  📅 Danh sách khung giờ chi tiết ({pitchSlots.length})
+                </span>
+                {pitchSlots.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ các khung giờ hiện tại của sân này?')) {
+                        setPitchSlots([]);
+                        toast.success('Đã xóa tất cả khung giờ. Hãy bấm "Lưu Sân Đấu" để lưu thay đổi này.');
+                      }
+                    }}
+                    className="text-[10px] font-black text-red-400 hover:text-red-300 transition bg-transparent border-0 cursor-pointer flex items-center gap-1 uppercase tracking-wider"
+                  >
+                    🗑️ Xóa tất cả
+                  </button>
+                )}
+              </div>
+
+              {/* Bộ lọc tìm kiếm khung giờ cho đối tác */}
+              {pitchSlots.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-2 bg-slate-950 p-2.5 rounded-2xl border border-slate-850">
+                  <select
+                    value={slotDayFilter}
+                    onChange={(e) => setSlotDayFilter(e.target.value)}
+                    className="bg-slate-900 border border-slate-800 text-[10px] text-slate-350 font-bold px-2 py-1.5 rounded-xl outline-none cursor-pointer"
+                  >
+                    <option value="all">Tất cả các ngày</option>
+                    <option value="1">Thứ 2</option>
+                    <option value="2">Thứ 3</option>
+                    <option value="3">Thứ 4</option>
+                    <option value="4">Thứ 5</option>
+                    <option value="5">Thứ 6</option>
+                    <option value="6">Thứ 7</option>
+                    <option value="0">Chủ Nhật</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Tìm giờ (ví dụ: 06:00, 17)..."
+                    value={slotTimeSearch}
+                    onChange={(e) => setSlotTimeSearch(e.target.value)}
+                    className="flex-grow bg-slate-900 border border-slate-800 text-[10px] text-white px-3 py-1.5 rounded-xl placeholder-slate-700 focus:outline-none focus:border-amber-500 font-semibold"
+                  />
+                </div>
+              )}
               
               {pitchSlots.length === 0 ? (
                 <div className="p-8 bg-slate-950 border border-slate-850 rounded-2xl flex flex-col items-center text-slate-600 text-center gap-1.5">
@@ -615,32 +664,57 @@ export const PitchManagement: React.FC = () => {
                   <span className="text-[10px] font-bold">Chưa có khung giờ nào được thiết lập.</span>
                   <span className="text-[9px] text-slate-700 leading-tight">Hãy sử dụng công cụ "Smart Slots" để sinh cấu hình hoạt động tự động nhanh.</span>
                 </div>
-              ) : (
-                <div className="max-h-64 overflow-y-auto bg-slate-950 border border-slate-850 rounded-2xl p-4 space-y-1.5 scrollbar-thin">
-                  {pitchSlots.map((ts, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex justify-between items-center px-3 py-2 bg-slate-900/50 hover:bg-slate-900 border border-slate-850 hover:border-slate-800 rounded-xl transition text-[10px] text-slate-300 font-mono"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-850">{getDayName(ts.dayOfWeek)}</span>
-                        <span>⏰ {ts.startTime.substring(0, 5)} - {ts.endTime.substring(0, 5)}</span>
-                      </div>
+              ) : (() => {
+                const filtered = pitchSlots.filter(ts => {
+                  const matchesDay = slotDayFilter === 'all' || ts.dayOfWeek.toString() === slotDayFilter;
+                  const timeRangeStr = `${ts.startTime.substring(0, 5)} - ${ts.endTime.substring(0, 5)}`;
+                  const matchesTime = timeRangeStr.includes(slotTimeSearch.trim());
+                  return matchesDay && matchesTime;
+                });
 
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-amber-500">x{ts.priceModifier.toFixed(2)}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveSingleSlot(idx)}
-                          className="text-slate-600 hover:text-red-400 p-0.5 hover:bg-slate-950 rounded transition border-0 bg-transparent cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-6 bg-slate-950 border border-slate-850 rounded-2xl text-center text-[10px] text-slate-500">
+                      Không tìm thấy khung giờ nào khớp với bộ lọc tìm kiếm.
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                }
+
+                return (
+                  <div className="max-h-64 overflow-y-auto bg-slate-950 border border-slate-850 rounded-2xl p-4 space-y-1.5 scrollbar-thin">
+                    {filtered.map((ts, idx) => {
+                      // Tìm chỉ số gốc trong mảng pitchSlots để xóa đúng phần tử
+                      const originalIndex = pitchSlots.findIndex(
+                        origTs => origTs.dayOfWeek === ts.dayOfWeek && 
+                                 origTs.startTime === ts.startTime && 
+                                 origTs.endTime === ts.endTime
+                      );
+                      return (
+                        <div 
+                          key={idx} 
+                          className="flex justify-between items-center px-3 py-2 bg-slate-900/50 hover:bg-slate-900 border border-slate-850 hover:border-slate-800 rounded-xl transition text-[10px] text-slate-300 font-mono"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-850">{getDayName(ts.dayOfWeek)}</span>
+                            <span>⏰ {ts.startTime.substring(0, 5)} - {ts.endTime.substring(0, 5)}</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-amber-500">x{ts.priceModifier.toFixed(2)}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveSingleSlot(originalIndex !== -1 ? originalIndex : idx)}
+                              className="text-slate-600 hover:text-red-400 p-0.5 hover:bg-slate-950 rounded transition border-0 bg-transparent cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
 
           </div>

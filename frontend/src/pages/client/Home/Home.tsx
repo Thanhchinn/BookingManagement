@@ -12,6 +12,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { useCategories } from '../../../hooks/useCategories';
 import { BadgePercent, Building2, CalendarDays, MapPin, ShieldCheck, Trophy, Zap } from 'lucide-react';
+import { ErrorBoundary } from '../../../components/ui/ErrorBoundary';
 interface HomeProps {
   onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
@@ -318,7 +319,7 @@ export const Home: React.FC<HomeProps> = ({
                     </div>
 
                     <button
-                      onClick={() => onNavigate?.('field-details', { locationId: pitch.locationId })}
+                      onClick={() => onNavigate?.('field-details', { locationId: pitch.locationId, courtId: pitch.id })}
                       className="px-3.5 py-2 bg-teal-600 hover:bg-teal-500 active:scale-95 text-[10px] font-extrabold text-white rounded-xl transition shadow-md shadow-teal-600/10 cursor-pointer border-0"
                     >
                       Đặt Lịch
@@ -417,7 +418,12 @@ export const Home: React.FC<HomeProps> = ({
             </p>
           </div>
 
-          <Swiper
+          <ErrorBoundary fallback={
+            <div className="py-12 bg-slate-900/30 border border-slate-800 rounded-3xl text-center text-xs text-slate-500">
+              💬 Không thể tải các đánh giá của tuyển thủ lúc này.
+            </div>
+          }>
+            <Swiper
             modules={[Pagination, Autoplay]}
             spaceBetween={24}
             slidesPerView={1}
@@ -477,6 +483,7 @@ export const Home: React.FC<HomeProps> = ({
               </div>
             </SwiperSlide>
           </Swiper>
+          </ErrorBoundary>
         </div>
       </section>
 
