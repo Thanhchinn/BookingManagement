@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 // Import các trang theo đúng cấu trúc tối ưu chuẩn Senior
 import { Home } from './pages/client/Home';
 import { AuthPage } from './pages/client/AuthPage';
@@ -23,6 +23,7 @@ import { Toaster, toast } from 'sonner';
 import { LockedAccountView } from './pages/client/LockedAccount';
 import { useAuthStore } from './store/useAuthStore';
 import { useAppStore } from './store/useAppStore';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 function App() {
   // 1. QUẢN LÝ ĐƯỜNG DẪN URL TRÊN TRÌNH DUYỆT BẰNG REACT ROUTER DOM
@@ -30,33 +31,12 @@ function App() {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  // Trạng thái trang client phụ, được tính toán tự động dựa trên URL hiện tại để đồng bộ 100%
-  const currentPage = (() => {
-    const path = currentPath;
-    if (path === '/' || path === '') return 'home';
-    if (path === '/auth') return 'auth';
-    if (path === '/my-bookings') return 'my-bookings';
-    if (path === '/field-details') return 'field-details';
-    if (path === '/booking-success') return 'booking-success';
-    if (path === '/matchmaking') return 'matchmaking';
-    if (path === '/matchmaking/create') return 'matchmaking-create';
-    if (path === '/chat') return 'chat';
-    if (path === '/search') return 'search';
-    if (path === '/profile') return 'profile';
-    if (path === '/change-password') return 'change-password';
-    
-    // Nếu là đường dẫn của admin hoặc partner thì không coi là 404 phía client
-    if (path === '/admin' || path.startsWith('/admin/')) return 'home';
-    if (path === '/partner' || path.startsWith('/partner/')) return 'home';
-    
-    return '404';
-  })();
-
   // 2. KẾT NỐI VỚI ZUSTAND STORES ĐỂ QUẢN LÝ TRẠNG THÁI TOÀN CỤC
   const { 
     userName, 
     partnerName, 
     isAdminLoggedIn, 
+    loginUser,
     logoutUser, 
     loginAdmin, 
     logoutAdmin, 
@@ -260,74 +240,10 @@ function App() {
       );
     }
 
-    if (isAdminRoute) {
-      if (isAdminLoggedIn) {
-        return (
-          <AdminLayout 
-            currentPath={currentPath}
-            navigateTo={navigateTo}
-            onLogout={() => {
-              logoutAdmin();
-              toast.success('Đăng xuất thành công!', {
-                description: 'Phiên làm việc quản trị đã được hủy an toàn.',
-                duration: 3000,
-              });
-              navigateTo('/admin');
-            }}
-          />
-        );
-      } else {
-        return (
-          <AdminLoginPage 
-            onLoginSuccess={handleAdminLoginSuccess}
-            onBackToClient={() => navigateTo('/')}
-          />
-        );
-      }
-    }
-
-    if (isPartnerRoute) {
-      if (partnerName) {
-        return (
-          <PartnerLayout 
-            partnerName={partnerName}
-            currentPath={currentPath}
-            navigateTo={navigateTo}
-            onLogout={() => {
-              logoutPartner();
-              toast.success('Đăng xuất thành công!', {
-                description: 'Phiên làm việc đối tác đã được hủy an toàn.',
-                duration: 3000,
-              });
-              navigateTo('/');
-            }}
-          />
-        );
-      } else {
-        return (
-          <PartnerLoginPage 
-            onLoginSuccess={handlePartnerLoginSuccess}
-            onBackToClient={() => navigateTo('/')}
-            onGoToAuth={() => handleNavigate('auth', 'login')}
-          />
-        );
-      }
-    }
-
-    // Mặc định hiển thị trang phía Client
-    if (currentPage === '404') {
-      return (
-        <NotFound 
-          onNavigate={handleNavigate} 
-          userName={userName || undefined} 
-          onLogout={handleClientLogout} 
-        />
-      );
-    }
-
     return (
-      <>
-        {currentPage === 'home' && (
+      <Routes>
+        {/* Client Routes */}
+        <Route path="/" element={
           <Home 
             onNavigate={handleNavigate} 
             userName={userName || undefined} 
@@ -338,8 +254,9 @@ function App() {
               navigateTo('/search');
             }}
           />
-        )}
-        {currentPage === 'search' && (
+        } />
+
+        <Route path="/search" element={
           <Search
             onNavigate={handleNavigate}
             userName={userName || undefined}
@@ -347,22 +264,27 @@ function App() {
             searchFilters={searchFilters}
             onUpdateFilters={setSearchFilters}
           />
-        )}
-        {currentPage === 'auth' && (
+        } />
+
+        <Route path="/auth" element={
           <AuthPage 
             initialMode={authMode} 
             onBackToHome={() => navigateTo('/')}
             onLoginSuccess={handleClientLoginSuccess}
           />
-        )}
-        {currentPage === 'my-bookings' && (
-          <MyBookings 
-            onNavigate={handleNavigate}
-            userName={userName || undefined}
-            onLogout={handleClientLogout}
-          />
-        )}
-        {currentPage === 'field-details' && (
+        } />
+
+        <Route path="/my-bookings" element={
+          <ProtectedRoute allowedRole="client">
+            <MyBookings 
+              onNavigate={handleNavigate}
+              userName={userName || undefined}
+              onLogout={handleClientLogout}
+            />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/field-details" element={
           <CourtDetails 
             locationId={selectedLocationId}
             initialCourtId={selectedCourtId}
@@ -371,52 +293,123 @@ function App() {
             onLogout={handleClientLogout}
             onSetBookingSuccessData={setBookingSuccessData}
           />
-        )}
-        {currentPage === 'booking-success' && (
+        } />
+
+        <Route path="/booking-success" element={
           <BookingSuccess 
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}
             bookingSuccessData={bookingSuccessData}
           />
-        )}
-        {currentPage === 'matchmaking' && (
+        } />
+
+        <Route path="/matchmaking" element={
           <Matchmaking 
             onNavigate={handleNavigate}
             userName={userName || undefined}
             onLogout={handleClientLogout}
           />
-        )}
-        {currentPage === 'matchmaking-create' && (
-          <MatchmakingCreate
-            onNavigate={handleNavigate}
-            userName={userName || undefined}
-            onLogout={handleClientLogout}
+        } />
+
+        <Route path="/matchmaking/create" element={
+          <ProtectedRoute allowedRole="client">
+            <MatchmakingCreate
+              onNavigate={handleNavigate}
+              userName={userName || undefined}
+              onLogout={handleClientLogout}
+            />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/chat" element={
+          <ProtectedRoute allowedRole="client">
+            <CommunityChat 
+              onNavigate={handleNavigate}
+              userName={userName || undefined}
+              onLogout={handleClientLogout}
+            />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute allowedRole="client">
+            <Profile 
+              onNavigate={handleNavigate}
+              userName={userName || undefined}
+              onLogout={handleClientLogout}
+              onProfileUpdated={(newName) => setUserName(newName)}
+            />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/change-password" element={
+          <ProtectedRoute allowedRole="client">
+            <ChangePassword
+              onNavigate={handleNavigate}
+              userName={userName || undefined}
+              onLogout={handleClientLogout}
+            />
+          </ProtectedRoute>
+        } />
+
+        {/* Admin Area */}
+        <Route path="/admin/*" element={
+          isAdminLoggedIn ? (
+            <AdminLayout 
+              currentPath={currentPath}
+              navigateTo={navigateTo}
+              onLogout={() => {
+                logoutAdmin();
+                toast.success('Đăng xuất thành công!', {
+                  description: 'Phiên làm việc quản trị đã được hủy an toàn.',
+                  duration: 3000,
+                });
+                navigateTo('/admin');
+              }}
+            />
+          ) : (
+            <AdminLoginPage 
+              onLoginSuccess={handleAdminLoginSuccess}
+              onBackToClient={() => navigateTo('/')}
+            />
+          )
+        } />
+
+        {/* Partner Area */}
+        <Route path="/partner/*" element={
+          partnerName ? (
+            <PartnerLayout 
+              partnerName={partnerName}
+              currentPath={currentPath}
+              navigateTo={navigateTo}
+              onLogout={() => {
+                logoutPartner();
+                toast.success('Đăng xuất thành công!', {
+                  description: 'Phiên làm việc đối tác đã được hủy an toàn.',
+                  duration: 3000,
+                });
+                navigateTo('/');
+              }}
+            />
+          ) : (
+            <PartnerLoginPage 
+              onLoginSuccess={handlePartnerLoginSuccess}
+              onBackToClient={() => navigateTo('/')}
+              onGoToAuth={() => handleNavigate('auth', 'login')}
+            />
+          )
+        } />
+
+        {/* 404 Route */}
+        <Route path="*" element={
+          <NotFound 
+            onNavigate={handleNavigate} 
+            userName={userName || undefined} 
+            onLogout={handleClientLogout} 
           />
-        )}
-        {currentPage === 'chat' && (
-          <CommunityChat 
-            onNavigate={handleNavigate}
-            userName={userName || undefined}
-            onLogout={handleClientLogout}
-          />
-        )}
-        {currentPage === 'profile' && (
-          <Profile 
-            onNavigate={handleNavigate}
-            userName={userName || undefined}
-            onLogout={handleClientLogout}
-            onProfileUpdated={(newName) => setUserName(newName)}
-          />
-        )}
-        {currentPage === 'change-password' && (
-          <ChangePassword
-            onNavigate={handleNavigate}
-            userName={userName || undefined}
-            onLogout={handleClientLogout}
-          />
-        )}
-      </>
+        } />
+      </Routes>
     );
   };
 

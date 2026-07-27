@@ -468,8 +468,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                 const cur = gallery[Math.min(activeImgIndex, gallery.length - 1)];
                 return (
                   <>
-                    <div className="h-64 sm:h-[380px] bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden relative flex items-center justify-center">
-                      <img src={cur.url} alt="Gallery" className="w-full h-full object-cover transition-all duration-500" />
+                    <div className="h-64 sm:h-[380px] bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden relative flex items-center justify-center group/main">
+                      <img src={cur.url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/main:scale-105" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
                       <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
                         <p className="text-xs sm:text-sm text-slate-200 font-bold m-0 bg-slate-950/70 border border-slate-800 px-4 py-2 rounded-2xl backdrop-blur-md">
@@ -484,10 +484,13 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       <div className="grid grid-cols-3 gap-3">
                         {gallery.slice(0, 3).map((img, idx) => (
                           <button key={idx} onClick={() => setActiveImgIndex(idx)}
-                            className={`h-16 sm:h-20 rounded-2xl overflow-hidden border-2 transition cursor-pointer p-0 relative ${
-                              activeImgIndex === idx ? 'border-amber-500' : 'border-transparent hover:border-slate-700'
+                            className={`h-16 sm:h-20 rounded-2xl overflow-hidden border-2 transition cursor-pointer p-0 relative group ${
+                              activeImgIndex === idx ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-transparent hover:border-slate-700'
                             }`}>
-                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                            <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition duration-300" />
+                            {activeImgIndex !== idx && (
+                              <div className="absolute inset-0 bg-slate-950/45 group-hover:bg-slate-950/20 transition duration-200"></div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -666,16 +669,19 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                             key={s.id}
                             disabled={isBooked}
                             onClick={() => setSelectedSlotId(isSelected ? null : s.id)}
-                            className={`p-3.5 rounded-2xl transition border text-left cursor-pointer flex justify-between items-center relative overflow-hidden ${
+                            className={`p-3.5 rounded-2xl transition-all duration-200 border text-left cursor-pointer flex justify-between items-center relative overflow-hidden active:scale-[0.98] ${
                               isBooked
-                                ? 'bg-slate-950/20 border-slate-900/60 text-slate-600 cursor-not-allowed opacity-40'
+                                ? 'bg-slate-950/20 border-slate-900/60 text-slate-655 cursor-not-allowed opacity-40'
                                 : isSelected
-                                ? 'bg-amber-550 border-amber-500 text-white shadow-lg shadow-amber-500/10'
+                                ? 'bg-amber-600/15 border-amber-500 text-white shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
                                 : 'bg-slate-950 border-slate-850 text-slate-350 hover:border-slate-750 hover:bg-slate-900/40'
                             }`}
                           >
                             <div className="space-y-1">
-                              <span className="text-xs font-bold block">{s.label}</span>
+                              <span className="text-xs font-bold flex items-center gap-1.5 leading-none">
+                                {isSelected && <span className="text-amber-400 text-xs shrink-0">✓</span>}
+                                <span>{s.label}</span>
+                              </span>
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[8px] bg-slate-900 border border-slate-800 text-slate-500 px-1 py-0.2 rounded font-bold uppercase">
                                   {s.startHour % 2 === 0 ? 'Giờ chẵn' : 'Giờ lẻ'}
@@ -689,7 +695,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                               {isBooked ? (
                                 <span className="text-[8px] bg-slate-900 border border-slate-850 px-2 py-0.5 rounded text-slate-500 font-black uppercase">Hết sân</span>
                               ) : (
-                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-white' : 'text-amber-400'}`}>
+                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-amber-455' : 'text-amber-400'}`}>
                                   {(BASE_PRICE * s.priceModifier).toLocaleString()}đ/h
                                 </span>
                               )}
@@ -709,42 +715,59 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {products.map(p => (
-                      <div 
-                        key={p.id}
-                        className="bg-slate-950 border border-slate-855/80 rounded-2xl p-4 flex items-center justify-between gap-4 transition hover:border-slate-800"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-2xl select-none shrink-0">
-                            {p.image}
+                    {products.map(p => {
+                      const hasQty = p.qty > 0;
+                      return (
+                        <div 
+                          key={p.id}
+                          className={`border rounded-2xl p-4 flex items-center justify-between gap-4 transition duration-200 ${
+                            hasQty
+                              ? 'bg-amber-600/10 border-amber-500 text-white shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
+                              : 'bg-slate-950 border-slate-855/80 text-slate-350 hover:border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl select-none shrink-0 border transition ${
+                              hasQty ? 'bg-slate-950 border-amber-500/30' : 'bg-slate-900 border-slate-800'
+                            }`}>
+                              {p.image}
+                            </div>
+                            <div className="text-left leading-tight">
+                              <span className="text-xs font-bold text-slate-200 block">{p.name}</span>
+                              <span className={`text-[10px] font-mono font-bold mt-1.5 block ${hasQty ? 'text-amber-350' : 'text-amber-400'}`}>
+                                {p.price.toLocaleString()}đ
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-left leading-tight">
-                            <span className="text-xs font-bold text-slate-200 block">{p.name}</span>
-                            <span className="text-[10px] text-amber-400 font-mono font-bold mt-1.5 block">
-                              {p.price.toLocaleString()}đ
-                            </span>
-                          </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button 
-                            onClick={() => updateProductQty(p.id, -1)}
-                            className="w-7 h-7 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-slate-800 transition"
-                          >
-                            -
-                          </button>
-                          <span className="w-6 text-center text-xs font-black font-mono text-white">
-                            {p.qty}
-                          </span>
-                          <button 
-                            onClick={() => updateProductQty(p.id, 1)}
-                            className="w-7 h-7 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-slate-800 transition"
-                          >
-                            +
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button 
+                              onClick={() => updateProductQty(p.id, -1)}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer transition ${
+                                hasQty 
+                                  ? 'bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/30 text-amber-400' 
+                                  : 'bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center text-xs font-black font-mono text-white">
+                              {p.qty}
+                            </span>
+                            <button 
+                              onClick={() => updateProductQty(p.id, 1)}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer transition ${
+                                hasQty 
+                                  ? 'bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/30 text-amber-400' 
+                                  : 'bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

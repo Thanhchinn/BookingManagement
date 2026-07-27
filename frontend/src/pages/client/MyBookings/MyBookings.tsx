@@ -30,6 +30,45 @@ const getSportTypeName = (cat: string) => {
   return cat.charAt(0).toUpperCase() + cat.slice(1);
 };
 
+const getSportEmoji = (sport: string) => {
+  if (!sport) return '🏆';
+  const val = sport.toLowerCase();
+  if (val.includes('bóng đá') || val.includes('football') || val.includes('soccer')) return '⚽';
+  if (val.includes('cầu lông') || val.includes('badminton')) return '🏸';
+  if (val.includes('tennis')) return '🎾';
+  if (val.includes('bóng rổ') || val.includes('basketball')) return '🏀';
+  if (val.includes('bóng chuyền') || val.includes('volleyball')) return '🏐';
+  return '🏆';
+};
+
+const getBookingCountdown = (bookingDate: string, startTime: string, status: string) => {
+  if (status !== 'CONFIRMED' && status !== 'PENDING') return null;
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (bookingDate === todayStr) {
+      return { text: 'Hôm nay ⏰', className: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' };
+    }
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    if (bookingDate === tomorrowStr) {
+      return { text: 'Ngày mai 📅', className: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' };
+    }
+    
+    const tDate = new Date(todayStr);
+    const bDate = new Date(bookingDate);
+    const diffTime = bDate.getTime() - tDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 0) {
+      return { text: `Còn ${diffDays} ngày ⏳`, className: 'bg-slate-950 text-slate-400 border border-slate-800' };
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
 interface MyBookingsProps {
   onNavigate?: (page: any, authMode?: any) => void;
   userName?: string;
@@ -320,72 +359,93 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
               </Button>
             </div>
           ) : (
-            filteredBookings.map(b => (
-              <div 
-                key={b.id}
-                onClick={() => setSelectedBooking(b)}
-                className={`sz-card transition-all duration-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer ${
-                  selectedBooking?.id === b.id ? 'border-emerald-500 bg-slate-900/90 shadow-md border-dashed' : 'border-slate-800/80 hover:border-slate-700'
-                }`}
-              >
-                <div className="space-y-3 flex-grow text-left">
-                  <div className="flex flex-wrap items-center gap-2 text-left">
-                    <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">{b.bookingCode}</span>
-                    {getStatusBadge(b.status)}
-                    {b.isMatch && (
-                      <>
-                        <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          Ghép Kèo ({b.matchCurrentPlayers}/{b.matchMaxPlayers})
+            filteredBookings.map(b => {
+              const countdown = getBookingCountdown(b.bookingDate, b.startTime, b.status);
+              return (
+                <div 
+                  key={b.id}
+                  onClick={() => setSelectedBooking(b)}
+                  className={`sz-card transition-all duration-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer ${
+                    selectedBooking?.id === b.id ? 'border-emerald-500 bg-slate-900/90 shadow-md border-dashed' : 'border-slate-800/80 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="space-y-3 flex-grow text-left w-full min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-left">
+                      <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">{b.bookingCode}</span>
+                      {getStatusBadge(b.status)}
+                      {countdown && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${countdown.className}`}>
+                          {countdown.text}
                         </span>
-                        {b.isHostMatch ? (
-                          <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            Chủ phòng (Tổ chức)
+                      )}
+                      {b.isMatch && (
+                        <>
+                          <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Ghép Kèo ({b.matchCurrentPlayers}/{b.matchMaxPlayers})
                           </span>
-                        ) : (
-                          <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            Đã ứng tuyển thành công
+                          {b.isHostMatch ? (
+                            <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              Chủ phòng (Tổ chức)
+                            </span>
+                          ) : (
+                            <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              Đã ứng tuyển thành công
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <h4 className="text-base sm:text-lg font-black text-white m-0 hover:text-emerald-400 transition text-left flex items-center gap-2 truncate">
+                      <span className="shrink-0">{getSportEmoji(b.sport)}</span>
+                      <span className="truncate">{b.courtName}</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-400 text-left">
+                      <div className="flex items-center gap-1.5 text-left">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{b.bookingDate}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-left">
+                        <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{b.startTime} - {b.endTime} ({b.sport})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:col-span-2 text-left min-w-0">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        <span className="truncate">{b.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Dịch vụ phụ trợ đính kèm dưới dạng chip */}
+                    {b.products && b.products.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest mr-1">Phụ kiện kèm:</span>
+                        {b.products.map((p, idx) => (
+                          <span key={idx} className="inline-flex items-center text-[10px] bg-slate-950 text-slate-400 border border-slate-800 px-2 py-0.5 rounded font-mono">
+                            {p.name.includes('Nước') || p.name.toLowerCase().includes('coca') || p.name.toLowerCase().includes('pepsi') || p.name.toLowerCase().includes('aquafina') ? '🥤' : '🎒'} {p.name} <span className="text-emerald-400 font-bold ml-1">x{p.qty}</span>
                           </span>
-                        )}
-                      </>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  <h4 className="text-base sm:text-lg font-black text-white m-0 hover:text-emerald-400 transition text-left">
-                    {b.courtName}
-                  </h4>
+                  <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-3 border-t sm:border-t-0 border-slate-850 pt-4 sm:pt-0 shrink-0">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">
+                        {b.isMatch ? 'Chi phí tham gia' : 'Tổng thanh toán'}
+                      </p>
+                      <p className="text-base font-extrabold text-emerald-400 font-mono m-0">
+                        {b.isMatch ? 'Chia đều / Miễn phí' : `${b.price.toLocaleString('vi-VN')}đ`}
+                      </p>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-400 text-left">
-                    <div className="flex items-center gap-1.5 text-left">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>{b.bookingDate}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-left">
-                      <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>{b.startTime} - {b.endTime} ({b.sport})</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:col-span-2 text-left">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                      <span className="truncate">{b.location}</span>
-                    </div>
+                    <button className="flex items-center gap-1 text-[11px] font-extrabold text-slate-350 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/80 px-4 py-2 rounded-xl transition duration-150">
+                      Xem chi tiết <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-3 border-t sm:border-t-0 border-slate-800 pt-4 sm:pt-0 shrink-0">
-                  <div className="text-left sm:text-right">
-                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">
-                      {b.isMatch ? 'Chi phí tham gia' : 'Tổng thanh toán'}
-                    </p>
-                    <p className="text-base font-extrabold text-emerald-400 font-mono m-0">
-                      {b.isMatch ? 'Chia đều / Miễn phí' : `${b.price.toLocaleString('vi-VN')}đ`}
-                    </p>
-                  </div>
-
-                  <button className="flex items-center gap-1 text-[11px] font-extrabold text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl transition duration-150">
-                    Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

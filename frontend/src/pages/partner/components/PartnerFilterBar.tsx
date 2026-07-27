@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Search, Filter, Trophy } from 'lucide-react';
-import { getCategoryLabel, getCategoryEmoji } from '../../utils/formatters';
+import { getCategoryLabel, getCategoryEmoji } from '../../../utils/formatters';
 
 interface PartnerFilterBarProps {
   mode: 'bookings' | 'locations' | 'pitches';
@@ -93,6 +94,7 @@ export const PartnerFilterBar: React.FC<PartnerFilterBarProps> = ({
                 ))}
               </select>
             </div>
+          )}
           {onCategoryChange && (
             <div className="flex items-center bg-slate-950 border border-slate-850 rounded-lg px-2.5 py-1.5 focus-within:border-amber-500/50 w-full sm:min-w-[220px] sm:max-w-[300px] transition-all">
               <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0 mr-1.5" />

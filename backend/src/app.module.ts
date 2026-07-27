@@ -14,6 +14,8 @@ import { PublicModule } from './public/public.module';
 import { MatchmakingModule } from './matchmaking/matchmaking.module';
 import { ChatModule } from './chat/chat.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -30,9 +32,19 @@ import { BookingsModule } from './bookings/bookings.module';
     MatchmakingModule,
     ChatModule,
     BookingsModule,
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 seconds
+      limit: 100, // max 100 requests per IP
+    }]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
 

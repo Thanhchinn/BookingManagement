@@ -19,8 +19,12 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Bắn event để App.tsx xử lý buộc logout
-      window.dispatchEvent(new CustomEvent('user-force-logout'));
+      const url = error.config?.url || '';
+      // Không bắn sự kiện hết hạn phiên làm việc nếu đây là cuộc gọi API đăng nhập thất bại
+      if (!url.includes('/auth/login') && !url.includes('/auth/admin/login')) {
+        // Bắn event để App.tsx xử lý buộc logout
+        window.dispatchEvent(new CustomEvent('user-force-logout'));
+      }
     }
     return Promise.reject(error);
   }

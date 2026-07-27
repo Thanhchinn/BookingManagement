@@ -18,6 +18,8 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -70,14 +72,16 @@ export class UsersController {
 
   // 1. Thống kê nhanh thông số tài khoản (LƯU Ý: Phải đặt trước GET :id để tránh bị đè route)
   @Get('stats')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPERADMIN', 'MODERATOR')
   async getStats() {
     return this.usersService.getStats();
   }
 
   // 2. Lấy danh sách người dùng (Hỗ trợ phân trang và tìm kiếm phía máy chủ)
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPERADMIN', 'MODERATOR')
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -108,7 +112,8 @@ export class UsersController {
 
   // 4. Tạo người dùng mới phía quản trị (Bảo mật nghiêm ngặt)
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPERADMIN', 'MODERATOR')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
     const newUser = await this.usersService.create(createUserDto);
@@ -125,7 +130,8 @@ export class UsersController {
 
   // 6. Xóa người dùng
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPERADMIN', 'MODERATOR')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string) {
     return this.usersService.remove(id);

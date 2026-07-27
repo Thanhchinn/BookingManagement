@@ -25,7 +25,7 @@ export class AuthService {
     });
 
     if (!admin) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không hợp lệ');
+      throw new UnauthorizedException('Tài khoản quản trị viên không tồn tại trong hệ thống');
     }
 
     if (!admin.isActive) {
@@ -34,7 +34,7 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(pass, admin.password);
     if (!isMatch) {
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không hợp lệ');
+      throw new UnauthorizedException('Mật khẩu quản trị viên không chính xác');
     }
 
     return admin;
@@ -67,14 +67,14 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
+      throw new UnauthorizedException('Email này chưa được đăng ký tài khoản');
     }
 
 
 
     const isMatch = await bcrypt.compare(pass, user.password);
     if (!isMatch) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
+      throw new UnauthorizedException('Mật khẩu không chính xác');
     }
 
     return user;

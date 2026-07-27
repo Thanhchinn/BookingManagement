@@ -241,7 +241,7 @@ export const FieldManagement: React.FC = () => {
             return (
               <div 
                 key={loc.id} 
-                className="sz-card overflow-hidden animate-in fade-in duration-200 group flex flex-col justify-between"
+                className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl overflow-hidden animate-in fade-in duration-200 group flex flex-col justify-between hover:border-slate-700/60 transition-all duration-350"
               >
                 {/* Facility Image Cover */}
                 {loc.imageUrl && (
@@ -249,8 +249,9 @@ export const FieldManagement: React.FC = () => {
                     <img 
                       src={loc.imageUrl} 
                       alt={loc.name}
-                      className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
                   </div>
                 )}
 
@@ -289,21 +290,21 @@ export const FieldManagement: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => handleOpenEditLocationPage(loc.id)}
-                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-850 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-amber-500" />
                         Sửa Cơ Sở
                       </button>
                       <button
                         onClick={() => handleOpenManageProductsPage(loc.id, loc.name)}
-                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-855 hover:border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-850 text-xs font-bold text-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <ShoppingBag className="w-3.5 h-3.5 text-amber-500" />
                         Quản Lý Sản Phẩm
                       </button>
                       <button
                         onClick={() => handleDeleteLocation(loc.id, loc.name)}
-                        className="p-2 bg-slate-950 hover:bg-red-500/10 border border-slate-855 hover:border-red-500/20 text-slate-500 hover:text-red-400 rounded-xl transition cursor-pointer"
+                        className="p-2 bg-slate-950 hover:bg-red-500/10 border border-slate-850 hover:border-red-500/20 text-slate-500 hover:text-red-400 rounded-xl transition cursor-pointer"
                         title="Xóa toàn bộ cơ sở này"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -337,7 +338,7 @@ export const FieldManagement: React.FC = () => {
                         {locCourts.map(court => (
                           <div 
                             key={court.id} 
-                            className="bg-slate-950/80 border border-slate-850 p-4 rounded-2xl flex flex-col justify-between hover:border-slate-750 transition"
+                            className="bg-slate-950/60 border border-slate-850 p-4 rounded-2xl flex flex-col justify-between hover:border-amber-500/30 transition duration-200 active:scale-[0.98]"
                           >
                             <div>
                               <div className="flex justify-between items-start">

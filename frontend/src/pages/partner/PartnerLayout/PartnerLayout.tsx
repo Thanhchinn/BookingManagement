@@ -410,14 +410,13 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
                   handleSelectTab(item.id);
                   setIsMobileSidebarOpen(false); // Đóng drawer trên mobile sau khi chọn
                 }}
-                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition duration-150 border-0 cursor-pointer text-left
-                  ${isActive 
-                    ? 'bg-amber-500 text-white font-extrabold shadow-lg shadow-amber-500/10' 
+                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition duration-150 border-0 cursor-pointer text-left ${
+                  isActive 
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 active:scale-[0.98]' 
                     : 'bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/30'
-                  }
-                `}
+                }`}
               >
-                <IconComponent className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <IconComponent className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-white'}`} />
                 {!isSidebarCollapsed && <span className="text-xs">{item.label}</span>}
               </button>
             );

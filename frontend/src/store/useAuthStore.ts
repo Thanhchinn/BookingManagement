@@ -5,6 +5,10 @@ interface AuthState {
   userName: string | null;
   partnerName: string | null;
   isAdminLoggedIn: boolean;
+  userToken: string | null;
+  adminToken: string | null;
+  userInfo: any | null;
+  adminProfile: any | null;
   
   loginUser: (name: string, token: string, userInfo: any) => void;
   logoutUser: () => void;
@@ -18,13 +22,31 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => {
-  // Khôi phục user từ localStorage
-  const getInitialUser = () => {
+  // Khôi phục token và user từ localStorage
+  const getInitialToken = () => localStorage.getItem('user_token');
+  const getInitialUserInfo = () => {
     const saved = localStorage.getItem('user_info');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        return parsed.fullName || null;
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+  const getInitialUser = () => {
+    const info = getInitialUserInfo();
+    return info ? info.fullName || null : null;
+  };
+
+  // Khôi phục admin từ localStorage
+  const getInitialAdminToken = () => localStorage.getItem('admin_token');
+  const getInitialAdminProfile = () => {
+    const saved = localStorage.getItem('admin_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
       } catch {
         return null;
       }
@@ -32,21 +54,19 @@ export const useAuthStore = create<AuthState>((set) => {
     return null;
   };
 
-  // Khôi phục admin từ localStorage
-  const getInitialAdmin = () => {
-    const profile = localStorage.getItem('admin_profile');
-    return !!profile;
-  };
-
   return {
     userName: getInitialUser(),
     partnerName: localStorage.getItem('partner_name') || null,
-    isAdminLoggedIn: getInitialAdmin(),
+    isAdminLoggedIn: !!getInitialAdminToken(),
+    userToken: getInitialToken(),
+    adminToken: getInitialAdminToken(),
+    userInfo: getInitialUserInfo(),
+    adminProfile: getInitialAdminProfile(),
 
     loginUser: (name, token, userInfo) => {
       localStorage.setItem('user_token', token);
       localStorage.setItem('user_info', JSON.stringify(userInfo));
-      set({ userName: name });
+      set({ userName: name, userToken: token, userInfo: userInfo });
     },
 
     logoutUser: () => {
@@ -54,7 +74,7 @@ export const useAuthStore = create<AuthState>((set) => {
       localStorage.removeItem('user_info');
       localStorage.removeItem('partner_name');
       apiClient.post('/auth/logout').catch(() => {});
-      set({ userName: null, partnerName: null });
+      set({ userName: null, partnerName: null, userToken: null, userInfo: null });
     },
 
     setUserName: (name) => {
@@ -64,14 +84,14 @@ export const useAuthStore = create<AuthState>((set) => {
     loginAdmin: (token, profile) => {
       localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_profile', JSON.stringify(profile));
-      set({ isAdminLoggedIn: true });
+      set({ isAdminLoggedIn: true, adminToken: token, adminProfile: profile });
     },
 
     logoutAdmin: () => {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_profile');
       apiClient.post('/auth/logout').catch(() => {});
-      set({ isAdminLoggedIn: false });
+      set({ isAdminLoggedIn: false, adminToken: null, adminProfile: null });
     },
 
     loginPartner: (name) => {
