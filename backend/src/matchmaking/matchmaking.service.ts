@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { SkillLevel } from '@prisma/client';
+import { isAdminRole } from '../auth/auth.constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchPostDto } from './dto/create-match-post.dto';
 import { ApplyMatchDto } from './dto/apply-match.dto';
@@ -49,11 +51,31 @@ export class MatchmakingService {
     const pitch = await this.prisma.sportsPitch.findUnique({
       where: { id: pitchId },
     });
-    if (!pitch) {
+    if (!pitch || pitch.deletedAt || !pitch.isActive) {
       throw new NotFoundException('Không tìm thấy sân thi đấu đã chọn.');
     }
 
     const bookingId = dto.bookingId ? BigInt(dto.bookingId) : null;
+
+    // Bài gắn với đơn đặt sân: đơn phải của chính người đăng, đúng sân, còn hiệu lực.
+    // Ngày giờ của bài lấy theo đơn để không bị lệch.
+    let schedule = {
+      playDate: parseDate(dto.playDate),
+      startTime: parseTimeToDate(dto.startTime),
+      endTime: parseTimeToDate(dto.endTime),
+    };
+    if (bookingId) {
+      const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+      if (
+        !booking ||
+        booking.userId.toString() !== userId.toString() ||
+        booking.sportsPitchId !== pitchId ||
+        !['PENDING', 'CONFIRMED'].includes(booking.status)
+      ) {
+        throw new BadRequestException('Đơn đặt sân không hợp lệ để tạo bài ghép đội.');
+      }
+      schedule = { playDate: booking.bookingDate, startTime: booking.startTime, endTime: booking.endTime };
+    }
 
     // Tạo MatchPost và tự động thêm Host trong một transaction
     const post = await this.prisma.$transaction(async (tx) => {
@@ -64,9 +86,7 @@ export class MatchmakingService {
           bookingId: bookingId,
           title: dto.title,
           description: dto.description || '',
-          playDate: parseDate(dto.playDate),
-          startTime: parseTimeToDate(dto.startTime),
-          endTime: parseTimeToDate(dto.endTime),
+          ...schedule,
           skillLevel: dto.skillLevel || 'ANY',
           maxPlayers: dto.maxPlayers,
           currentPlayers: 1,
@@ -109,7 +129,8 @@ export class MatchmakingService {
       where.playDate = parseDate(filters.playDate);
     }
 
-    if (filters.skillLevel && filters.skillLevel !== 'ALL') {
+    // Bỏ qua giá trị không thuộc enum (ví dụ 'ALL' = không lọc)
+    if (filters.skillLevel && (Object.values(SkillLevel) as string[]).includes(filters.skillLevel)) {
       where.skillLevel = filters.skillLevel;
     }
 
@@ -517,7 +538,7 @@ export class MatchmakingService {
       throw new NotFoundException('Không tìm thấy bài đăng ghép đôi.');
     }
 
-    const isAdmin = role && role !== 'USER';
+    const isAdmin = isAdminRole(role);
 
     if (!isAdmin && post.userId.toString() !== userId.toString()) {
       throw new ForbiddenException('Chỉ có chủ bài đăng hoặc Quản trị viên mới được quyền hủy/xóa bài đăng.');

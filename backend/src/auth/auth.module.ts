@@ -4,13 +4,16 @@ import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { getJwtSecret } from './auth.constants';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'fallbackSuperSecretKey123',
-      signOptions: { expiresIn: '24h' }, // Phiên đăng nhập có thời hạn 24 tiếng
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getJwtSecret(),
+        signOptions: { expiresIn: '24h' }, // Phiên đăng nhập có thời hạn 24 tiếng
+      }),
     }),
   ],
   controllers: [AuthController],

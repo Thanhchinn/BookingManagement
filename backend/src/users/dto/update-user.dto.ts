@@ -1,4 +1,5 @@
 import { 
+  IsIn,
   IsEmail, 
   IsString, 
   MinLength, 
@@ -51,6 +52,14 @@ export class UpdateUserDto {
   @IsOptional()
   city?: string;
 
+  @IsString()
+  @IsOptional()
+  provinceCode?: string; // Mã tỉnh (bảng location_provinces)
+
+  @IsString()
+  @IsOptional()
+  wardCode?: string; // Mã phường/xã (bảng location_wards)
+
   @IsInt({ message: 'Điểm tích lũy phải là số nguyên.' })
   @Min(0, { message: 'Điểm tích lũy không được nhỏ hơn 0.' })
   @IsOptional()
@@ -64,7 +73,7 @@ export class UpdateUserDto {
   @IsOptional()
   birthDate?: string;
 
-  @IsString({ message: 'Giới tính phải là chuỗi ký tự.' })
+  @IsIn(['MALE', 'FEMALE', 'OTHER', ''], { message: 'Giới tính không hợp lệ.' })
   @IsOptional()
   gender?: string;
 

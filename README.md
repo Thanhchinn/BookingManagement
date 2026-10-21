@@ -69,18 +69,23 @@ Tạo file `.env` trong thư mục `backend` (nếu chưa có) và cập nhật 
 ```env
 PORT=3000
 DATABASE_URL="postgresql://postgres:matkhaucuaban@localhost:5432/sport_booking_db?schema=public"
-JWT_SECRET="bi-mat-quan-trong-cua-ban-12345"
+JWT_SECRET="thay-bang-chuoi-ngau-nhien-toi-thieu-32-ky-tu"
 ```
 
-_(Thay thế `postgres:matkhaucuaban` bằng tài khoản và mật khẩu PostgreSQL của bạn)_
+_(Thay thế `postgres:matkhaucuaban` bằng tài khoản và mật khẩu PostgreSQL của bạn. Tạo `JWT_SECRET` ngẫu nhiên bằng: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Xem đầy đủ các biến trong `backend/.env.example`)_
 
 #### **Bước 1.3: Khởi tạo Cơ sở dữ liệu với Prisma**
 
-Chạy lệnh migration để tự động tạo cấu trúc bảng trong PostgreSQL:
+**Database mới (chưa có bảng):** tạo cấu trúc bảng và dữ liệu mẫu:
 
 ```bash
-npx prisma migrate dev --name init
+npx prisma migrate deploy
+npx prisma db seed
 ```
+
+**Database đã tạo trước tháng 10/2026** (từng dùng `prisma db push` hoặc chuỗi migration cũ): làm theo [backend/prisma/baseline/README.md](backend/prisma/baseline/README.md) **một lần duy nhất**. Không chạy `prisma migrate dev` trước khi hoàn tất bước này.
+
+Khi thay đổi `schema.prisma` về sau: `npx prisma migrate dev --name <ten_thay_doi>`.
 
 #### **Bước 1.4: Khởi động Server Backend phát triển**
 

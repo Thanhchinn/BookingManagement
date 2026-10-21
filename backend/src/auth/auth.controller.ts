@@ -5,7 +5,13 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
+import { Public } from './decorators/public.decorator';
 
+// Cookie chỉ bật `secure` khi chạy production (HTTPS)
+const COOKIE_SECURE = process.env.NODE_ENV === 'production';
+
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -14,6 +20,7 @@ export class AuthController {
   // ĐĂNG NHẬP DÀNH CHO ADMIN
   // ==========================================
   @Post('admin/login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // Chống dò mật khẩu: 10 lần/phút/IP
   @HttpCode(HttpStatus.OK)
   async loginAdmin(
     @Body() loginAdminDto: LoginAdminDto,
@@ -27,7 +34,7 @@ export class AuthController {
 
     res.cookie('admin_token', result.access_token, {
       httpOnly: true,
-      secure: false, // false cho local dev HTTP, set true khi chạy HTTPS
+      secure: COOKIE_SECURE,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
     });
@@ -39,6 +46,7 @@ export class AuthController {
   // ĐĂNG NHẬP DÀNH CHO KHÁCH HÀNG (USER)
   // ==========================================
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async loginUser(
     @Body() loginUserDto: LoginUserDto,
@@ -52,7 +60,7 @@ export class AuthController {
 
     res.cookie('user_token', result.access_token, {
       httpOnly: true,
-      secure: false,
+      secure: COOKIE_SECURE,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
     });
@@ -75,6 +83,7 @@ export class AuthController {
   // GỬI MÃ OTP XÁC THỰC EMAIL ĐĂNG KÝ
   // ==========================================
   @Post('send-otp')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async sendOtp(@Body() sendOtpDto: SendOtpDto) {
     return this.authService.sendOtp(sendOtpDto.email);
@@ -84,6 +93,7 @@ export class AuthController {
   // ĐĂNG KÝ DÀNH CHO KHÁCH HÀNG (USER)
   // ==========================================
   @Post('register')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   async registerUser(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.registerUser(registerUserDto);

@@ -6,16 +6,17 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ProductCategoriesService } from './product-categories.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { USER_ROLE } from '../auth/auth.constants';
 
 @Controller('product-categories')
-@UseGuards(JwtAuthGuard)
+// Chỉ tài khoản khách hàng/đối tác (role USER); quyền sở hữu cơ sở được kiểm tra trong service
+@Roles(USER_ROLE)
 export class ProductCategoriesController {
   constructor(private readonly categoriesService: ProductCategoriesService) {}
 

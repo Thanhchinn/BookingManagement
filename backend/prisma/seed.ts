@@ -8,6 +8,7 @@ import { seedAdmins } from './seeders/admin.seeder';
 import { seedUsers } from './seeders/user.seeder';
 import { seedCategories } from './seeders/category.seeder';
 import { seedLocations } from './seeders/location.seeder';
+import { seedPromotions } from './seeders/promotion.seeder';
 
 // Khởi tạo connection pool Postgres chuẩn của Prisma 7 Wasm engine
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -22,6 +23,7 @@ async function main() {
   await seedUsers(prisma);
   await seedCategories(prisma);
   await seedLocations(prisma);
+  await seedPromotions(prisma);
 
   console.log('🌱 [DatabaseSeeder] Database seeding completed successfully.');
 }

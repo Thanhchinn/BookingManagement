@@ -4,6 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 import { Request } from 'express';
+import { AuthUser, getJwtSecret, isAdminRole, USER_ROLE } from '../auth.constants';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,28 +17,31 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'fallbackSuperSecretKey123',
+      secretOrKey: getJwtSecret(),
     });
   }
 
-  async validate(payload: any) {
-    // Nếu là tài khoản Khách hàng (User)
-    if (payload.role === 'USER') {
+  async validate(payload: any): Promise<AuthUser> {
+    // Tài khoản Khách hàng / Đối tác (bảng users)
+    if (payload.role === USER_ROLE) {
       const user = await this.prisma.user.findUnique({
-        where: { id: BigInt(payload.sub) }
+        where: { id: BigInt(payload.sub) },
+        select: { isActive: true, deletedAt: true },
       });
-      if (!user) {
+      if (!user || user.deletedAt) {
         throw new UnauthorizedException('Tài khoản không tồn tại trên hệ thống');
       }
       if (!user.isActive) {
         throw new UnauthorizedException('Tài khoản của bạn đã bị khóa bởi quản trị viên');
       }
+      return { userId: payload.sub, role: USER_ROLE };
     }
-    
-    // Nếu là tài khoản Quản trị viên (Admin)
-    if (payload.role === 'ADMIN' || payload.role === 'SUPERADMIN' || payload.role === 'MODERATOR') {
+
+    // Tài khoản Quản trị viên (bảng admins)
+    if (isAdminRole(payload.role)) {
       const admin = await this.prisma.admin.findUnique({
-        where: { id: BigInt(payload.sub) }
+        where: { id: BigInt(payload.sub) },
+        select: { isActive: true, role: true, username: true },
       });
       if (!admin) {
         throw new UnauthorizedException('Tài khoản quản trị không tồn tại');
@@ -45,8 +49,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (!admin.isActive) {
         throw new UnauthorizedException('Tài khoản quản trị viên đã bị vô hiệu hóa');
       }
+      // Dùng role hiện tại trong DB thay vì role trong token (phòng trường hợp đã bị hạ quyền)
+      return { userId: payload.sub, username: admin.username, role: admin.role };
     }
 
-    return { userId: payload.sub, username: payload.username, role: payload.role };
+    throw new UnauthorizedException('Token không hợp lệ');
   }
 }

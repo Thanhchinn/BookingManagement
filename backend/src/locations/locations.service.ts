@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { countUpcomingBookings } from '../bookings/booking-rules';
+import { resolveAddressCodes } from '../common/utils/address.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -37,7 +39,7 @@ export class LocationsService {
   async findAll(userId: string | number | bigint) {
     const partner = await this.getPartnerProfile(userId);
     const locations = await this.prisma.location.findMany({
-      where: { partnerId: partner.id },
+      where: { partnerId: partner.id, deletedAt: null },
       include: {
         locationAmenities: {
           include: {
@@ -57,6 +59,7 @@ export class LocationsService {
       where: {
         id: BigInt(id),
         partnerId: partner.id,
+        deletedAt: null,
       },
       include: {
         locationAmenities: {
@@ -93,6 +96,7 @@ export class LocationsService {
         ward: dto.ward || null,
         district: dto.district || null,
         city: dto.city || null,
+        ...(await resolveAddressCodes(this.prisma, dto.provinceCode, dto.wardCode)),
         contactPhone: dto.contactPhone || null,
         imageUrl: dto.imageUrl || null,
         latitude: dto.latitude || null,
@@ -147,6 +151,7 @@ export class LocationsService {
         ward: dto.ward,
         district: dto.district,
         city: dto.city,
+        ...(await resolveAddressCodes(this.prisma, dto.provinceCode, dto.wardCode)),
         contactPhone: dto.contactPhone,
         imageUrl: dto.imageUrl,
         latitude: dto.latitude,
@@ -172,11 +177,33 @@ export class LocationsService {
   }
 
   // Xóa cơ sở
+  // Xóa mềm cơ sở cùng toàn bộ sân và sản phẩm bên trong (giữ lịch sử đặt sân)
   async remove(id: string | number | bigint, userId: string | number | bigint) {
     await this.findOne(id, userId);
-    await this.prisma.location.delete({
-      where: { id: BigInt(id) },
-    });
+    const locationId = BigInt(id);
+
+    const upcoming = await countUpcomingBookings(this.prisma, { sportsPitch: { locationId } });
+    if (upcoming > 0) {
+      throw new ConflictException(
+        `Cơ sở còn ${upcoming} đơn đặt sân sắp diễn ra. Vui lòng xử lý (hủy/hoàn tất) các đơn này trước khi xóa.`,
+      );
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.sportsPitch.updateMany({
+        where: { locationId, deletedAt: null },
+        data: { deletedAt: now, isActive: false },
+      }),
+      this.prisma.product.updateMany({
+        where: { locationId, deletedAt: null },
+        data: { deletedAt: now, isAvailable: false },
+      }),
+      this.prisma.location.update({
+        where: { id: locationId },
+        data: { deletedAt: now, isActive: false, isPrimary: false },
+      }),
+    ]);
     return { message: 'Đã xóa cơ sở thành công.' };
   }
 

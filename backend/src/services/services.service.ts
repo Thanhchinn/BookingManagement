@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { countUpcomingBookings } from '../bookings/booking-rules';
 import { PrismaService } from '../prisma/prisma.service';
 import { PartnersService } from '../partners/partners.service';
 import { CreateServiceDto } from './dto/create-service.dto';
@@ -56,8 +57,10 @@ export class ServicesService {
     const partner = await this.getPartnerProfile(userId);
     const services = await this.prisma.sportsPitch.findMany({
       where: {
+        deletedAt: null,
         location: {
           partnerId: partner.id,
+          deletedAt: null,
         },
       },
       include: {
@@ -86,9 +89,11 @@ export class ServicesService {
     const partner = await this.getPartnerProfile(userId);
     const service = await this.prisma.sportsPitch.findFirst({
       where: {
+        deletedAt: null,
         id: BigInt(id),
         location: {
           partnerId: partner.id,
+          deletedAt: null,
         },
       },
       include: {
@@ -128,6 +133,7 @@ export class ServicesService {
       where: {
         id: BigInt(dto.locationId),
         partnerId: partner.id,
+        deletedAt: null,
       },
     });
     if (!location) {
@@ -160,9 +166,11 @@ export class ServicesService {
     // Xác minh sân thuộc sở hữu của đối tác
     const service = await this.prisma.sportsPitch.findFirst({
       where: {
+        deletedAt: null,
         id: BigInt(id),
         location: {
           partnerId: partner.id,
+          deletedAt: null,
         },
       },
     });
@@ -176,6 +184,7 @@ export class ServicesService {
         where: {
           id: BigInt(dto.locationId),
           partnerId: partner.id,
+          deletedAt: null,
         },
       });
       if (!targetLocation) {
@@ -208,9 +217,11 @@ export class ServicesService {
     const partner = await this.getPartnerProfile(userId);
     const service = await this.prisma.sportsPitch.findFirst({
       where: {
+        deletedAt: null,
         id: BigInt(id),
         location: {
           partnerId: partner.id,
+          deletedAt: null,
         },
       },
     });
@@ -218,8 +229,18 @@ export class ServicesService {
       throw new NotFoundException(`Không tìm thấy sân có ID: ${id}`);
     }
 
-    await this.prisma.sportsPitch.delete({
-      where: { id: BigInt(id) },
+    // Không xóa sân khi còn khách đã đặt lịch sắp tới
+    const upcoming = await countUpcomingBookings(this.prisma, { sportsPitchId: service.id });
+    if (upcoming > 0) {
+      throw new ConflictException(
+        `Sân còn ${upcoming} đơn đặt sắp diễn ra. Vui lòng xử lý (hủy/hoàn tất) các đơn này trước khi xóa.`,
+      );
+    }
+
+    // Xóa mềm: giữ lịch sử đặt sân, đánh giá, thanh toán
+    await this.prisma.sportsPitch.update({
+      where: { id: service.id },
+      data: { deletedAt: new Date(), isActive: false },
     });
     return { message: 'Đã xóa sân thành công.' };
   }
@@ -233,6 +254,7 @@ export class ServicesService {
         sportsPitch: {
           location: {
             partnerId: partner.id,
+            deletedAt: null,
           },
         },
       },
@@ -272,9 +294,11 @@ export class ServicesService {
     const partner = await this.getPartnerProfile(userId);
     const service = await this.prisma.sportsPitch.findFirst({
       where: {
+        deletedAt: null,
         id: BigInt(serviceId),
         location: {
           partnerId: partner.id,
+          deletedAt: null,
         },
       },
     });

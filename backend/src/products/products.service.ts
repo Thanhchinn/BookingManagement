@@ -29,6 +29,7 @@ export class ProductsService {
       where: {
         id: BigInt(locationId),
         partnerId: partner.id,
+        deletedAt: null,
       },
     });
 
@@ -38,12 +39,22 @@ export class ProductsService {
     return location;
   }
 
+  // Tìm danh mục sản phẩm của đối tác theo tên (không phân biệt hoa thường); không có thì null
+  private async resolveProductCategoryId(partnerId: bigint, name?: string | null) {
+    if (!name) return null;
+    const category = await this.prisma.productCategory.findFirst({
+      where: { partnerId, name: { equals: name, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return category?.id ?? null;
+  }
+
   // Lấy danh sách sản phẩm theo locationId
   async findByLocation(locationId: string, userId: string | number | bigint) {
     await this.checkLocationOwnership(locationId, userId);
     
     const products = await this.prisma.product.findMany({
-      where: { locationId: BigInt(locationId) },
+      where: { locationId: BigInt(locationId), deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
     
@@ -55,7 +66,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id: BigInt(id) },
     });
-    if (!product) {
+    if (!product || product.deletedAt) {
       throw new NotFoundException(`Không tìm thấy sản phẩm có ID: ${id}`);
     }
 
@@ -65,13 +76,14 @@ export class ProductsService {
 
   // Tạo mới sản phẩm
   async create(dto: CreateProductDto, userId: string | number | bigint) {
-    await this.checkLocationOwnership(dto.locationId, userId);
+    const location = await this.checkLocationOwnership(dto.locationId, userId);
 
     const product = await this.prisma.product.create({
       data: {
         locationId: BigInt(dto.locationId),
         name: dto.name,
         category: dto.category || 'DRINK',
+        productCategoryId: await this.resolveProductCategoryId(location.partnerId, dto.category),
         description: dto.description || null,
         price: dto.price,
         imageUrl: dto.imageUrl || null,
@@ -87,17 +99,20 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id: BigInt(id) },
     });
-    if (!product) {
+    if (!product || product.deletedAt) {
       throw new NotFoundException(`Không tìm thấy sản phẩm có ID: ${id}`);
     }
 
-    await this.checkLocationOwnership(product.locationId, userId);
+    const location = await this.checkLocationOwnership(product.locationId, userId);
 
     const updated = await this.prisma.product.update({
       where: { id: BigInt(id) },
       data: {
         name: dto.name,
         category: dto.category,
+        ...(dto.category !== undefined
+          ? { productCategoryId: await this.resolveProductCategoryId(location.partnerId, dto.category) }
+          : {}),
         description: dto.description,
         price: dto.price,
         imageUrl: dto.imageUrl,
@@ -113,14 +128,16 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id: BigInt(id) },
     });
-    if (!product) {
+    if (!product || product.deletedAt) {
       throw new NotFoundException(`Không tìm thấy sản phẩm có ID: ${id}`);
     }
 
     await this.checkLocationOwnership(product.locationId, userId);
 
-    await this.prisma.product.delete({
+    // Xóa mềm: hóa đơn cũ vẫn tham chiếu được sản phẩm
+    await this.prisma.product.update({
       where: { id: BigInt(id) },
+      data: { deletedAt: new Date(), isAvailable: false },
     });
 
     return { message: 'Đã xóa sản phẩm thành công.' };

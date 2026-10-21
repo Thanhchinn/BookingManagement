@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Admin } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { CreateAdminDto, UpdateAdminDto } from './dto/admin.dto';
 
 @Injectable()
 export class AdminsService {
@@ -32,7 +34,7 @@ export class AdminsService {
   }
 
   // Tạo tài khoản Admin mới
-  async create(data: any): Promise<Admin> {
+  async create(data: CreateAdminDto): Promise<Admin> {
     const existingUsername = await this.findByUsername(data.username);
     if (existingUsername) {
       throw new ConflictException('Tên đăng nhập admin này đã tồn tại.');
@@ -48,6 +50,7 @@ export class AdminsService {
     return this.prisma.admin.create({
       data: {
         ...data,
+        password: await bcrypt.hash(data.password, 10), // Luôn lưu mật khẩu đã băm
         role: data.role ?? 'MODERATOR',
         isActive: data.isActive ?? true,
       },
@@ -55,7 +58,7 @@ export class AdminsService {
   }
 
   // Cập nhật tài khoản Admin
-  async update(id: string | number | bigint, data: any): Promise<Admin> {
+  async update(id: string | number | bigint, data: UpdateAdminDto): Promise<Admin> {
     await this.findOne(id); // Check existence
 
     if (data.username) {
@@ -84,7 +87,10 @@ export class AdminsService {
 
     return this.prisma.admin.update({
       where: { id: BigInt(id) },
-      data,
+      data: {
+        ...data,
+        ...(data.password ? { password: await bcrypt.hash(data.password, 10) } : {}),
+      },
     });
   }
 

@@ -49,4 +49,12 @@ export class UpdateLocationDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   amenityIds?: number[];
+
+  @IsString()
+  @IsOptional()
+  provinceCode?: string; // Mã tỉnh (bảng location_provinces)
+
+  @IsString()
+  @IsOptional()
+  wardCode?: string; // Mã phường/xã (bảng location_wards)
 }

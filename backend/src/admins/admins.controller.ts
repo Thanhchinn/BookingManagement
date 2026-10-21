@@ -1,26 +1,33 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Put, 
-  Delete, 
-  HttpCode, 
-  HttpStatus 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AdminsService } from './admins.service';
+import { CreateAdminDto, UpdateAdminDto } from './dto/admin.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
 
-// Hàm helper để convert BigInt thành string trong JSON response
+// Hàm helper để convert BigInt thành string và loại bỏ mật khẩu khỏi JSON response
 function serializeAdmin(admin: any) {
   if (!admin) return null;
+  const { password, ...rest } = admin;
   return {
-    ...admin,
+    ...rest,
     id: admin.id.toString(),
   };
 }
 
+// Chỉ SUPERADMIN được quản lý tài khoản quản trị
 @Controller('admins')
+@Roles('SUPERADMIN')
 export class AdminsController {
   constructor(private readonly adminsService: AdminsService) {}
 
@@ -38,20 +45,27 @@ export class AdminsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createAdminDto: any) {
+  async create(@Body() createAdminDto: CreateAdminDto) {
     const newAdmin = await this.adminsService.create(createAdminDto);
     return serializeAdmin(newAdmin);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateAdminDto: any) {
+  async update(@Request() req: any, @Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto) {
+    // Không cho tự hạ quyền hoặc tự vô hiệu hóa chính mình (tránh mất hết SUPERADMIN)
+    if (req.user.userId === id && (updateAdminDto.role !== undefined || updateAdminDto.isActive === false)) {
+      throw new ForbiddenException('Không thể tự thay đổi vai trò hoặc vô hiệu hóa tài khoản của chính mình.');
+    }
     const updatedAdmin = await this.adminsService.update(id, updateAdminDto);
     return serializeAdmin(updatedAdmin);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
+  async remove(@Request() req: any, @Param('id') id: string) {
+    if (req.user.userId === id) {
+      throw new ForbiddenException('Không thể tự xóa tài khoản của chính mình.');
+    }
     return this.adminsService.remove(id);
   }
 }

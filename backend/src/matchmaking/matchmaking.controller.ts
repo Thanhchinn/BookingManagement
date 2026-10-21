@@ -7,16 +7,16 @@ import {
   Patch, 
   Delete, 
   Query, 
-  UseGuards, 
   Request,
-  ForbiddenException
 } from '@nestjs/common';
 import { MatchmakingService } from './matchmaking.service';
 import { CreateMatchPostDto } from './dto/create-match-post.dto';
 import { ApplyMatchDto } from './dto/apply-match.dto';
 import { ApproveParticipantDto } from './dto/approve-participant.dto';
 import { ApprovePostDto } from './dto/approve-post.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { ADMIN_ROLES, USER_ROLE } from '../auth/auth.constants';
 
 @Controller('matchmaking')
 export class MatchmakingController {
@@ -24,13 +24,14 @@ export class MatchmakingController {
 
   // 1. Tạo bài viết ghép đôi mới (Khách hàng)
   @Post('posts')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async create(@Request() req, @Body() dto: CreateMatchPostDto) {
     const userId = req.user.userId;
     return this.matchmakingService.create(userId, dto);
   }
 
   // 2. Lấy danh sách bài đăng ghép đôi công khai (hiển thị cho tất cả khách hàng)
+  @Public()
   @Get('posts/public')
   async findPublic(
     @Query('sport') sport?: string,
@@ -43,7 +44,7 @@ export class MatchmakingController {
 
   // 3. Lấy danh sách bài viết của chính người đăng nhập (My Posts)
   @Get('posts/my-posts')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async findMyPosts(@Request() req) {
     const userId = req.user.userId;
     return this.matchmakingService.findMyPosts(userId);
@@ -51,13 +52,14 @@ export class MatchmakingController {
 
   // 3.5 Lấy danh sách bài đăng ghép đôi người dùng tham gia (Host hoặc đã JOINED)
   @Get('posts/joined')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async findJoinedMatches(@Request() req) {
     const userId = req.user.userId;
     return this.matchmakingService.findJoinedMatches(userId);
   }
 
   // 4. Xem chi tiết bài viết (Khách hàng)
+  @Public()
   @Get('posts/:id')
   async findOne(@Param('id') id: string) {
     return this.matchmakingService.findOne(id);
@@ -65,7 +67,7 @@ export class MatchmakingController {
 
   // 5. Nộp đơn xin gia nhập trận đấu (Khách hàng)
   @Post('posts/:id/apply')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async applyToJoin(
     @Request() req,
     @Param('id') id: string,
@@ -77,7 +79,7 @@ export class MatchmakingController {
 
   // 6. Host phê duyệt thành viên tham gia
   @Patch('posts/:id/participants/:participantId')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async approveParticipant(
     @Request() req,
     @Param('id') id: string,
@@ -90,7 +92,7 @@ export class MatchmakingController {
 
   // 6.2 Người tham gia tự hủy/rút lui khỏi trận đấu
   @Post('posts/:id/leave')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async leaveMatch(@Request() req, @Param('id') id: string, @Body('reason') reason?: string) {
     const userId = req.user.userId;
     return this.matchmakingService.leaveMatch(userId, id, reason);
@@ -98,7 +100,7 @@ export class MatchmakingController {
 
   // 6.5 Host xóa/kick thành viên khỏi trận đấu
   @Post('posts/:id/participants/:participantId/kick')
-  @UseGuards(JwtAuthGuard)
+  @Roles(USER_ROLE)
   async removeParticipant(
     @Request() req,
     @Param('id') id: string,
@@ -111,7 +113,6 @@ export class MatchmakingController {
 
   // 7. Host hủy/xóa bài đăng hoặc Admin xóa bài đăng
   @Delete('posts/:id')
-  @UseGuards(JwtAuthGuard)
   async remove(@Request() req, @Param('id') id: string) {
     const userId = req.user.userId;
     const role = req.user.role;
@@ -124,18 +125,12 @@ export class MatchmakingController {
 
   // Admin lấy danh sách các bài đăng trong hệ thống
   @Get('admin/posts')
-  @UseGuards(JwtAuthGuard)
+  @Roles(...ADMIN_ROLES)
   async adminFindAll(
-    @Request() req,
     @Query('status') status?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    // Bảo mật: check role admin
-    if (req.user.role === 'USER') {
-      throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
-    }
-
     return this.matchmakingService.adminFindAll({
       status,
       page: page ? parseInt(page, 10) : 1,
@@ -145,17 +140,11 @@ export class MatchmakingController {
 
   // Admin duyệt bài viết của người dùng
   @Patch('admin/posts/:id/approve')
-  @UseGuards(JwtAuthGuard)
+  @Roles(...ADMIN_ROLES)
   async adminApprove(
-    @Request() req,
     @Param('id') id: string,
     @Body() dto: ApprovePostDto,
   ) {
-    // Bảo mật: check role admin
-    if (req.user.role === 'USER') {
-      throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
-    }
-
     return this.matchmakingService.adminApprove(id, dto);
   }
 }

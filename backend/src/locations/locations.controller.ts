@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
@@ -14,10 +13,12 @@ import {
 import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { USER_ROLE } from '../auth/auth.constants';
 
 @Controller('locations')
-@UseGuards(JwtAuthGuard)
+// Chỉ tài khoản khách hàng/đối tác (role USER); quyền sở hữu cơ sở được kiểm tra trong service
+@Roles(USER_ROLE)
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 

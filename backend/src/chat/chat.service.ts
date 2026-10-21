@@ -1,29 +1,80 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { ChatRoomType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+// Giờ:phút theo giờ Việt Nam (không phụ thuộc múi giờ của server)
+function formatClock(date: Date): string {
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
+}
+import { AuthUser, isAdminRole, USER_ROLE } from '../auth/auth.constants';
 
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private serializeMessage(msg: any) {
+  // Định dạng tin nhắn kênh hỗ trợ Admin <-> Đối tác (giữ nguyên định dạng API cũ).
+  // Tin không có người gửi là user (admin gửi, hoặc admin đã bị xóa) được coi là của ADMIN.
+  private serializeSupportMessage(msg: { id: bigint; senderId: bigint | null; senderAdminId: bigint | null; messageText: string; createdAt: Date }, partnerId: bigint) {
+    const isPartner = msg.senderId !== null;
     return {
       id: msg.id.toString(),
-      partnerId: msg.partnerId.toString(),
-      senderType: msg.senderType,
-      senderId: msg.senderId.toString(),
+      partnerId: partnerId.toString(),
+      senderType: isPartner ? 'PARTNER' : 'ADMIN',
+      senderId: (isPartner ? msg.senderId : msg.senderAdminId)?.toString() ?? null,
       text: msg.messageText,
-      timestamp: msg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: formatClock(msg.createdAt),
       createdAt: msg.createdAt,
     };
   }
 
-  async getAdminPartnerMessages(partnerId: string) {
-    const messages = await this.prisma.adminPartnerMessage.findMany({
-      where: { partnerId: BigInt(partnerId) },
-      orderBy: { createdAt: 'asc' },
-    });
+  // Phòng chat SUPPORT của đối tác (tạo khi cần), thành viên là tài khoản user của đối tác
+  private async getOrCreateSupportRoom(partnerId: bigint) {
+    const existing = await this.prisma.chatRoom.findUnique({ where: { partnerId } });
+    if (existing) return existing;
 
-    return messages.map((m) => this.serializeMessage(m));
+    const partner = await this.prisma.partnerProfile.findUnique({
+      where: { id: partnerId },
+      select: { userId: true, businessName: true },
+    });
+    if (!partner) {
+      throw new NotFoundException('Không tìm thấy đối tác này.');
+    }
+    try {
+      return await this.prisma.chatRoom.create({
+        data: {
+          type: ChatRoomType.SUPPORT,
+          partnerId,
+          name: `Hỗ trợ: ${partner.businessName}`,
+          members: { create: { userId: partner.userId } },
+        },
+      });
+    } catch {
+      // Hai yêu cầu tạo cùng lúc: phòng đã được tạo bởi yêu cầu kia
+      return this.prisma.chatRoom.findUniqueOrThrow({ where: { partnerId } });
+    }
+  }
+
+  // Chỉ Admin hoặc chính chủ đối tác (user sở hữu hồ sơ) mới được xem/gửi tin trong kênh admin-partner
+  async assertCanAccessPartnerThread(user: AuthUser, partnerId: string) {
+    if (isAdminRole(user.role)) return;
+    if (user.role === USER_ROLE) {
+      const partner = await this.prisma.partnerProfile.findUnique({
+        where: { id: BigInt(partnerId) },
+        select: { userId: true },
+      });
+      if (partner && partner.userId.toString() === user.userId) return;
+    }
+    throw new ForbiddenException('Bạn không có quyền truy cập cuộc trò chuyện này.');
+  }
+
+  async getAdminPartnerMessages(partnerId: string) {
+    const room = await this.prisma.chatRoom.findUnique({ where: { partnerId: BigInt(partnerId) } });
+    if (!room) return [];
+    const messages = await this.prisma.message.findMany({
+      where: { chatRoomId: room.id },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    return messages.map((m) => this.serializeSupportMessage(m, room.partnerId!));
   }
 
   async sendAdminPartnerMessage(
@@ -32,45 +83,36 @@ export class ChatService {
     senderId: string,
     text: string,
   ) {
-    // Kiểm tra xem đối tác có tồn tại không
-    const partner = await this.prisma.partnerProfile.findUnique({
-      where: { id: BigInt(partnerId) },
-    });
-    if (!partner) {
-      throw new NotFoundException('Không tìm thấy đối tác này.');
+    if (!text?.trim()) {
+      throw new BadRequestException('Nội dung tin nhắn không được để trống.');
     }
-
-    const newMessage = await this.prisma.adminPartnerMessage.create({
+    const room = await this.getOrCreateSupportRoom(BigInt(partnerId));
+    const newMessage = await this.prisma.message.create({
       data: {
-        partnerId: BigInt(partnerId),
-        senderType,
-        senderId: BigInt(senderId),
-        messageText: text,
+        chatRoomId: room.id,
+        ...(senderType === 'ADMIN' ? { senderAdminId: BigInt(senderId) } : { senderId: BigInt(senderId) }),
+        messageText: text.trim(),
       },
     });
-
-    return this.serializeMessage(newMessage);
+    return this.serializeSupportMessage(newMessage, room.partnerId!);
   }
 
   async getAllLastMessages() {
-    const partners = await this.prisma.partnerProfile.findMany({
-      select: { id: true },
+    // 1 truy vấn cho mọi phòng SUPPORT (trước đây: 1 truy vấn cho mỗi đối tác)
+    const rooms = await this.prisma.chatRoom.findMany({
+      where: { type: ChatRoomType.SUPPORT },
+      select: {
+        partnerId: true,
+        messages: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 1 },
+      },
     });
 
     const lastMessages: Record<string, any> = {};
-    for (const p of partners) {
-      const msg = await this.prisma.adminPartnerMessage.findFirst({
-        where: { partnerId: p.id },
-        orderBy: { createdAt: 'desc' },
-      });
-      if (msg) {
-        lastMessages[p.id.toString()] = {
-          id: msg.id.toString(),
-          senderType: msg.senderType,
-          text: msg.messageText,
-          createdAt: msg.createdAt,
-          timestamp: msg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        };
+    for (const room of rooms) {
+      const msg = room.messages[0];
+      if (msg && room.partnerId) {
+        const { id, senderType, text, createdAt, timestamp } = this.serializeSupportMessage(msg, room.partnerId);
+        lastMessages[room.partnerId.toString()] = { id, senderType, text, createdAt, timestamp };
       }
     }
     return lastMessages;
@@ -81,7 +123,7 @@ export class ChatService {
     
     // Tìm các room mà user này làm thành viên
     const roomMemberships = await this.prisma.chatRoomMember.findMany({
-      where: { userId: userIdBigInt },
+      where: { userId: userIdBigInt, chatRoom: { type: { not: ChatRoomType.SUPPORT } } },
       include: {
         chatRoom: {
           include: {
@@ -158,7 +200,7 @@ export class ChatService {
           unreadCount,
           lastMessage: lastMsg ? lastMsg.messageText : 'Chưa có tin nhắn mới.',
           lastMessageTime: lastMsg 
-            ? lastMsg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+            ? lastMsg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })
             : '',
           lastMessageDate: lastMsg ? lastMsg.createdAt : null
         };
@@ -325,11 +367,11 @@ export class ChatService {
 
     return messages.map((m) => ({
       id: m.id.toString(),
-      senderName: m.sender.fullName,
-      senderAvatar: m.sender.avatarUrl || '🧑',
+      senderName: m.sender?.fullName ?? 'Quản trị viên',
+      senderAvatar: m.sender?.avatarUrl || '🧑',
       isMe: m.senderId === userIdBig,
       text: m.messageText,
-      timestamp: m.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: m.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
       type: m.type
     }));
   }
@@ -377,11 +419,11 @@ export class ChatService {
 
     return {
       id: msg.id.toString(),
-      senderName: msg.sender.fullName,
-      senderAvatar: msg.sender.avatarUrl || '🧑',
+      senderName: msg.sender?.fullName ?? 'Quản trị viên',
+      senderAvatar: msg.sender?.avatarUrl || '🧑',
       isMe: true,
       text: msg.messageText,
-      timestamp: msg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: msg.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
       type: msg.type
     };
   }

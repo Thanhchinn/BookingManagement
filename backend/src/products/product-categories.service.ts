@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PartnersService } from '../partners/partners.service';
 
@@ -88,13 +88,28 @@ export class ProductCategoriesService {
       throw new ForbiddenException('Bạn không có quyền chỉnh sửa danh mục này.');
     }
 
-    const updated = await this.prisma.productCategory.update({
-      where: { id: BigInt(id) },
-      data: {
-        name,
-        icon: icon || '📦',
-      },
+    const duplicate = await this.prisma.productCategory.findFirst({
+      where: { partnerId: partner.id, name, NOT: { id: BigInt(id) } },
+      select: { id: true },
     });
+    if (duplicate) {
+      throw new ConflictException('Bạn đã có danh mục sản phẩm cùng tên.');
+    }
+
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.productCategory.update({
+        where: { id: BigInt(id) },
+        data: {
+          name,
+          icon: icon || '📦',
+        },
+      }),
+      // Đồng bộ nhãn danh mục hiển thị trên các sản phẩm thuộc danh mục này
+      this.prisma.product.updateMany({
+        where: { productCategoryId: BigInt(id) },
+        data: { category: name },
+      }),
+    ]);
 
     return serializeProductCategory(updated);
   }

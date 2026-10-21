@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
@@ -14,10 +13,12 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { USER_ROLE } from '../auth/auth.constants';
 
 @Controller('products')
-@UseGuards(JwtAuthGuard)
+// Chỉ tài khoản khách hàng/đối tác (role USER); quyền sở hữu cơ sở được kiểm tra trong service
+@Roles(USER_ROLE)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 

@@ -17,34 +17,37 @@ model User {
   id                BigInt    @id @default(autoincrement())
   fullName          String    @map("full_name") @db.VarChar(255)
   email             String    @unique @db.VarChar(255)
-  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamp
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
   password          String    @db.VarChar(255)
   phone             String?   @unique @db.VarChar(20)
   avatarUrl         String?   @map("avatar_url") @db.Text
   address           String?   @db.Text
   ward              String?   @db.VarChar(100)
-  district          String?   @db.VarChar(100)
+  district          String?   @db.VarChar(100) // Không dùng nữa (bỏ cấp huyện từ 07/2025), giữ để hiển thị dữ liệu cũ
   city              String?   @db.VarChar(100)
+  provinceCode      String?   @map("province_code") @db.VarChar(2) // Mã tỉnh/thành (địa giới 2 cấp)
+  wardCode          String?   @map("ward_code") @db.VarChar(6)     // Mã phường/xã
   latitude          Decimal?  @db.Decimal(10, 8)
   longitude         Decimal?  @db.Decimal(11, 8)
   loyaltyPoints     Int       @default(0) @map("loyalty_points")
   isActive          Boolean   @default(true) @map("is_active")
-  rememberToken     String?   @map("remember_token") @db.VarChar(100)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz // Xóa mềm + ẩn danh hóa, không xóa cứng
 
   // --- CÁC TRƯỜNG BỔ SUNG MỚI ---
   birthDate         DateTime? @map("birth_date") @db.Date
-  gender            String?   @db.VarChar(10) // MALE, FEMALE, OTHER
+  gender            Gender?
   bio               String?   @db.Text
-  favoriteSports    Json?     @map("favorite_sports") // Mảng tên/slug bộ môn, ví dụ: ["football", "badminton"]
-  skillLevels       Json?     @map("skill_levels")    // JSON lưu trình độ từng bộ môn, ví dụ: {"football": "INTERMEDIATE"}
   preferredPlayTime Json?     @map("preferred_play_time")
 
   // Quan hệ 2 chiều (Reciprocal Relations)
   partnerProfile    PartnerProfile?
+  sportPreferences  UserSportPreference[]
+  province          LocationProvince? @relation(fields: [provinceCode], references: [provinceCode], onDelete: SetNull)
+  wardRelation      LocationWard?     @relation(fields: [wardCode], references: [wardCode], onDelete: SetNull)
   bookings          Booking[]
-  userPromotions    UserPromotion[]
+  promotionRedemptions PromotionRedemption[]
   matchPosts        MatchPost[]
   matchParticipants MatchParticipant[]
   chatRoomMembers   ChatRoomMember[]
@@ -52,7 +55,6 @@ model User {
   disputes          Dispute[]
   notifications     Notification[]
   reviews           Review[]
-  otpVerifications  OtpVerification[]
 
   @@index([latitude, longitude], name: "idx_users_location")
   @@map("users")
@@ -61,13 +63,10 @@ model User {
 model OtpVerification {
   id        BigInt   @id @default(autoincrement())
   email     String   @unique @db.VarChar(255)
-  otpCode   String   @map("otp_code") @db.VarChar(10)
-  expiresAt DateTime @map("expires_at") @db.Timestamp
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
-  userId    BigInt?  @map("user_id")
-
-  // Quan hệ
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpCode   String   @map("otp_code") @db.VarChar(64) // SHA-256 hash của mã OTP, không lưu mã gốc
+  attempts  Int      @default(0) // Số lần nhập sai, quá giới hạn thì hủy mã
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("otp_verifications")
 }
@@ -78,16 +77,17 @@ model Admin {
   email           String    @unique @db.VarChar(255)
   password        String    @db.VarChar(255)
   fullName        String?   @map("full_name") @db.VarChar(255)
-  role            String    @default("MODERATOR") @db.VarChar(20)
+  role            AdminRole @default(MODERATOR)
   isActive        Boolean   @default(true) @map("is_active")
-  lastLogin       DateTime? @map("last_login") @db.Timestamp
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  lastLogin       DateTime? @map("last_login") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ 2 chiều
   approvedPartners PartnerProfile[]
   processedCommissionBills PartnerCommissionBill[]
   resolvedDisputes Dispute[]
+  messages         Message[]
 
   @@map("admins")
 }
@@ -99,25 +99,26 @@ model PartnerProfile {
   taxCode             String?   @map("tax_code") @db.VarChar(50)
   businessLicenseUrl  String?   @map("business_license_url") @db.Text
   commissionRate      Decimal   @default(10.00) @map("commission_rate") @db.Decimal(5, 2)
-  commissionType      String    @default("PERCENTAGE") @map("commission_type") @db.VarChar(20)
+  commissionType      CommissionType @default(PERCENTAGE) @map("commission_type")
   commissionFixedAmount Decimal   @default(0.00) @map("commission_fixed_amount") @db.Decimal(12, 2)
-  balance             Decimal   @default(0.00) @map("balance") @db.Decimal(15, 2)
-  status              String    @default("PENDING") @db.VarChar(20)
+  balance             Decimal   @default(0.00) @map("balance") @db.Decimal(15, 2) // Hoa hồng đối tác đang nợ nền tảng = SUM(partner_ledger_entries.amount)
+  status              PartnerStatus @default(PENDING)
   approvedBy          BigInt?   @map("approved_by")
   bankName            String?   @map("bank_name") @db.VarChar(100)
   bankAccountNumber   String?   @map("bank_account_number") @db.VarChar(50)
   bankAccountName     String?   @map("bank_account_name") @db.VarChar(100)
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Khai báo quan hệ
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
   approver          Admin?    @relation(fields: [approvedBy], references: [id], onDelete: SetNull)
   locations         Location[]
   commissionBills   PartnerCommissionBill[]
   disputes          Dispute[]
   promotions        Promotion[]
-  adminPartnerMessages AdminPartnerMessage[]
+  supportRoom          ChatRoom?
+  ledgerEntries        PartnerLedgerEntry[]
   productCategories    ProductCategory[]
 
   @@map("partner_profiles")
@@ -139,6 +140,8 @@ model LocationProvince {
   image         String?   @db.VarChar(255)
 
   wards         LocationWard[]
+  locations     Location[]
+  users         User[]
 
   @@map("location_provinces")
 }
@@ -150,7 +153,10 @@ model LocationWard {
   provinceCode  String    @map("province_code") @db.VarChar(2)
 
   province      LocationProvince @relation(fields: [provinceCode], references: [provinceCode], onDelete: Cascade)
+  locations     Location[]
+  users         User[]
 
+  @@index([provinceCode])
   @@map("location_wards")
 }
 
@@ -160,22 +166,29 @@ model Location {
   name          String    @db.VarChar(255)
   address       String    @db.Text
   ward          String?   @db.VarChar(100)
-  district      String?   @db.VarChar(100)
+  district      String?   @db.VarChar(100) // Không dùng nữa (bỏ cấp huyện từ 07/2025)
   city          String?   @db.VarChar(100)
+  provinceCode  String?   @map("province_code") @db.VarChar(2)
+  wardCode      String?   @map("ward_code") @db.VarChar(6)
   latitude      Decimal?  @db.Decimal(10, 8)
   longitude     Decimal?  @db.Decimal(11, 8)
   contactPhone  String?   @map("contact_phone") @db.VarChar(20)
   imageUrl      String?   @map("image_url") @db.Text
   isActive      Boolean   @default(true) @map("is_active")
   isPrimary     Boolean   @default(false) @map("is_primary")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz // Xóa mềm: giữ lại để không mất lịch sử đặt sân
 
-  partner       PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner       PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  province      LocationProvince? @relation(fields: [provinceCode], references: [provinceCode], onDelete: SetNull)
+  wardRelation  LocationWard?     @relation(fields: [wardCode], references: [wardCode], onDelete: SetNull)
   sportsPitches SportsPitch[]
   products      Product[]
   locationAmenities LocationAmenity[]
 
+  @@index([partnerId])
+  @@index([provinceCode, wardCode])
   @@index([city, district], name: "idx_locations_city_district")
   @@index([latitude, longitude], name: "idx_locations_geo")
   @@map("locations")
@@ -190,8 +203,11 @@ model Category {
   colorText   String    @default("text-emerald-600") @map("color_text") @db.VarChar(255)
   isActive    Boolean   @default(true) @map("is_active")
   sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   sportsPitches SportsPitch[]
+  userPreferences UserSportPreference[]
 
   @@map("categories")
 }
@@ -200,16 +216,17 @@ model SportsPitch {
   id                BigInt    @id @default(autoincrement())
   locationId        BigInt    @map("location_id")
   name              String    @db.VarChar(255)
-  category          String    @db.VarChar(30)
+  category          String    @db.VarChar(30) // slug bộ môn (khóa ngoại tự nhiên, ON UPDATE CASCADE)
   subType           String?   @map("sub_type") @db.VarChar(50)
   description       String?   @db.Text
   basePricePerHour  Decimal   @map("base_price_per_hour") @db.Decimal(12, 2)
   imageUrls         Json?     @map("image_urls")
   isActive          Boolean   @default(true) @map("is_active")
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz // Xóa mềm: giữ lại để không mất lịch sử đặt sân
 
-  location          Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  location          Location  @relation(fields: [locationId], references: [id], onDelete: Restrict)
   categoryRelation  Category  @relation(fields: [category], references: [slug], onDelete: Restrict)
   timeSlots         TimeSlot[]
   slotOverrides     SlotOverride[]
@@ -217,6 +234,7 @@ model SportsPitch {
   matchPosts        MatchPost[]
   reviews           Review[]
 
+  @@index([locationId])
   @@index([category], name: "idx_sports_pitches_category")
   @@map("sports_pitches")
 }
@@ -246,17 +264,22 @@ model Product {
   id          BigInt    @id @default(autoincrement())
   locationId  BigInt    @map("location_id")
   name        String    @db.VarChar(255)
-  category    String    @default("DRINK") @db.VarChar(50)
+  category    String    @default("DRINK") @db.VarChar(50) // Tên danh mục (nhãn hiển thị)
+  productCategoryId BigInt? @map("product_category_id")
   description String?   @db.Text
   price       Decimal   @db.Decimal(12, 2)
   imageUrl    String?   @map("image_url") @db.Text
   isAvailable Boolean   @default(true) @map("is_available")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz // Xóa mềm: giữ lại để không mất lịch sử đặt sân
 
-  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  productCategory ProductCategory? @relation(fields: [productCategoryId], references: [id], onDelete: SetNull)
   bookingDetails BookingDetail[]
 
+  @@index([locationId])
+  @@index([productCategoryId])
   @@map("products")
 }
 
@@ -265,11 +288,13 @@ model ProductCategory {
   partnerId   BigInt    @map("partner_id")
   name        String    @db.VarChar(100)
   icon        String?   @default("📦") @db.VarChar(50)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   partner     PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  products    Product[]
 
+  @@unique([partnerId, name])
   @@map("product_categories")
 }
 
@@ -285,8 +310,8 @@ model TimeSlot {
   endTime       DateTime  @map("end_time") @db.Time
   priceModifier Decimal   @default(1.00) @map("price_modifier") @db.Decimal(3, 2)
   isAvailable   Boolean   @default(true) @map("is_available")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   sportsPitch   SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Cascade)
 
@@ -303,6 +328,8 @@ model SlotOverride {
   priceModifier Decimal   @default(1.00) @map("price_modifier") @db.Decimal(3, 2)
   isClosed      Boolean   @default(false) @map("is_closed")
   reason        String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   sportsPitch   SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Cascade)
 
@@ -314,6 +341,58 @@ model SlotOverride {
 // NHÓM 4: ĐẶT SÂN & THANH TOÁN
 // ============================================================================
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingPaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOMO
+  VNPAY
+}
+
+enum PaymentType {
+  CASH
+  DEPOSIT
+  FULL
+  REFUND
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum RedemptionStatus {
+  APPLIED
+  RELEASED
+}
+
+enum ActorType {
+  USER
+  PARTNER
+  ADMIN
+  SYSTEM
+}
+
 model Booking {
   id                  BigInt    @id @default(autoincrement())
   bookingCode        String    @unique @map("booking_code") @db.VarChar(20)
@@ -323,30 +402,40 @@ model Booking {
   bookingDate         DateTime  @map("booking_date") @db.Date
   startTime           DateTime  @map("start_time") @db.Time
   endTime             DateTime  @map("end_time") @db.Time
-  basePrice           Decimal   @map("base_price") @db.Decimal(12, 2)
+  basePrice           Decimal   @map("base_price") @db.Decimal(12, 2) // Tiền sân (trước VAT)
+  serviceAmount       Decimal   @default(0.00) @map("service_amount") @db.Decimal(12, 2) // Tiền sản phẩm/dịch vụ
   discountAmount      Decimal   @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
-  finalPrice          Decimal   @map("final_price") @db.Decimal(12, 2)
-  commissionType      String    @default("PERCENTAGE") @map("commission_type") @db.VarChar(20)
+  vatAmount           Decimal   @default(0.00) @map("vat_amount") @db.Decimal(12, 2)
+  finalPrice          Decimal   @map("final_price") @db.Decimal(12, 2) // = basePrice + serviceAmount - discountAmount + vatAmount
+  paidAmount          Decimal   @default(0.00) @map("paid_amount") @db.Decimal(12, 2) // Số tiền thực thu (đã trừ hoàn tiền)
+  commissionType      CommissionType @default(PERCENTAGE) @map("commission_type")
   commissionRate      Decimal?  @map("commission_rate") @db.Decimal(5, 2)
   commissionFixedAmount Decimal? @map("commission_fixed_amount") @db.Decimal(12, 2)
   commissionAmount    Decimal   @default(0.00) @map("commission_amount") @db.Decimal(12, 2)
-  status              String    @default("PENDING") @db.VarChar(20)
-  paymentStatus       String    @default("UNPAID") @map("payment_status") @db.VarChar(20)
+  status              BookingStatus        @default(PENDING)
+  paymentStatus       BookingPaymentStatus @default(UNPAID) @map("payment_status")
   cancellationReason  String?   @map("cancellation_reason") @db.Text
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt          DateTime? @map("archived_at") @db.Timestamptz // Chủ sân/Admin ẩn đơn đã hủy khỏi danh sách quản lý (không xóa)
 
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sportsPitch         SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sportsPitch         SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Restrict)
   promotion           Promotion? @relation(fields: [promoId], references: [id], onDelete: SetNull)
   bookingDetails      BookingDetail[]
   payments            Payment[]
   matchPosts          MatchPost[]
+  statusHistory       BookingStatusHistory[]
+  promotionRedemption PromotionRedemption?
   reviews             Review?
   disputes            Dispute[]
+  ledgerEntries       PartnerLedgerEntry[]
 
   @@index([bookingDate])
-  @@index([startTime])
+  @@index([userId, createdAt])
+  @@index([sportsPitchId, bookingDate, status])
+  // Ngoài ra DB có ràng buộc EXCLUDE "bookings_no_overlap" (xem migration harden_booking_flow)
+  // chặn 2 đơn PENDING/CONFIRMED trùng giờ trên cùng một sân.
   @@map("bookings")
 }
 
@@ -354,29 +443,37 @@ model BookingDetail {
   id          BigInt    @id @default(autoincrement())
   bookingId   BigInt    @map("booking_id")
   productId   BigInt    @map("product_id")
+  productName String    @map("product_name") @db.VarChar(255) // Ảnh chụp tên sản phẩm lúc đặt
   quantity    Int       @default(1)
   price       Decimal   @db.Decimal(12, 2)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
 
+  @@index([bookingId])
+  @@index([productId])
   @@map("booking_details")
 }
 
 model Payment {
   id              BigInt    @id @default(autoincrement())
   bookingId       BigInt    @map("booking_id")
+  provider        String?   @db.VarChar(30) // VNPAY, MOMO... (null với tiền mặt/chuyển khoản thủ công)
   transactionId   String?   @map("transaction_id") @db.VarChar(255)
   amount          Decimal   @db.Decimal(12, 2)
-  paymentMethod   String?   @map("payment_method") @db.VarChar(20)
-  paymentType     String    @map("payment_type") @db.VarChar(20)
-  status          String    @default("PENDING") @db.VarChar(20)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
+  paymentMethod   PaymentMethod? @map("payment_method")
+  paymentType     PaymentType    @map("payment_type")
+  status          PaymentTransactionStatus @default(PENDING)
+  rawResponse     Json?     @map("raw_response") // Dữ liệu gốc từ cổng thanh toán (đối soát)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
 
+  @@unique([provider, transactionId]) // Chống ghi nhận trùng một giao dịch từ cổng
+  @@index([bookingId])
   @@map("payments")
 }
 
@@ -385,32 +482,66 @@ model Promotion {
   partnerId         BigInt?   @map("partner_id")
   code              String    @unique @db.VarChar(50)
   description       String?   @db.Text
-  discountPercent   Decimal   @default(0.00) @map("discount_percent") @db.Decimal(5, 2)
+  discountType      DiscountType @default(PERCENT) @map("discount_type")
+  discountPercent   Decimal   @default(0.00) @map("discount_percent") @db.Decimal(5, 2) // Dùng khi PERCENT
+  fixedDiscountAmount Decimal? @map("fixed_discount_amount") @db.Decimal(12, 2) // Dùng khi FIXED
   maxDiscountAmount Decimal?  @map("max_discount_amount") @db.Decimal(12, 2)
   minOrderValue     Decimal   @default(0.00) @map("min_order_value") @db.Decimal(12, 2)
-  startDate         DateTime  @map("start_date") @db.Timestamp
-  endDate           DateTime  @map("end_date") @db.Timestamp
+  startDate         DateTime  @map("start_date") @db.Timestamptz
+  endDate           DateTime  @map("end_date") @db.Timestamptz
   usageLimit        Int       @default(0) @map("usage_limit")
-  usedCount         Int       @default(0) @map("used_count")
+  usedCount         Int       @default(0) @map("used_count") // Bộ đếm lượt đang áp dụng (khớp với redemptions APPLIED)
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  partner           PartnerProfile? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner           PartnerProfile? @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   bookings          Booking[]
-  userPromotions    UserPromotion[]
+  redemptions       PromotionRedemption[]
 
+  @@index([partnerId])
   @@index([startDate, endDate], name: "idx_promotions_dates")
   @@map("promotions")
 }
 
-model UserPromotion {
-  id          BigInt    @id @default(autoincrement())
-  userId      BigInt    @map("user_id")
-  promotionId BigInt    @map("promotion_id")
-  usedAt      DateTime  @default(now()) @map("used_at") @db.Timestamp
+// Mỗi lần dùng mã gắn với 1 đơn. Hủy đơn -> RELEASED (trả lại lượt).
+// Mỗi người chỉ có 1 dòng cho mỗi mã: dùng lại sau khi được trả lượt thì cập nhật dòng cũ.
+model PromotionRedemption {
+  id             BigInt           @id @default(autoincrement())
+  promotionId    BigInt           @map("promotion_id")
+  userId         BigInt           @map("user_id")
+  bookingId      BigInt?          @unique @map("booking_id")
+  discountAmount Decimal          @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
+  status         RedemptionStatus @default(APPLIED)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  promotion      Promotion        @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  booking        Booking?         @relation(fields: [bookingId], references: [id], onDelete: Restrict)
 
-  @@map("user_promotions")
+  @@unique([promotionId, userId])
+  @@index([userId])
+  @@map("promotion_redemptions")
+}
+
+// Lịch sử thay đổi trạng thái đơn: ai đổi, lúc nào, vì sao
+model BookingStatusHistory {
+  id                BigInt                @id @default(autoincrement())
+  bookingId         BigInt                @map("booking_id")
+  fromStatus        BookingStatus?        @map("from_status")
+  toStatus          BookingStatus         @map("to_status")
+  fromPaymentStatus BookingPaymentStatus? @map("from_payment_status")
+  toPaymentStatus   BookingPaymentStatus  @map("to_payment_status")
+  actorType         ActorType             @map("actor_type")
+  actorId           BigInt?               @map("actor_id") // users.id hoặc admins.id tùy actorType
+  reason            String?               @db.Text
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  booking           Booking               @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_status_history")
 }
 
 // ============================================================================
@@ -427,17 +558,21 @@ model MatchPost {
   playDate        DateTime  @map("play_date") @db.Date
   startTime       DateTime  @map("start_time") @db.Time
   endTime         DateTime  @map("end_time") @db.Time
-  skillLevel      String    @default("ANY") @map("skill_level") @db.VarChar(20)
+  skillLevel      SkillLevel @default(ANY) @map("skill_level")
   maxPlayers      Int       @map("max_players")
   currentPlayers  Int       @default(1) @map("current_players")
-  status          String    @default("OPEN") @db.VarChar(20)
+  status          MatchPostStatus @default(OPEN)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sportsPitch     SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sportsPitch     SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Restrict)
   booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   participants    MatchParticipant[]
   chatRoom        ChatRoom?
 
+  @@index([userId])
+  @@index([sportsPitchId])
   @@index([playDate, status], name: "idx_match_posts_date_status")
   @@map("match_posts")
 }
@@ -446,13 +581,16 @@ model MatchParticipant {
   id            BigInt    @id @default(autoincrement())
   matchPostId   BigInt    @map("match_post_id")
   userId        BigInt    @map("user_id")
-  status        String    @default("PENDING") @db.VarChar(20)
+  status        MatchParticipantStatus @default(PENDING)
   note          String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   matchPost     MatchPost @relation(fields: [matchPostId], references: [id], onDelete: Cascade)
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([matchPostId, userId])
+  @@index([userId])
   @@map("match_participants")
 }
 
@@ -462,11 +600,14 @@ model MatchParticipant {
 
 model ChatRoom {
   id          BigInt    @id @default(autoincrement())
-  type        String    @default("INDIVIDUAL") @db.VarChar(20)
+  type        ChatRoomType @default(INDIVIDUAL)
   matchPostId BigInt?   @unique @map("match_post_id")
+  partnerId   BigInt?   @unique @map("partner_id") // Phòng SUPPORT: kênh hỗ trợ giữa Admin và đối tác
   name        String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   matchPost   MatchPost? @relation(fields: [matchPostId], references: [id], onDelete: Cascade)
+  partner     PartnerProfile? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   members     ChatRoomMember[]
   messages    Message[]
 
@@ -477,28 +618,33 @@ model ChatRoomMember {
   id          BigInt    @id @default(autoincrement())
   chatRoomId  BigInt    @map("chat_room_id")
   userId      BigInt    @map("user_id")
-  lastReadAt  DateTime? @map("last_read_at") @db.Timestamp
+  lastReadAt  DateTime? @map("last_read_at") @db.Timestamptz
 
   chatRoom    ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([chatRoomId, userId])
+  @@index([userId])
   @@map("chat_room_members")
 }
 
 model Message {
   id            BigInt    @id @default(autoincrement())
   chatRoomId    BigInt    @map("chat_room_id")
-  senderId      BigInt    @map("sender_id")
+  senderId      BigInt?   @map("sender_id")       // Người gửi là user (khách/đối tác)
+  senderAdminId BigInt?   @map("sender_admin_id") // Người gửi là admin (phòng SUPPORT)
   messageText   String    @map("message_text") @db.Text
-  type          String    @default("TEXT") @db.VarChar(20)
+  type          MessageType @default(TEXT)
   attachments   Json?
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   chatRoom      ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
-  sender        User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender        User?     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderAdmin   Admin?    @relation(fields: [senderAdminId], references: [id], onDelete: SetNull)
 
   @@index([chatRoomId, createdAt], name: "idx_messages_room_time")
+  @@index([senderId])
+  @@index([senderAdminId])
   @@map("messages")
 }
 
@@ -514,16 +660,21 @@ model Dispute {
   category        String    @db.VarChar(30)
   description     String    @db.Text
   evidenceUrls    Json?     @map("evidence_urls")
-  status          String    @default("OPEN") @db.VarChar(20)
+  status          DisputeStatus @default(OPEN)
   resolution      String?   @db.Text
   resolvedBy      BigInt?   @map("resolved_by")
-  resolvedAt      DateTime? @map("resolved_at") @db.Timestamp
+  resolvedAt      DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  plaintiff       User      @relation(fields: [raisedBy], references: [id], onDelete: Cascade)
-  partner         PartnerProfile @relation(fields: [againstPartner], references: [id], onDelete: Cascade)
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  plaintiff       User      @relation(fields: [raisedBy], references: [id], onDelete: Restrict)
+  partner         PartnerProfile @relation(fields: [againstPartner], references: [id], onDelete: Restrict)
   resolver        Admin?    @relation(fields: [resolvedBy], references: [id], onDelete: SetNull)
 
+  @@index([bookingId])
+  @@index([raisedBy])
+  @@index([againstPartner, status])
   @@map("disputes")
 }
 
@@ -537,16 +688,17 @@ model PartnerCommissionBill {
   periodStart         DateTime  @map("period_start") @db.Date
   periodEnd           DateTime  @map("period_end") @db.Date
   dueDate             DateTime  @map("due_date") @db.Date
-  status              String    @default("UNPAID") @db.VarChar(20) // UNPAID, PROCESSING, PAID, OVERDUE
+  status              CommissionBillStatus @default(UNPAID)
   paymentEvidenceUrl  String?   @map("payment_evidence_url") @db.Text
   processedBy         BigInt?   @map("processed_by")
-  processedAt         DateTime? @map("processed_at") @db.Timestamp
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  processedAt         DateTime? @map("processed_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  partner             PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partner             PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   processor           Admin?         @relation(fields: [processedBy], references: [id], onDelete: SetNull)
 
+  @@index([partnerId, periodStart])
   @@map("partner_commission_bills")
 }
 
@@ -555,15 +707,14 @@ model Notification {
   userId      BigInt    @map("user_id")
   title       String    @db.VarChar(255)
   message     String    @db.Text
-  type        String    @db.VarChar(20)
+  type        NotificationType
   relatedId   BigInt?   @map("related_id")
   isRead      Boolean   @default(false) @map("is_read")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([isRead])
+  @@index([userId, isRead, createdAt]) // Thông báo (chưa đọc) mới nhất của 1 người
   @@map("notifications")
 }
 
@@ -576,27 +727,139 @@ model Review {
   comment       String?   @db.Text
   images        Json?
   partnerReply  String?   @map("partner_reply") @db.Text
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sportsPitch   SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Cascade)
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sportsPitch   SportsPitch @relation(fields: [sportsPitchId], references: [id], onDelete: Restrict)
 
-  @@index([rating])
+  @@index([sportsPitchId, createdAt])
+  @@index([userId])
   @@map("reviews")
 }
 
-model AdminPartnerMessage {
-  id          BigInt         @id @default(autoincrement())
-  partnerId   BigInt         @map("partner_id")
-  senderType  String         @map("sender_type") @db.VarChar(20) // 'ADMIN' | 'PARTNER'
-  senderId    BigInt         @map("sender_id")
-  messageText String         @map("message_text") @db.Text
-  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamp
 
-  // Relations
-  partner     PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+// Sở thích & trình độ từng bộ môn của người dùng (thay cho 2 cột JSON favorite_sports/skill_levels)
+model UserSportPreference {
+  userId     BigInt      @map("user_id")
+  categoryId BigInt      @map("category_id")
+  skillLevel SkillLevel? @map("skill_level")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz
 
-  @@map("admin_partner_messages")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
+  @@index([categoryId, skillLevel]) // Tìm người chơi theo bộ môn/trình độ (ghép trận)
+  @@map("user_sport_preferences")
 }
 
+// ============================================================================
+// ENUM TRẠNG THÁI / PHÂN LOẠI
+// ============================================================================
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AdminRole {
+  SUPERADMIN
+  ADMIN
+  MODERATOR
+}
+
+enum PartnerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum SkillLevel {
+  ANY
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum MatchPostStatus {
+  PENDING
+  OPEN
+  FULL
+  REJECTED
+  CANCELLED
+}
+
+enum MatchParticipantStatus {
+  PENDING
+  JOINED
+  REJECTED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum CommissionBillStatus {
+  UNPAID
+  PROCESSING
+  PAID
+  OVERDUE
+}
+
+enum NotificationType {
+  BOOKING
+  MATCH
+  PAYMENT
+  PROMOTION
+  SYSTEM
+}
+
+// Sổ cái hoa hồng của đối tác: mọi thay đổi số tiền đối tác nợ nền tảng đều là một bút toán (không sửa/xóa).
+// amount > 0: đối tác nợ thêm (thu hoa hồng); amount < 0: giảm nợ (hoàn hoa hồng, đối tác thanh toán).
+model PartnerLedgerEntry {
+  id        BigInt          @id @default(autoincrement())
+  partnerId BigInt          @map("partner_id")
+  bookingId BigInt?         @map("booking_id")
+  type      LedgerEntryType
+  amount    Decimal         @db.Decimal(15, 2)
+  note      String?         @db.Text
+  createdBy BigInt?         @map("created_by") // admins.id khi admin ghi nhận thủ công
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  partner   PartnerProfile  @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([bookingId, type]) // Mỗi đơn chỉ thu / hoàn hoa hồng một lần
+  @@index([partnerId, createdAt])
+  @@map("partner_ledger_entries")
+}
+
+enum LedgerEntryType {
+  COMMISSION_CHARGE   // Đơn hoàn thành: ghi nợ hoa hồng
+  COMMISSION_REVERSAL // Đơn đã hoàn thành bị hoàn tiền: hoàn lại hoa hồng
+  COMMISSION_PAYMENT  // Đối tác thanh toán hoa hồng cho nền tảng
+  ADJUSTMENT          // Điều chỉnh thủ công của admin
+}
+
+enum ChatRoomType {
+  INDIVIDUAL
+  MATCH
+  SUPPORT
+}

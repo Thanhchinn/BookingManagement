@@ -1,4 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  ACTIVE_BOOKING_STATUSES,
+  ALLOWED_DURATIONS,
+  bookingStartAt,
+  calculatePricing,
+  DEFAULT_DURATION,
+  evaluateSlot,
+  formatMinutes,
+  isAllowedDuration,
+  nowInVietnam,
+  parseBookingDate,
+  rangesOverlap,
+  timeToMinutes,
+} from '../bookings/booking-rules';
 import { PrismaService } from '../prisma/prisma.service';
 
 export function serializePublicLocation(loc: any) {
@@ -64,10 +78,11 @@ export class PublicService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Lấy danh sách cơ sở công khai (cho trang tìm kiếm của client)
-  async findLocations(city?: string, category?: string, search?: string) {
+  async findLocations(city?: string, category?: string, search?: string, provinceCode?: string) {
     const locations = await this.prisma.location.findMany({
       where: {
         isActive: true,
+        ...(provinceCode ? { provinceCode } : {}),
         ...(city && city !== 'all' ? { city: { contains: city, mode: 'insensitive' } } : {}),
         ...(search ? {
           OR: [
@@ -181,89 +196,143 @@ export class PublicService {
     return serializePublicService(service);
   }
 
-  // Lấy các slot khả dụng của sân theo ngày cụ thể và thời lượng chơi mong muốn
-  async getAvailableSlots(serviceId: string, date: string, duration: number = 1.5) {
+  // Lấy các slot khả dụng của sân theo ngày cụ thể và thời lượng chơi mong muốn.
+  // Dùng chung quy tắc với bước tạo đơn (booking-rules) để những gì hiển thị "còn trống" thì đặt được.
+  async getAvailableSlots(serviceId: string, date: string, duration: number = DEFAULT_DURATION) {
+    const bookingDate = parseBookingDate(date);
+    if (!bookingDate || !/^\d+$/.test(serviceId)) {
+      throw new BadRequestException('Tham số ngày hoặc mã sân không hợp lệ.');
+    }
+    if (!isAllowedDuration(duration)) {
+      throw new BadRequestException(`Thời lượng thuê không hợp lệ (chỉ hỗ trợ ${ALLOWED_DURATIONS.join(', ')} giờ).`);
+    }
+
+    const pitchId = BigInt(serviceId);
     const service = await this.prisma.sportsPitch.findFirst({
-      where: { id: BigInt(serviceId), isActive: true },
+      where: { id: pitchId, isActive: true },
       select: { basePricePerHour: true },
     });
     if (!service) return [];
 
-    const dateObj = new Date(date);
-    const dayOfWeek = dateObj.getUTCDay(); // 0 = Sun, 1 = Mon, ... timezone-safe
+    const dayOfWeek = bookingDate.getUTCDay(); // 0 = CN, 1 = T2, ...
+    const [timeSlots, overrides, bookedSlots] = await Promise.all([
+      // Lấy cả khung giờ đang đóng để kiểm tra ca đấu không kéo dài vào khung đóng
+      this.prisma.timeSlot.findMany({
+        where: { sportsPitchId: pitchId, dayOfWeek },
+        orderBy: { startTime: 'asc' },
+      }),
+      this.prisma.slotOverride.findMany({
+        where: { sportsPitchId: pitchId, overrideDate: bookingDate },
+      }),
+      // Các booking đang giữ chỗ trong ngày đó
+      this.prisma.booking.findMany({
+        where: {
+          sportsPitchId: pitchId,
+          bookingDate,
+          status: { in: ACTIVE_BOOKING_STATUSES },
+        },
+        select: { startTime: true, endTime: true },
+      }),
+    ]);
 
-    // Lấy tất cả timeslots của ngày trong tuần đó
-    const timeSlots = await this.prisma.timeSlot.findMany({
-      where: { sportsPitchId: BigInt(serviceId), dayOfWeek, isAvailable: true },
-      orderBy: { startTime: 'asc' },
-    });
-
-    // Lấy các booking đã được xác nhận hoặc đang chờ duyệt trong ngày đó
-    const bookedSlots = await this.prisma.booking.findMany({
-      where: {
-        sportsPitchId: BigInt(serviceId),
-        bookingDate: new Date(date),
-        status: { in: ['CONFIRMED', 'PENDING'] },
-      },
-      select: { startTime: true, endTime: true },
-    });
-
-    const basePricePerHour = parseFloat(service.basePricePerHour.toString());
-
-    // Tìm giờ đóng cửa lớn nhất của ngày đó trong các timeslots
-    let maxCloseMinutes = 0;
-    timeSlots.forEach((ts: any) => {
-      const endIso = ts.endTime.toISOString().substring(11, 16);
-      const [endH, endM] = endIso.split(':').map(Number);
-      const endMinutes = endH * 60 + endM;
-      if (endMinutes > maxCloseMinutes) {
-        maxCloseMinutes = endMinutes;
-      }
-    });
-
+    const now = nowInVietnam();
     const availableSlots: any[] = [];
-    const durMinutes = duration * 60;
 
-    timeSlots.forEach((ts: any) => {
-      const startIso = ts.startTime.toISOString().substring(11, 16); // HH:mm
-      const [startH, startM] = startIso.split(':').map(Number);
-      const startMinutes = startH * 60 + startM;
-      const endMinutes = startMinutes + durMinutes;
+    for (const ts of timeSlots) {
+      if (!ts.isAvailable) continue;
+      const evaluation = evaluateSlot(ts, timeSlots, overrides, duration);
 
-      // Nếu ca đấu vượt quá giờ đóng cửa lớn nhất của sân, bỏ qua
-      if (endMinutes > maxCloseMinutes) return;
+      // Ca vượt giờ mở cửa thì không hiển thị (giữ hành vi cũ)
+      if (evaluation.unavailableKind === 'hours') continue;
 
-      const endH = Math.floor(endMinutes / 60);
-      const endM = endMinutes % 60;
-      const endStr = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
-
-      // Kiểm tra xem ca virtual này có bị trùng với booking nào không
-      const virtualStartStr = `${startIso}:00`;
-      const virtualEndStr = `${endStr}:00`;
-
-      const isBooked = bookedSlots.some((b: any) => {
-        const bStart = b.startTime.toISOString().substring(11, 19);
-        const bEnd = b.endTime.toISOString().substring(11, 19);
-        return virtualStartStr < bEnd && virtualEndStr > bStart;
+      const isTaken = bookedSlots.some((b) =>
+        rangesOverlap(evaluation.startMinutes, evaluation.endMinutes, timeToMinutes(b.startTime), timeToMinutes(b.endTime)),
+      );
+      const isPast = bookingStartAt(bookingDate, ts.startTime) <= now;
+      const { courtCost } = calculatePricing({
+        basePricePerHour: service.basePricePerHour,
+        priceModifier: evaluation.priceModifier,
+        durationHours: duration,
+        products: [],
       });
-
-      const priceModifier = parseFloat(ts.priceModifier.toString());
-      const finalPrice = Math.round(basePricePerHour * priceModifier * duration);
 
       availableSlots.push({
         id: `${ts.id.toString()}_${duration}`,
         dayOfWeek: ts.dayOfWeek,
-        startTime: startIso,
-        endTime: endStr,
-        priceModifier,
+        startTime: formatMinutes(evaluation.startMinutes),
+        endTime: formatMinutes(evaluation.endMinutes),
+        priceModifier: evaluation.priceModifier.toNumber(),
         isAvailable: ts.isAvailable,
-        isBooked,
+        // Đã có người đặt, đã qua giờ hoặc sân tạm đóng đều không cho chọn
+        isBooked: isTaken || isPast || !!evaluation.unavailableReason,
+        unavailableReason: evaluation.unavailableReason ?? (isTaken ? 'Đã có người đặt' : isPast ? 'Đã qua giờ' : null),
         durationHours: duration,
-        finalPrice,
+        finalPrice: courtCost.toNumber(), // Tiền sân trước VAT (giống trước đây)
       });
-    });
+    }
 
     return availableSlots;
+  }
+
+  // Cơ sở trong bán kính radiusKm quanh (lat, lng), gần nhất trước.
+  // Lọc thô theo khung tọa độ (dùng index latitude/longitude) rồi tính khoảng cách haversine.
+  async findNearbyLocations(lat: number, lng: number, radiusKm = 5) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      throw new BadRequestException('Tọa độ không hợp lệ.');
+    }
+    const radius = Math.min(Math.max(Number.isFinite(radiusKm) ? radiusKm : 5, 0.1), 50);
+    const latDelta = radius / 111.32;
+    const lngDelta = radius / (111.32 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
+
+    const rows = await this.prisma.$queryRaw<{ id: bigint; distance_km: number }[]>`
+      SELECT id, distance_km FROM (
+        SELECT id,
+          6371 * 2 * ASIN(SQRT(
+            POWER(SIN(RADIANS(latitude::float8 - ${lat}::float8) / 2), 2) +
+            COS(RADIANS(${lat}::float8)) * COS(RADIANS(latitude::float8)) *
+            POWER(SIN(RADIANS(longitude::float8 - ${lng}::float8) / 2), 2)
+          )) AS distance_km
+        FROM locations
+        WHERE is_active = true AND deleted_at IS NULL
+          AND latitude BETWEEN ${lat - latDelta} AND ${lat + latDelta}
+          AND longitude BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}
+      ) AS t
+      WHERE distance_km <= ${radius}
+      ORDER BY distance_km
+      LIMIT 50`;
+    if (rows.length === 0) return [];
+
+    const locations = await this.prisma.location.findMany({
+      where: { id: { in: rows.map((r) => r.id) } },
+      include: {
+        locationAmenities: { include: { amenity: true } },
+        _count: { select: { sportsPitches: true } },
+        sportsPitches: {
+          where: { isActive: true },
+          select: { id: true, name: true, category: true, subType: true, basePricePerHour: true, imageUrls: true },
+          take: 4,
+        },
+      },
+    });
+    const distance = new Map(rows.map((r) => [r.id.toString(), Math.round(Number(r.distance_km) * 100) / 100]));
+    return locations
+      .map((l) => ({ ...serializePublicLocation(l), distanceKm: distance.get(l.id.toString()) }))
+      .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+  }
+
+  async getProvinces() {
+    return this.prisma.locationProvince.findMany({
+      select: { provinceCode: true, name: true, shortName: true, placeType: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async getWards(provinceCode: string) {
+    return this.prisma.locationWard.findMany({
+      where: { provinceCode },
+      select: { wardCode: true, name: true, provinceCode: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   // Lấy sản phẩm bán kèm của cơ sở

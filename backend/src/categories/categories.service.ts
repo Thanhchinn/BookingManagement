@@ -145,7 +145,15 @@ export class CategoriesService {
   async remove(id: string | number | bigint): Promise<{ message: string }> {
     await this.findOne(id);
     
-    // Thực hiện xóa cứng (hoặc bạn có thể đổi thành xóa mềm bằng cách update isActive = false tùy nhu cầu)
+    // Bộ môn đang được sân sử dụng (kể cả sân đã xóa mềm) thì không xóa được, chỉ có thể ẩn
+    const category = await this.prisma.category.findUnique({ where: { id: BigInt(id) }, select: { slug: true } });
+    const usedBy = await this.prisma.sportsPitch.count({ where: { category: category!.slug } });
+    if (usedBy > 0) {
+      throw new ConflictException(
+        `Bộ môn đang được ${usedBy} sân sử dụng. Hãy tắt trạng thái hoạt động (isActive) thay vì xóa.`,
+      );
+    }
+
     await this.prisma.category.delete({
       where: { id: BigInt(id) },
     });

@@ -5,8 +5,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { PublicService } from './public.service';
+import { Public } from '../auth/decorators/public.decorator';
 
-// Controller này KHÔNG có @UseGuards(JwtAuthGuard) — công khai cho mọi người
+// Controller công khai cho mọi người (bỏ qua JwtAuthGuard toàn cục)
+@Public()
 @Controller('public')
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
@@ -18,8 +20,34 @@ export class PublicController {
     @Query('city') city?: string,
     @Query('category') category?: string,
     @Query('search') search?: string,
+    @Query('provinceCode') provinceCode?: string,
   ) {
-    return this.publicService.findLocations(city, category, search);
+    return this.publicService.findLocations(city, category, search, provinceCode);
+  }
+
+  // Tìm cơ sở gần một vị trí (sắp xếp theo khoảng cách)
+  // GET /public/locations/nearby?lat=10.77&lng=106.70&radiusKm=5
+  // Lưu ý: phải khai báo TRƯỚC route 'locations/:id'
+  @Get('locations/nearby')
+  async findNearby(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radiusKm') radiusKm?: string,
+  ) {
+    return this.publicService.findNearbyLocations(Number(lat), Number(lng), radiusKm ? Number(radiusKm) : undefined);
+  }
+
+  // Danh mục địa giới hành chính 2 cấp (dùng cho ô chọn địa chỉ)
+  // GET /public/provinces
+  @Get('provinces')
+  async getProvinces() {
+    return this.publicService.getProvinces();
+  }
+
+  // GET /public/provinces/79/wards
+  @Get('provinces/:code/wards')
+  async getWards(@Param('code') code: string) {
+    return this.publicService.getWards(code);
   }
 
   // Lấy danh sách tất cả sân đấu nổi bật

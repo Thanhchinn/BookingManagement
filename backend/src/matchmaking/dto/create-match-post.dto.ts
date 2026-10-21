@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsIn, Min } from 'class-validator';
 
 export class CreateMatchPostDto {
   @IsString()
@@ -29,7 +29,8 @@ export class CreateMatchPostDto {
 
   @IsString()
   @IsOptional()
-  skillLevel?: string;
+  @IsIn(['ANY', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'], { message: 'Trình độ không hợp lệ.' })
+  skillLevel?: 'ANY' | 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
   @IsInt({ message: 'Số lượng tối đa phải là số nguyên' })
   @Min(2, { message: 'Cần tuyển ít nhất 2 cầu thủ' })
