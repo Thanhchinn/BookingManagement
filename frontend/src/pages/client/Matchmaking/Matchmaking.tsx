@@ -255,25 +255,32 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-400">
       
       {/* Header */}
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
+      {/* BACKGROUND DECORATIVE GLOW EFFECTS */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] opacity-70"></div>
+        <div className="absolute bottom-1/3 right-10 w-[400px] h-[300px] bg-teal-500/10 rounded-full blur-[120px] opacity-60"></div>
+      </div>
+
       {/* Main Hub */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow w-full space-y-8 relative z-10">
         
         {/* Banner Giới thiệu */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-md">
-          <div className="text-left space-y-1.5">
-            <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Kết nối cộng đồng
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white m-0 tracking-tight">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-950/60">
+          <div className="text-left space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-[11px] uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Kết nối cộng đồng thể thao
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-white m-0 tracking-tight">
               Cộng Đồng Ghép Đội & Tìm Bạn Chơi
             </h2>
-            <p className="text-xs text-slate-400">
-              Thiếu chân sút sân bóng đá, thiếu đối thủ tennis, hay cần lập cặp đôi nam nữ cầu lông? Tìm kiếm và ghép đội ngay.
+            <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-xl m-0 leading-relaxed">
+              Thiếu chân sút bóng đá, thiếu đối thủ pickleball hay tìm cặp đôi giao lưu cầu lông? Tìm kiếm và giao lưu thể thao tức thì.
             </p>
           </div>
 
@@ -287,23 +294,23 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
               }
             }}
             variant="primary"
-            className="px-5 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-black rounded-xl shadow-lg shadow-emerald-600/10 cursor-pointer flex items-center gap-1.5 transition active:scale-95 shrink-0"
+            className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black rounded-2xl shadow-xl shadow-emerald-500/25 cursor-pointer flex items-center justify-center gap-2 transition duration-200 active:scale-95 shrink-0 uppercase tracking-wide border-0"
           >
-            <PlusCircle className="w-4.5 h-4.5" /> Đăng Ca Tìm Teammate
+            <PlusCircle className="w-5 h-5 stroke-[2.5]" /> ĐĂNG CA TÌM TEAMMATE
           </Button>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-slate-800">
+        <div className="flex border-b border-white/10">
           <button
             onClick={() => {
               setActiveTab('all');
               setSelectedMatch(null);
               setShowDetailsModal(false);
             }}
-            className={`px-6 py-3 text-xs font-bold transition border-b-2 cursor-pointer ${
+            className={`px-6 py-3.5 text-xs sm:text-sm font-black transition duration-200 border-b-2 cursor-pointer ${
               activeTab === 'all'
-                ? 'border-emerald-500 text-emerald-400'
+                ? 'border-emerald-400 text-emerald-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -316,9 +323,9 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
                 setSelectedMatch(null);
                 setShowDetailsModal(false);
               }}
-              className={`px-6 py-3 text-xs font-bold transition border-b-2 cursor-pointer ${
+              className={`px-6 py-3.5 text-xs sm:text-sm font-black transition duration-200 border-b-2 cursor-pointer ${
                 activeTab === 'my-posts'
-                  ? 'border-emerald-500 text-emerald-400'
+                  ? 'border-emerald-400 text-emerald-400'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -328,26 +335,26 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         </div>
 
         {/* Thanh lọc & tìm kiếm */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-lg">
           <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm theo tên sân, môn, tiêu đề..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 focus:border-slate-750 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-300 outline-none transition"
+              className="w-full bg-slate-950/80 border border-white/10 focus:border-emerald-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white outline-none transition font-medium"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-            <div className="flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Môn:</span>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Môn:</span>
               <select
                 value={sportFilter}
                 onChange={(e) => setSportFilter(e.target.value as any)}
-                className="bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300 px-3 py-2 rounded-xl outline-none"
+                className="bg-slate-950 border border-white/10 text-[11px] font-bold text-white px-3 py-2 rounded-xl outline-none cursor-pointer focus:border-emerald-400"
               >
                 <option value="ALL">Tất cả môn</option>
                 <option value="cau-long">Cầu Lông</option>
@@ -357,12 +364,12 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Trình độ:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Trình độ:</span>
               <select
                 value={skillFilter}
                 onChange={(e) => setSkillFilter(e.target.value as any)}
-                className="bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300 px-3 py-2 rounded-xl outline-none"
+                className="bg-slate-950 border border-white/10 text-[11px] font-bold text-white px-3 py-2 rounded-xl outline-none cursor-pointer focus:border-emerald-400"
               >
                 <option value="ALL">Mọi trình độ</option>
                 <option value="Bất kỳ">Bất kỳ</option>
@@ -377,14 +384,14 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         {/* Khung nội dung chính */}
         <div className="max-w-4xl mx-auto">
           {loading ? (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-slate-400 text-xs font-bold">
               Đang tải dữ liệu ghép đôi...
             </div>
           ) : matches.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-850 rounded-3xl p-12 text-center space-y-3">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center space-y-3 shadow-xl">
               <span className="text-4xl block">🔍</span>
-              <h4 className="text-base font-bold text-white m-0">Không tìm thấy ca ghép đội nào</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">Thử đổi từ khóa tìm kiếm hoặc lọc các môn thể thao khác để kết nối với những người chơi khác.</p>
+              <h4 className="text-base sm:text-lg font-black text-white m-0">Không tìm thấy ca ghép đội nào</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">Thử đổi từ khóa tìm kiếm hoặc lọc các môn thể thao khác để kết nối với những người chơi khác.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -395,13 +402,13 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
                     setSelectedMatch(m);
                     setShowDetailsModal(true);
                   }}
-                  className="bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 transition rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 cursor-pointer"
+                  className="bg-slate-900/60 backdrop-blur-xl border border-white/10 hover:border-emerald-500/40 transition-all duration-300 rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 cursor-pointer shadow-xl group hover:translate-y-[-2px]"
                 >
-                  <div className="space-y-3.5 flex-grow">
+                  <div className="space-y-3 flex-grow text-left">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className="text-2xl select-none">{getSportIcon(m.sport)}</span>
-                      <span className="text-xs bg-slate-950 border border-slate-850 px-2 py-0.5 rounded text-emerald-400 font-bold uppercase">{getSportTypeName(m.sport)}</span>
-                      <span className="text-[10px] text-slate-500">Trình độ: <strong className="text-slate-300 font-medium">{m.skillLevel}</strong></span>
+                      <span className="text-xs bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg text-emerald-400 font-mono font-black uppercase">{getSportTypeName(m.sport)}</span>
+                      <span className="text-[11px] text-slate-400 font-medium">Trình độ: <strong className="text-slate-200 font-bold">{m.skillLevel}</strong></span>
                       
                       {m.status === 'PENDING' ? (
                         <Badge status="warning">Chờ duyệt</Badge>
@@ -414,37 +421,37 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
                       )}
                     </div>
 
-                    <h4 className="text-base sm:text-lg font-black text-white m-0 hover:text-emerald-400 transition leading-snug">
+                    <h4 className="text-base sm:text-xl font-black text-white m-0 group-hover:text-emerald-400 transition-colors leading-snug">
                       {m.title}
                     </h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-400">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{m.playDate}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-slate-300 font-medium">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+                        <span className="font-bold">{m.playDate}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{m.startTime} - {m.endTime}</span>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+                        <span className="font-bold">{m.startTime} - {m.endTime}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 sm:col-span-2">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <div className="flex items-center gap-2 sm:col-span-2 text-slate-400">
+                        <MapPin className="w-4 h-4 text-slate-500 shrink-0 stroke-[2]" />
                         <span className="truncate">{m.courtName}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 border-t md:border-t-0 border-slate-800 pt-4 md:pt-0 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-full bg-slate-950 border border-slate-850 flex items-center justify-center text-xs select-none">{m.hostAvatar}</span>
+                  <div className="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 border-t md:border-t-0 border-white/10 pt-4 md:pt-0 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-full bg-slate-950 border border-white/10 flex items-center justify-center text-xs font-bold select-none text-emerald-400 shadow-md">{m.hostAvatar}</span>
                       <div className="text-left leading-none">
-                        <span className="text-[9px] text-slate-500 block">Host</span>
-                        <strong className="text-xs text-slate-200 block">{m.hostName}</strong>
+                        <span className="text-[9px] text-slate-400 font-black uppercase block">Host</span>
+                        <strong className="text-xs text-white block font-bold mt-0.5">{m.hostName}</strong>
                       </div>
                     </div>
 
-                    <button className="flex items-center gap-1 text-[10px] font-extrabold text-slate-300 hover:text-white bg-slate-950/65 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl transition">
-                      Xem & ứng tuyển <ChevronRight className="w-3.5 h-3.5" />
+                    <button className="flex items-center gap-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer">
+                      Xem & ứng tuyển <ChevronRight className="w-4 h-4 text-slate-950 stroke-[3]" />
                     </button>
                   </div>
                 </div>
