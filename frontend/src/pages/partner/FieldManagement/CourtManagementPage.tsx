@@ -160,7 +160,8 @@ export const CourtManagementPage: React.FC<CourtManagementPageProps> = ({
           toast.success(`Đã xóa sân "${courtName}" thành công!`);
           fetchCourtsAndCategories();
         } else {
-          toast.error('Lỗi khi xóa sân từ hệ thống.');
+          const body = await res.json().catch(() => ({}));
+          toast.error('Không thể xóa sân', { description: body.message || 'Yêu cầu bị từ chối từ hệ thống.' });
         }
       } catch (err) {
         toast.error('Lỗi kết nối máy chủ.');

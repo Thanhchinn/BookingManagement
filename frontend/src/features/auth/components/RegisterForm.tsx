@@ -24,7 +24,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
   const [otpCode, setOtpCode] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
-  const [devOtpSuggestion, setDevOtpSuggestion] = useState(''); // Để hiển thị mã gợi ý ở chế độ Dev
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -66,20 +65,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/send-otp', {
+      await apiClient.post('/auth/send-otp', {
         email: email.trim(),
       });
-
-      const data = response.data;
 
       setIsOtpSent(true);
       setOtpCountdown(60); // 60 giây chờ gửi lại
       setSuccessMsg('Mã xác thực OTP đã được gửi thành công.');
-      
-      // Hỗ trợ hiển thị trực tiếp OTP để test nhanh ở môi trường phát triển
-      if (data.devOtp) {
-        setDevOtpSuggestion(data.devOtp);
-      }
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Đã xảy ra lỗi khi gửi mã xác thực.';
       setError(msg);
@@ -252,13 +244,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
               className="bg-slate-900 border-emerald-500/30 text-white text-center text-lg font-mono tracking-widest focus:bg-slate-950 focus:border-emerald-500"
             />
 
-            {/* Dev Mode Helper suggestion */}
-            {devOtpSuggestion && (
-              <div className="text-[10px] text-slate-500 bg-slate-900/60 p-2 rounded-lg border border-slate-800 leading-normal">
-                💡 <strong>Thử nghiệm nhanh:</strong> Mã OTP vừa gửi là <code className="text-emerald-400 font-mono font-bold bg-slate-950 px-1 py-0.5 rounded">{devOtpSuggestion}</code> (hoặc xem trong Log của Terminal NestJS).
-              </div>
-            )}
-
             {/* Nút quay lại sửa thông tin email */}
             <div className="text-right">
               <button
@@ -266,7 +251,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchMode, onSucc
                 onClick={() => {
                   setIsOtpSent(false);
                   setOtpCode('');
-                  setDevOtpSuggestion('');
                 }}
                 className="text-[10px] text-slate-500 hover:text-slate-300 font-medium bg-transparent border-0 cursor-pointer p-0 underline"
               >

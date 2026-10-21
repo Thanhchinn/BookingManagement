@@ -48,7 +48,9 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`);
+        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` },
+        });
         if (res.ok) {
           const data = await res.json();
           // Nếu hồ sơ đối tác bị xóa hoặc chuyển sang trạng thái khác ACTIVE (VD: SUSPENDED, PENDING)
@@ -131,7 +133,9 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
         return;
       }
       try {
-        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`);
+        const res = await fetch(`http://localhost:3000/partners/user/${parsed.id}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` },
+        });
         if (res.ok) {
           const data = await res.json();
           setPartnerProfile(data);
@@ -156,6 +160,7 @@ export const PartnerLayout: React.FC<PartnerLayoutProps> = ({ partnerName, curre
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('user_token')}`,
         },
         body: JSON.stringify({
           businessName: partnerProfile.businessName,

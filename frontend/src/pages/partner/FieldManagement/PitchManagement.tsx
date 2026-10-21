@@ -225,7 +225,8 @@ export const PitchManagement: React.FC = () => {
           toast.success(`Đã xóa sân "${name}" thành công!`);
           fetchAllData();
         } else {
-          toast.error('Lỗi khi xóa sân từ hệ thống.');
+          const body = await res.json().catch(() => ({}));
+          toast.error('Không thể xóa sân', { description: body.message || 'Yêu cầu bị từ chối từ hệ thống.' });
         }
       } catch (err) {
         toast.error('Lỗi kết nối máy chủ.');

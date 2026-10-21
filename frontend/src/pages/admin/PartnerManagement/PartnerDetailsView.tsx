@@ -178,7 +178,7 @@ export const PartnerDetailsView: React.FC<PartnerDetailsViewProps> = ({
     try {
       const res = await fetch(`http://localhost:3000/partners/${partner.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
         body: JSON.stringify(updatedFields),
       });
       if (!res.ok) {

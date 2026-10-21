@@ -49,7 +49,9 @@ export const AdminPartnerChat: React.FC = () => {
   useEffect(() => {
     const fetchPartners = async () => {
       try {
-        const res = await fetch('http://localhost:3000/partners');
+        const res = await fetch('http://localhost:3000/partners', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
+        });
         if (res.ok) {
           const data = await res.json();
           const normalized = data.map((p: any) => ({

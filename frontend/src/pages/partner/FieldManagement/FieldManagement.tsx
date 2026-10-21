@@ -128,7 +128,8 @@ export const FieldManagement: React.FC = () => {
           toast.success('Đã xóa cơ sở thành công!');
           fetchLocationsAndCourts();
         } else {
-          toast.error('Lỗi xóa cơ sở', { description: 'Yêu cầu bị từ chối từ hệ thống.' });
+          const body = await response.json().catch(() => ({}));
+          toast.error('Lỗi xóa cơ sở', { description: body.message || 'Yêu cầu bị từ chối từ hệ thống.' });
         }
       } catch (err) {
         toast.error('Lỗi kết nối', { description: 'Không thể kết nối đến máy chủ.' });

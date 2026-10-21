@@ -78,7 +78,9 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
     const isBg = isBackground === true;
     if (!isBg) setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/partners');
+      const res = await fetch('http://localhost:3000/partners', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
+      });
       if (!res.ok) throw new Error('Không thể tải danh sách đối tác.');
       const raw: any[] = await res.json();
       setPartners(raw.map(normalizePartner));
@@ -120,7 +122,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
         try {
           const res = await fetch(`http://localhost:3000/partners/${id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
             body: JSON.stringify({ status: 'ACTIVE' }),
           });
           if (!res.ok) throw new Error('Cập nhật trạng thái thất bại.');
@@ -147,8 +149,9 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
         try {
           const res = await fetch(`http://localhost:3000/partners/${id}`, {
             method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
           });
-          if (!res.ok) throw new Error('Xóa hồ sơ thất bại.');
+          if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Xóa hồ sơ thất bại.');
           setSelectedPartner(null);
           await fetchPartners(); // Refresh ngay từ DB
           toast.success('Đã từ chối và xóa hồ sơ đăng ký.');
@@ -172,7 +175,7 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
         try {
           const res = await fetch(`http://localhost:3000/partners/${id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
             body: JSON.stringify({ status: newStatus.toUpperCase() }),
           });
           if (!res.ok) throw new Error('Cập nhật trạng thái thất bại.');
@@ -199,8 +202,9 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
         try {
           const res = await fetch(`http://localhost:3000/partners/${id}`, {
             method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
           });
-          if (!res.ok) throw new Error('Xóa thất bại.');
+          if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Xóa thất bại.');
           setSelectedPartner(null);
           await fetchPartners(); // Refresh ngay từ DB
           toast.success('Xóa đối tác thành công', {

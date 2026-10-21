@@ -228,7 +228,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
       setCancelReason('');
     } catch (err: any) {
       toast.dismiss('cancel-loading');
-      toast.error(err.message || 'Lỗi khi hủy lịch.');
+      toast.error(err.response?.data?.message || err.message || 'Lỗi khi hủy lịch.');
     }
   };
 
@@ -283,39 +283,48 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
   };
 
   return (
-    <div className="min-h-screen sz-page flex flex-col font-sans text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-400">
       
       {/* 1. HEADER NAVBAR */}
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
+      {/* BACKGROUND DECORATIVE GLOW EFFECTS */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] opacity-70"></div>
+        <div className="absolute bottom-1/3 right-10 w-[400px] h-[300px] bg-teal-500/10 rounded-full blur-[120px] opacity-60"></div>
+      </div>
+
       {/* 2. MAIN HUB CONTENT */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow w-full space-y-8 relative z-10">
         
         {/* Tiêu đề & Thống kê điểm loyalty */}
-        <div className="sz-panel flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 backdrop-blur-md">
-          <div className="text-left space-y-1">
-            <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-2xl shadow-slate-950/60">
+          <div className="text-left space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-[11px] uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               Khách hàng thân thiết
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white m-0 tracking-tight">
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-white m-0 tracking-tight">
               Lịch Hẹn Của Tôi
             </h2>
-            <p className="text-xs text-slate-400">
-              Quản lý danh sách đặt sân thể thao, xem mã QR check-in, viết đánh giá và khiếu nại.
+            <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-xl m-0 leading-relaxed">
+              Quản lý tất cả danh sách đặt sân thể thao, mã vé check-in, lịch ghép kèo giao lưu và gửi phản hồi đánh giá dịch vụ.
             </p>
           </div>
           
-          <div className="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-5 py-3 rounded-lg">
-            <TrendingUp className="w-6 h-6 text-emerald-400 shrink-0" />
-            <div className="text-left leading-none">
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Điểm thưởng tích lũy</span>
-              <span className="text-xl font-black text-emerald-400 mt-1 block">450 <span className="text-xs text-slate-500 font-medium">pts</span></span>
+          <div className="flex items-center gap-4 bg-slate-950/80 border border-emerald-500/30 px-6 py-4 rounded-2xl shadow-lg w-full sm:w-auto shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-slate-950 shrink-0 shadow-md shadow-emerald-500/20">
+              <TrendingUp className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div className="text-left leading-none space-y-1">
+              <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Điểm tích lũy SportZone</span>
+              <span className="text-2xl font-black text-emerald-400 font-mono block">450 <span className="text-xs text-slate-400 font-bold">pts</span></span>
             </div>
           </div>
         </div>
 
-        {/* 3. TABS BỘ LỌC ĐƠN HÀNG */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+        {/* 3. TABS BỘ LỌC ĐƠN HÀNG - RESPONSIVE SCROLLABLE ON MOBILE */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar select-none border-b border-white/10">
           {(['ALL', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED', 'APPLIED'] as const).map(filter => {
             const label = filter === 'ALL' ? 'Tất cả đơn' : 
                           filter === 'CONFIRMED' ? 'Chờ chơi' : 
@@ -327,10 +336,10 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                className={`px-4 py-2.5 text-xs font-black rounded-2xl transition-all duration-300 cursor-pointer whitespace-nowrap border shrink-0 ${
                   isActive 
-                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/10' 
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 border-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 scale-105' 
+                    : 'bg-slate-900/60 backdrop-blur-md border-white/10 text-slate-400 hover:text-white hover:border-emerald-500/30 hover:bg-slate-900'
                 }`}
               >
                 {label}
@@ -342,105 +351,108 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ onNavigate, userName, on
         {/* 4. DỮ LIỆU ĐƠN ĐẶT SÂN */}
         <div className="max-w-4xl mx-auto space-y-4">
           {filteredBookings.length === 0 ? (
-            <div className="sz-empty p-12 text-center space-y-4">
-              <div className="w-16 h-16 bg-slate-950 rounded-lg flex items-center justify-center text-3xl mx-auto border border-slate-800">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center space-y-4 shadow-xl">
+              <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-emerald-500/30 text-emerald-400 shadow-md">
                 📅
               </div>
               <div className="space-y-1">
-                <h4 className="text-base font-bold text-white m-0">Không tìm thấy đơn đặt sân nào</h4>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">Bạn chưa đăng ký lịch đặt sân bãi nào trong bộ lọc này hoặc chưa hoàn tất thao tác giữ ca.</p>
+                <h4 className="text-base sm:text-lg font-black text-white m-0">Không tìm thấy lịch đặt nào</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">Bạn chưa đăng ký lịch đặt sân bãi nào trong mục này hoặc chưa chọn giữ ca.</p>
               </div>
               <Button 
                 onClick={() => onNavigate?.('home')} 
                 variant="primary" 
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold rounded-xl cursor-pointer"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black rounded-xl cursor-pointer shadow-lg shadow-emerald-500/20 uppercase tracking-wider"
               >
-                Khám phá đặt sân ngay
+                Đặt sân thi đấu ngay
               </Button>
             </div>
           ) : (
             filteredBookings.map(b => {
               const countdown = getBookingCountdown(b.bookingDate, b.startTime, b.status);
+              const isSelected = selectedBooking?.id === b.id;
               return (
                 <div 
                   key={b.id}
                   onClick={() => setSelectedBooking(b)}
-                  className={`sz-card transition-all duration-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer ${
-                    selectedBooking?.id === b.id ? 'border-emerald-500 bg-slate-900/90 shadow-md border-dashed' : 'border-slate-800/80 hover:border-slate-700'
+                  className={`bg-slate-900/60 backdrop-blur-xl rounded-3xl transition-all duration-300 p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 cursor-pointer border shadow-xl relative overflow-hidden group hover:translate-y-[-2px] ${
+                    isSelected 
+                      ? 'border-emerald-400 bg-slate-900/90 shadow-2xl ring-2 ring-emerald-400/30' 
+                      : 'border-white/10 hover:border-emerald-500/40 hover:bg-slate-900/80'
                   }`}
                 >
                   <div className="space-y-3 flex-grow text-left w-full min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-left">
-                      <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">{b.bookingCode}</span>
+                      <span className="text-xs font-mono font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">{b.bookingCode}</span>
                       {getStatusBadge(b.status)}
                       {countdown && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${countdown.className}`}>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-lg ${countdown.className}`}>
                           {countdown.text}
                         </span>
                       )}
                       {b.isMatch && (
                         <>
-                          <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <span className="text-[9px] bg-purple-500/20 border border-purple-500/30 text-purple-300 font-extrabold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
                             Ghép Kèo ({b.matchCurrentPlayers}/{b.matchMaxPlayers})
                           </span>
                           {b.isHostMatch ? (
-                            <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            <span className="text-[9px] bg-blue-500/20 border border-blue-500/30 text-blue-300 font-extrabold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
                               Chủ phòng (Tổ chức)
                             </span>
                           ) : (
-                            <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              Đã ứng tuyển thành công
+                            <span className="text-[9px] bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-extrabold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
+                              Đã ứng tuyển
                             </span>
                           )}
                         </>
                       )}
                     </div>
 
-                    <h4 className="text-base sm:text-lg font-black text-white m-0 hover:text-emerald-400 transition text-left flex items-center gap-2 truncate">
-                      <span className="shrink-0">{getSportEmoji(b.sport)}</span>
+                    <h4 className="text-base sm:text-xl font-black text-white m-0 group-hover:text-emerald-400 transition-colors text-left flex items-center gap-2 truncate">
+                      <span className="shrink-0 text-xl">{getSportEmoji(b.sport)}</span>
                       <span className="truncate">{b.courtName}</span>
                     </h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-400 text-left">
-                      <div className="flex items-center gap-1.5 text-left">
-                        <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{b.bookingDate}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-slate-300 text-left font-medium">
+                      <div className="flex items-center gap-2 text-left">
+                        <Calendar className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+                        <span className="font-bold">{b.bookingDate}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-left">
-                        <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{b.startTime} - {b.endTime} ({b.sport})</span>
+                      <div className="flex items-center gap-2 text-left">
+                        <Clock className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+                        <span className="font-bold">{b.startTime} - {b.endTime} ({b.sport})</span>
                       </div>
-                      <div className="flex items-center gap-1.5 sm:col-span-2 text-left min-w-0">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <div className="flex items-center gap-2 sm:col-span-2 text-left min-w-0 text-slate-400">
+                        <MapPin className="w-4 h-4 text-slate-500 shrink-0 stroke-[2]" />
                         <span className="truncate">{b.location}</span>
                       </div>
                     </div>
 
                     {/* Dịch vụ phụ trợ đính kèm dưới dạng chip */}
                     {b.products && b.products.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest mr-1">Phụ kiện kèm:</span>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Dịch vụ kèm:</span>
                         {b.products.map((p, idx) => (
-                          <span key={idx} className="inline-flex items-center text-[10px] bg-slate-950 text-slate-400 border border-slate-800 px-2 py-0.5 rounded font-mono">
-                            {p.name.includes('Nước') || p.name.toLowerCase().includes('coca') || p.name.toLowerCase().includes('pepsi') || p.name.toLowerCase().includes('aquafina') ? '🥤' : '🎒'} {p.name} <span className="text-emerald-400 font-bold ml-1">x{p.qty}</span>
+                          <span key={idx} className="inline-flex items-center text-[10px] bg-slate-950 text-slate-300 border border-white/10 px-2.5 py-1 rounded-xl font-semibold">
+                            {p.name.includes('Nước') || p.name.toLowerCase().includes('coca') || p.name.toLowerCase().includes('pepsi') || p.name.toLowerCase().includes('aquafina') ? '🥤' : '🎒'} {p.name} <span className="text-emerald-400 font-black ml-1.5">x{p.qty}</span>
                           </span>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-3 border-t sm:border-t-0 border-slate-850 pt-4 sm:pt-0 shrink-0">
-                    <div className="text-left sm:text-right">
-                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider m-0">
-                        {b.isMatch ? 'Chi phí tham gia' : 'Tổng thanh toán'}
+                  <div className="w-full sm:w-auto flex sm:flex-col items-end justify-between sm:justify-center gap-3 border-t sm:border-t-0 border-white/10 pt-4 sm:pt-0 shrink-0">
+                    <div className="text-left sm:text-right space-y-0.5">
+                      <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider m-0">
+                        {b.isMatch ? 'Chi phí tham gia' : 'Tổng tiền'}
                       </p>
-                      <p className="text-base font-extrabold text-emerald-400 font-mono m-0">
-                        {b.isMatch ? 'Chia đều / Miễn phí' : `${b.price.toLocaleString('vi-VN')}đ`}
+                      <p className="text-lg sm:text-xl font-black text-emerald-400 font-mono m-0">
+                        {b.isMatch ? 'Chia đều' : `${b.price.toLocaleString('vi-VN')}đ`}
                       </p>
                     </div>
 
-                    <button className="flex items-center gap-1 text-[11px] font-extrabold text-slate-350 hover:text-white bg-slate-950/60 hover:bg-slate-800 border border-slate-800/80 px-4 py-2 rounded-xl transition duration-150">
-                      Xem chi tiết <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                    <button className="flex items-center gap-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer">
+                      Xem vé <ChevronRight className="w-4 h-4 text-slate-950 stroke-[3]" />
                     </button>
                   </div>
                 </div>

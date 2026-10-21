@@ -99,7 +99,7 @@ export const BookingMonitor: React.FC = () => {
   // Fetch admin bookings
   useEffect(() => {
     const fetchAdminBookings = async () => {
-      const token = localStorage.getItem('user_token');
+      const token = localStorage.getItem('admin_token');
       if (!token) return;
 
       try {
@@ -192,7 +192,7 @@ export const BookingMonitor: React.FC = () => {
       confirmText: 'Xác nhận hoàn tiền',
       type: 'danger',
       onConfirm: async () => {
-        const token = localStorage.getItem('user_token');
+        const token = localStorage.getItem('admin_token');
         if (!token) return;
         setIsConfirmLoading(true);
 

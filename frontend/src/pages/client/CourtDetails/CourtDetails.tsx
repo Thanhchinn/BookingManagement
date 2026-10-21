@@ -178,7 +178,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
 
   // 5. MÃ KHUYẾN MÃI (PROMO CODE)
   const [promoCode, setPromoCode] = useState<string>('');
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountPercent: number; maxDiscount: number } | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountType: 'PERCENT' | 'FIXED'; discountPercent: number; fixedAmount: number | null; maxDiscount: number | null; minOrderValue: number } | null>(null);
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [promoError, setPromoError] = useState<string>('');
 
   // 6. CỔNG THANH TOÁN
@@ -201,11 +202,14 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
 
   const subtotal = getSelectedSlotPrice() + getProductsPrice();
   
-  // Tính discount
+  // Tính discount — cùng công thức với backend (booking-rules.calculatePricing)
   const getDiscountAmount = () => {
-    if (!appliedPromo) return 0;
-    const discount = subtotal * (appliedPromo.discountPercent / 100);
-    return Math.min(discount, appliedPromo.maxDiscount);
+    if (!appliedPromo || subtotal < appliedPromo.minOrderValue) return 0;
+    let discount = appliedPromo.discountType === 'FIXED'
+      ? (appliedPromo.fixedAmount ?? 0)
+      : Math.round(subtotal * (appliedPromo.discountPercent / 100));
+    if (appliedPromo.maxDiscount !== null) discount = Math.min(discount, appliedPromo.maxDiscount);
+    return Math.min(discount, subtotal);
   };
 
   const vat = Math.round((subtotal - getDiscountAmount()) * 0.1);
@@ -222,19 +226,61 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     }));
   };
 
-  // Áp mã giảm giá
-  const handleApplyPromo = () => {
+  // Áp mã giảm giá — kiểm tra với máy chủ (hạn dùng, lượt dùng, cơ sở áp dụng, đơn tối thiểu)
+  const handleApplyPromo = async () => {
     setPromoError('');
-    const codeUpper = promoCode.trim().toUpperCase();
-    if (codeUpper === 'DONGGIA50K' || codeUpper === 'SPORT20') {
-      setAppliedPromo({
-        code: codeUpper,
-        discountPercent: codeUpper === 'DONGGIA50K' ? 25 : 20,
-        maxDiscount: codeUpper === 'DONGGIA50K' ? 50000 : 80000
+    const code = promoCode.trim().toUpperCase();
+    if (!code) {
+      setAppliedPromo(null);
+      return;
+    }
+    const token = localStorage.getItem('user_token');
+    if (!userName || !token) {
+      setPromoError('Vui lòng đăng nhập để sử dụng mã giảm giá.');
+      return;
+    }
+    if (!selectedSlotId || !activeCourt) {
+      setPromoError('Vui lòng chọn khung giờ trước khi áp mã.');
+      return;
+    }
+
+    setIsCheckingPromo(true);
+    try {
+      const res = await fetch(`${API}/bookings/quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sportsPitchId: activeCourt.id.toString(),
+          bookingDate: selectedDate,
+          slotId: selectedSlotId.toString(),
+          products: products
+            .filter(p => p.qty > 0)
+            .map(p => ({ productId: p.id.toString(), quantity: p.qty })),
+          promoCode: code,
+        }),
       });
-      toast.success(`Áp dụng thành công mã giảm giá ${codeUpper}`);
-    } else {
-      setPromoError('Mã giảm giá không hợp lệ hoặc đã hết lượt sử dụng.');
+      const data = await res.json();
+      if (!res.ok || !data.promotion) {
+        setAppliedPromo(null);
+        setPromoError(data.message || 'Mã giảm giá không hợp lệ.');
+        return;
+      }
+      setAppliedPromo({
+        code: data.promotion.code,
+        discountType: data.promotion.discountType,
+        discountPercent: data.promotion.discountPercent,
+        fixedAmount: data.promotion.fixedDiscountAmount,
+        maxDiscount: data.promotion.maxDiscountAmount,
+        minOrderValue: data.promotion.minOrderValue,
+      });
+      toast.success(`Áp dụng thành công mã giảm giá ${data.promotion.code}`);
+    } catch {
+      setPromoError('Không thể kiểm tra mã giảm giá. Vui lòng thử lại.');
+    } finally {
+      setIsCheckingPromo(false);
     }
   };
 
@@ -309,7 +355,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
         startTime: chosenSlot?.timeRange.split(' ')[0] || '18:00',
         endTime: chosenSlot?.timeRange.split(' ')[2] || '20:00',
         paymentMethod: paymentMethod,
-        finalPrice: finalPrice,
+        finalPrice: Number(booking.finalPrice ?? finalPrice), // Số tiền thực tế do máy chủ tính
         products: products.filter(p => p.qty > 0).map(p => ({ name: p.name, qty: p.qty, price: p.price }))
       };
 
@@ -501,55 +547,54 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
             </div>
 
             {/* Tabs Điều Hướng Chi Tiết */}
-            <div className="flex border-b border-slate-800 gap-6">
+            <div className="flex border-b border-white/10 gap-6">
               <button
                 onClick={() => setActiveTab('booking')}
-                className={`pb-4 text-sm font-bold border-b-2 transition duration-150 cursor-pointer bg-transparent border-0 px-1 ${
-                  activeTab === 'booking' ? 'border-amber-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'
+                className={`pb-4 text-sm font-black border-b-2 transition duration-200 cursor-pointer bg-transparent border-0 px-1 ${
+                  activeTab === 'booking' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Đặt sân & Chọn ca
               </button>
               <button
                 onClick={() => setActiveTab('details')}
-                className={`pb-4 text-sm font-bold border-b-2 transition duration-150 cursor-pointer bg-transparent border-0 px-1 ${
-                  activeTab === 'details' ? 'border-amber-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'
+                className={`pb-4 text-sm font-black border-b-2 transition duration-200 cursor-pointer bg-transparent border-0 px-1 ${
+                  activeTab === 'details' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Tiện ích & Đánh giá ({reviews.length} đánh giá)
               </button>
-            </div>
-
-            {/* Tab 1: ĐẶT SÂN */}
+            </div>              {/* Tab 1: ĐẶT SÂN */}
             {activeTab === 'booking' && (
               <div className="space-y-6">
                 
                 {/* 1. Chọn ngày chơi */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-4">
-                  <h3 className="text-sm font-black text-white m-0 flex items-center gap-2 uppercase tracking-wider text-amber-500">
-                    <CalendarIcon className="w-4.5 h-4.5" />
-                    1. Chọn ngày chơi
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+                  <h3 className="text-xs sm:text-sm font-black text-white m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
+                    <CalendarIcon className="w-4.5 h-4.5 stroke-[2.5]" />
+                    1. CHỌN NGÀY CHƠI
                   </h3>
                   
-                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
                     <input
                       type="date"
                       min={new Date().toISOString().split('T')[0]}
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs text-slate-300 font-bold px-4 py-3 rounded-xl outline-none transition w-full sm:w-64"
+                      className="bg-slate-950 border border-emerald-500/30 hover:border-emerald-400 text-xs text-slate-100 font-bold px-4 py-3 rounded-xl outline-none transition-all w-full sm:w-64 focus:ring-2 focus:ring-emerald-500/20"
                     />
-                    <span className="text-[10px] text-slate-500 font-semibold leading-relaxed">
-                      ⚠️ Chọn ngày đấu thích hợp. Lịch đặt trước tối đa 14 ngày.
+                    <span className="text-[11px] text-slate-400 font-medium leading-relaxed flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                      Lịch mở trước tối đa 14 ngày. Hãy chọn ngày thi đấu của bạn.
                     </span>
                   </div>
                 </div>
 
                 {/* 2. CHỌN SÂN TRONG CƠ SỞ */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-4">
-                  <h3 className="text-sm font-black text-white m-0 flex items-center gap-2 uppercase tracking-wider text-amber-500">
-                    <Trophy className="w-4.5 h-4.5 text-amber-500" />
-                    2. Chọn sân đấu chi tiết
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+                  <h3 className="text-xs sm:text-sm font-black text-white m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
+                    <Trophy className="w-4.5 h-4.5 stroke-[2.5]" />
+                    2. CHỌN SÂN ĐẤU CHI TIẾT
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -559,30 +604,30 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                         <button
                           key={c.id}
                           onClick={() => handleSelectCourt(c.id)}
-                          className={`p-4 rounded-2xl transition border text-left cursor-pointer flex flex-col justify-between h-28 relative overflow-hidden ${
+                          className={`p-4 rounded-2xl transition-all duration-300 border text-left cursor-pointer flex flex-col justify-between min-h-[110px] relative overflow-hidden active:scale-[0.98] ${
                             isSelected
-                              ? 'bg-amber-600/10 border-amber-500 text-white shadow-lg shadow-amber-500/5'
-                              : 'bg-slate-950 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/30'
+                              ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/30'
+                              : 'bg-slate-950/80 border-white/10 text-slate-400 hover:border-emerald-500/30 hover:bg-slate-900/60'
                           }`}
                         >
                           <div className="w-full flex justify-between items-start">
                             <div>
-                              <span className="text-xs font-black block leading-none">{c.name}</span>
-                              <span className="text-[9px] text-slate-500 block mt-1.5">{c.subType || c.category}</span>
+                              <span className="text-xs sm:text-sm font-black block leading-snug text-white">{c.name}</span>
+                              <span className="text-[10px] text-slate-400 font-medium block mt-1">{c.subType || c.category}</span>
                             </div>
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider shrink-0 ${
-                              isSelected ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-550 border border-slate-800'
+                            <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl uppercase tracking-wider shrink-0 ${
+                              isSelected ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 border border-white/10'
                             }`}>
                               {c.category}
                             </span>
                           </div>
 
-                          <div className="w-full flex justify-between items-center mt-2 pt-2 border-t border-slate-900/60">
-                            <span className="text-[9px] text-slate-500 flex items-center gap-1">
+                          <div className="w-full flex justify-between items-center mt-3 pt-2.5 border-t border-white/10">
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1 font-semibold">
                               ⭐ {c._count?.reviews || 0} đánh giá
                             </span>
-                            <span className={`text-[11px] font-extrabold ${isSelected ? 'text-amber-400' : 'text-slate-300'}`}>
-                              Giá gốc: {(Number(c.basePricePerHour) || 0).toLocaleString()}đ/h
+                            <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-400' : 'text-slate-300'}`}>
+                              {(Number(c.basePricePerHour) || 0).toLocaleString()}đ/h
                             </span>
                           </div>
                         </button>
@@ -591,18 +636,18 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   </div>
                 </div>
 
-                {/* 3. CHỌN CA ĐẤU (LÀM GỌN PHẦN NÀY BẰNG BỘ LỌC TỐT HƠN) */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <h3 className="text-sm font-black text-white m-0 flex items-center gap-2 uppercase tracking-wider text-amber-500">
-                      <Clock className="w-4.5 h-4.5" />
-                      3. Chọn Ca Đấu Trống
+                {/* 3. CHỌN CA ĐẤU (REAL-TIME TIMESLOTS MATRIX - RESPONSIVE DI ĐỘNG & TABLET) */}
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 pb-2 border-b border-white/10">
+                    <h3 className="text-xs sm:text-sm font-black text-white m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
+                      <Clock className="w-4.5 h-4.5 stroke-[2.5]" />
+                      3. CHỌN CA ĐẤU TRỐNG REAL-TIME
                     </h3>
 
-                    {/* Bộ lọc làm gọn ca */}
-                    <div className="flex flex-wrap items-center gap-2 select-none">
-                      <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold bg-slate-950 px-2 py-1 rounded-lg border border-slate-900 shrink-0">
-                        <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+                    {/* Bộ lọc làm gọn ca đấu - Tối ưu Responsive Grid trên Di động */}
+                    <div className="w-full lg:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 select-none">
+                      <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 font-extrabold bg-slate-950 px-2.5 py-1.5 rounded-xl border border-white/10 shrink-0">
+                        <SlidersHorizontal className="w-3 h-3 text-emerald-400" />
                         Lọc ca:
                       </div>
 
@@ -613,7 +658,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                           setSelectedDuration(parseFloat(e.target.value));
                           setSelectedSlotId(null);
                         }}
-                        className="bg-slate-950 border border-amber-500/30 hover:border-amber-500/50 text-[10px] text-amber-400 font-extrabold px-2 py-1 rounded-lg outline-none cursor-pointer"
+                        className="bg-slate-950 border border-emerald-500/40 text-[11px] text-emerald-300 font-extrabold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500/20"
                       >
                         <option value="1">⏱️ Thuê 1.0 Giờ</option>
                         <option value="1.5">⏱️ Thuê 1.5 Giờ</option>
@@ -624,19 +669,19 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       <select 
                         value={periodFilter} 
                         onChange={(e) => setPeriodFilter(e.target.value as any)}
-                        className="bg-slate-950 border border-slate-850 hover:border-slate-750 text-[10px] text-slate-300 font-bold px-2 py-1 rounded-lg outline-none cursor-pointer"
+                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer"
                       >
-                        <option value="all">Tất cả các buổi</option>
-                        <option value="morning">☀️ Ca Sáng (06h - 12h)</option>
-                        <option value="afternoon">🌤️ Ca Chiều (12h - 18h)</option>
-                        <option value="evening">🌙 Ca Tối (18h - 22h)</option>
+                        <option value="all">Tất cả buổi</option>
+                        <option value="morning">☀️ Sáng (06h-12h)</option>
+                        <option value="afternoon">🌤️ Chiều (12h-18h)</option>
+                        <option value="evening">🌙 Tối (18h-22h)</option>
                       </select>
 
                       {/* Filter Chẵn Lẻ */}
                       <select 
                         value={hourFilter} 
                         onChange={(e) => setHourFilter(e.target.value as any)}
-                        className="bg-slate-950 border border-slate-850 hover:border-slate-750 text-[10px] text-slate-300 font-bold px-2 py-1 rounded-lg outline-none cursor-pointer"
+                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer"
                       >
                         <option value="all">Tất cả khung giờ</option>
                         <option value="even">⏱️ Giờ chẵn (06h, 08h...)</option>
@@ -646,21 +691,34 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       {/* Tìm giờ bằng ô input */}
                       <input 
                         type="text"
-                        placeholder="Tìm giờ (ví dụ: 17:00)..."
+                        placeholder="Tìm giờ..."
                         value={timeSearch}
                         onChange={(e) => setTimeSearch(e.target.value)}
-                        className="bg-slate-950 border border-slate-850 hover:border-slate-750 text-[10px] text-white px-2.5 py-1 rounded-lg outline-none placeholder-slate-700 w-32 font-bold focus:border-amber-500/50"
+                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-white px-3 py-1.5 rounded-xl outline-none placeholder-slate-500 font-semibold col-span-2 sm:col-span-1 sm:w-28 focus:border-emerald-400"
                       />
                     </div>
                   </div>
 
-                  {/* Hiển thị danh sách ca thu gọn theo bộ lọc */}
+                  {/* Chú thích trạng thái ca đấu */}
+                  <div className="flex items-center gap-4 text-[11px] font-bold text-slate-400 py-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ca trống
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-white/10 inline-block"></span> Đã được đặt
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Đang chọn
+                    </span>
+                  </div>
+
+                  {/* Hiển thị danh sách ca thu gọn theo bộ lọc MATRIX - RESPONSIVE 2 COLUMNS ON MOBILE, 3 ON TABLET */}
                   {filteredSlots.length === 0 ? (
-                    <div className="py-8 bg-slate-950/20 border border-slate-900 rounded-2xl text-center text-xs text-slate-500">
-                      Không có ca đấu nào phù hợp với bộ lọc được chọn.
+                    <div className="py-10 bg-slate-950/40 border border-white/10 rounded-2xl text-center text-xs text-slate-400">
+                      Không tìm thấy ca đấu phù hợp với bộ lọc đã chọn.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {filteredSlots.map(s => {
                         const isBooked = s.isBooked;
                         const isSelected = selectedSlotId === s.id;
@@ -669,34 +727,34 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                             key={s.id}
                             disabled={isBooked}
                             onClick={() => setSelectedSlotId(isSelected ? null : s.id)}
-                            className={`p-3.5 rounded-2xl transition-all duration-200 border text-left cursor-pointer flex justify-between items-center relative overflow-hidden active:scale-[0.98] ${
+                            className={`p-3.5 rounded-2xl transition-all duration-300 border text-left cursor-pointer flex justify-between items-center relative overflow-hidden active:scale-[0.97] ${
                               isBooked
-                                ? 'bg-slate-950/20 border-slate-900/60 text-slate-655 cursor-not-allowed opacity-40'
+                                ? 'bg-slate-950/40 border-white/5 text-slate-600 cursor-not-allowed opacity-50'
                                 : isSelected
-                                ? 'bg-amber-600/15 border-amber-500 text-white shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
-                                : 'bg-slate-950 border-slate-850 text-slate-350 hover:border-slate-750 hover:bg-slate-900/40'
+                                ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-400 text-white shadow-lg shadow-emerald-500/15 ring-2 ring-emerald-400'
+                                : 'bg-slate-950/80 border-white/10 text-slate-200 hover:border-emerald-500/40 hover:bg-slate-900/60'
                             }`}
                           >
                             <div className="space-y-1">
-                              <span className="text-xs font-bold flex items-center gap-1.5 leading-none">
-                                {isSelected && <span className="text-amber-400 text-xs shrink-0">✓</span>}
+                              <span className="text-xs font-black flex items-center gap-1.5 leading-none">
+                                {isSelected && <span className="text-emerald-400 text-xs shrink-0">✓</span>}
                                 <span>{s.label}</span>
                               </span>
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] bg-slate-900 border border-slate-800 text-slate-500 px-1 py-0.2 rounded font-bold uppercase">
+                                <span className="text-[8px] bg-slate-900 border border-white/10 text-slate-400 px-1.5 py-0.5 rounded-md font-bold uppercase">
                                   {s.startHour % 2 === 0 ? 'Giờ chẵn' : 'Giờ lẻ'}
                                 </span>
                                 {s.isPromo && !isBooked && (
-                                  <span className="text-[8px] text-emerald-400 font-extrabold bg-emerald-950/50 border border-emerald-900/40 px-1.5 py-0.2 rounded">🎁 -10%</span>
+                                  <span className="text-[8px] text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">🎁 -10%</span>
                                 )}
                               </div>
                             </div>
                             <div className="text-right shrink-0">
                               {isBooked ? (
-                                <span className="text-[8px] bg-slate-900 border border-slate-850 px-2 py-0.5 rounded text-slate-500 font-black uppercase">Hết sân</span>
+                                <span className="text-[9px] bg-slate-900 border border-white/10 px-2 py-0.5 rounded-md text-slate-500 font-black uppercase">ĐÃ ĐẶT</span>
                               ) : (
-                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-amber-455' : 'text-amber-400'}`}>
-                                  {(BASE_PRICE * s.priceModifier).toLocaleString()}đ/h
+                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-300' : 'text-emerald-400'}`}>
+                                  {(BASE_PRICE * s.priceModifier).toLocaleString()}đ
                                 </span>
                               )}
                             </div>
@@ -708,33 +766,33 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                 </div>
 
                 {/* 4. Dịch vụ nước uống và dụng cụ đi kèm */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-4">
-                  <h3 className="text-sm font-black text-white m-0 flex items-center gap-2 uppercase tracking-wider text-amber-500">
-                    <Coffee className="w-4.5 h-4.5" />
-                    4. Dịch vụ ăn uống & Thuê đồ dùng kèm
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+                  <h3 className="text-xs sm:text-sm font-black text-white m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
+                    <Coffee className="w-4.5 h-4.5 stroke-[2.5]" />
+                    4. DỊCH VỤ ĂN UỐNG & THUÊ ĐỒ DÙNG KÈM
                   </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {products.map(p => {
                       const hasQty = p.qty > 0;
                       return (
                         <div 
                           key={p.id}
-                          className={`border rounded-2xl p-4 flex items-center justify-between gap-4 transition duration-200 ${
+                          className={`border rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all duration-300 ${
                             hasQty
-                              ? 'bg-amber-600/10 border-amber-500 text-white shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
-                              : 'bg-slate-950 border-slate-855/80 text-slate-350 hover:border-slate-800'
+                              ? 'bg-emerald-500/10 border-emerald-400 text-white shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/30'
+                              : 'bg-slate-950/80 border-white/10 text-slate-300 hover:border-emerald-500/30'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl select-none shrink-0 border transition ${
-                              hasQty ? 'bg-slate-950 border-amber-500/30' : 'bg-slate-900 border-slate-800'
+                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl select-none shrink-0 border transition ${
+                              hasQty ? 'bg-slate-950 border-emerald-400/50' : 'bg-slate-900 border-white/10'
                             }`}>
                               {p.image}
                             </div>
                             <div className="text-left leading-tight">
-                              <span className="text-xs font-bold text-slate-200 block">{p.name}</span>
-                              <span className={`text-[10px] font-mono font-bold mt-1.5 block ${hasQty ? 'text-amber-350' : 'text-amber-400'}`}>
+                              <span className="text-xs font-black text-white block">{p.name}</span>
+                              <span className={`text-[11px] font-mono font-bold mt-1 block ${hasQty ? 'text-emerald-300' : 'text-emerald-400'}`}>
                                 {p.price.toLocaleString()}đ
                               </span>
                             </div>
@@ -743,10 +801,10 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                           <div className="flex items-center gap-2 shrink-0">
                             <button 
                               onClick={() => updateProductQty(p.id, -1)}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer transition ${
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm cursor-pointer transition border-0 ${
                                 hasQty 
-                                  ? 'bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/30 text-amber-400' 
-                                  : 'bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white'
+                                  ? 'bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300' 
+                                  : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white'
                               }`}
                             >
                               -
@@ -756,10 +814,10 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                             </span>
                             <button 
                               onClick={() => updateProductQty(p.id, 1)}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm cursor-pointer transition ${
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-sm cursor-pointer transition border-0 ${
                                 hasQty 
-                                  ? 'bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/30 text-amber-400' 
-                                  : 'bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-white'
+                                  ? 'bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300' 
+                                  : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white'
                               }`}
                             >
                               +
@@ -912,11 +970,11 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
           <div className="space-y-6">
             
             {/* Tóm tắt biên lai thanh toán */}
-            <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 space-y-6 sticky top-24">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-5 sticky top-24 shadow-2xl shadow-slate-950/60">
               
-              <div className="border-b border-slate-800/80 pb-4 text-left">
-                <h3 className="text-sm font-black text-white m-0 tracking-wider uppercase text-amber-500">Biên lai thanh toán</h3>
-                <p className="text-[10px] text-slate-500 m-0">Kiểm tra chi tiết và các khoản khấu trừ</p>
+              <div className="border-b border-white/10 pb-4 text-left">
+                <h3 className="text-xs sm:text-sm font-black text-white m-0 tracking-wider uppercase text-emerald-400">BIÊN LAI THANH TOÁN</h3>
+                <p className="text-[11px] text-slate-400 m-0 mt-0.5 font-medium">Kiểm tra chi tiết ca đấu và khấu trừ</p>
               </div>
 
               {/* Chi tiết ca đã chọn */}
@@ -925,25 +983,25 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   
                   {/* Sân bãi */}
                   <div className="space-y-2 text-left">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">1. Sân thi đấu đã chọn</span>
-                    <div className="bg-slate-955 border border-slate-850 rounded-2xl p-4 flex justify-between items-center">
+                    <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block">1. Sân thi đấu đã chọn</span>
+                    <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 flex justify-between items-center">
                       <div>
-                        <strong className="text-xs text-white block">{activeCourt.name}</strong>
-                        <span className="text-[9px] text-slate-500 font-bold block mt-1">{selectedDate} | {slots.find(s => s.id === selectedSlotId)?.label}</span>
+                        <strong className="text-xs text-white block font-black">{activeCourt.name}</strong>
+                        <span className="text-[10px] text-slate-400 font-medium block mt-1">{selectedDate} | {slots.find(s => s.id === selectedSlotId)?.label}</span>
                       </div>
-                      <span className="font-mono font-bold text-amber-400 text-xs shrink-0">{getSelectedSlotPrice().toLocaleString()}đ</span>
+                      <span className="font-mono font-black text-emerald-400 text-xs shrink-0">{getSelectedSlotPrice().toLocaleString()}đ</span>
                     </div>
                   </div>
 
                   {/* Nước uống phụ trợ */}
                   {getProductsPrice() > 0 && (
                     <div className="space-y-2 text-left">
-                      <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">2. Dịch vụ phụ trợ mua thêm</span>
-                      <div className="bg-slate-955 border border-slate-855 rounded-2xl p-4 space-y-2">
+                      <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block">2. Dịch vụ phụ trợ mua thêm</span>
+                      <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-4 space-y-2">
                         {products.filter(p => p.qty > 0).map(p => (
-                          <div key={p.id} className="flex justify-between items-center text-[10px] text-slate-400 font-medium">
-                            <span>{p.name} <span className="text-slate-600 font-extrabold">x{p.qty}</span></span>
-                            <span className="font-mono text-white">{(p.qty * p.price).toLocaleString()}đ</span>
+                          <div key={p.id} className="flex justify-between items-center text-[11px] text-slate-300 font-semibold">
+                            <span>{p.name} <span className="text-emerald-400 font-black">x{p.qty}</span></span>
+                            <span className="font-mono text-white font-bold">{(p.qty * p.price).toLocaleString()}đ</span>
                           </div>
                         ))}
                       </div>
@@ -952,65 +1010,51 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
 
                   {/* Nhập mã voucher */}
                   <div className="space-y-2 text-left">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">3. Mã giảm giá (Promo)</span>
+                    <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block">3. Mã giảm giá (Promo)</span>
                     <div className="flex gap-2">
                       <InputField
                         type="text"
                         placeholder="Nhập mã voucher..."
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value)}
-                        className="bg-slate-955 border border-slate-855 py-2.5 px-3.5 rounded-xl text-xs flex-grow outline-none text-white focus:border-amber-500/50"
+                        className="bg-slate-950 border border-white/10 py-2.5 px-3.5 rounded-xl text-xs flex-grow outline-none text-white focus:border-emerald-400"
                       />
                       <button 
                         onClick={handleApplyPromo}
-                        className="px-4 py-2.5 bg-slate-955 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-205 hover:text-white rounded-xl transition cursor-pointer"
+                        disabled={isCheckingPromo}
+                        className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-white/10 text-xs font-black text-slate-200 hover:text-white rounded-xl transition cursor-pointer"
                       >
-                        Áp dụng
+                        {isCheckingPromo ? 'Đang kiểm tra...' : 'Áp dụng'}
                       </button>
                     </div>
                     {appliedPromo && (
-                      <p className="text-[10px] text-emerald-400 font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã giảm {appliedPromo.discountPercent}% (Tối đa -{appliedPromo.maxDiscount.toLocaleString()}đ)
+                      <p className="text-[11px] text-emerald-300 font-extrabold m-0 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" /> Đã giảm {appliedPromo.discountType === 'FIXED' ? `${(appliedPromo.fixedAmount ?? 0).toLocaleString()}đ` : `${appliedPromo.discountPercent}%`}{appliedPromo.maxDiscount !== null && ` (Tối đa -${appliedPromo.maxDiscount.toLocaleString()}đ)`}
                       </p>
                     )}
                     {promoError && (
-                      <p className="text-[10px] text-red-500 m-0">⚠ {promoError}</p>
+                      <p className="text-[11px] text-red-400 font-bold m-0">⚠ {promoError}</p>
                     )}
-                    <p className="text-[9px] text-slate-500 m-0 leading-relaxed">
-                      💡 Mã voucher mẫu: <strong className="text-amber-400">SPORT20</strong> hoặc <strong className="text-amber-400">DONGGIA50K</strong>
-                    </p>
                   </div>
 
                   {/* Receipt Breakdown (Dotted Separator Style) */}
-                  <div className="border-t border-dashed border-slate-800 pt-4 space-y-2.5 text-xs text-left">
-                    <div className="flex justify-between items-center text-slate-450">
+                  <div className="border-t border-dashed border-white/10 pt-4 space-y-2 text-xs text-left">
+                    <div className="flex justify-between items-center text-slate-400 font-medium">
                       <span>Cộng tiền sân & dịch vụ:</span>
                       <span className="font-mono text-white font-semibold">{subtotal.toLocaleString()}đ</span>
                     </div>
                     {appliedPromo && (
-                      <div className="flex justify-between items-center text-red-400 font-bold">
+                      <div className="flex justify-between items-center text-rose-400 font-bold">
                         <span>Giảm giá voucher:</span>
                         <span className="font-mono">-{getDiscountAmount().toLocaleString()}đ</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center text-slate-450">
+                    <div className="flex justify-between items-center text-slate-400 font-medium">
                       <span>Thuế VAT (10%):</span>
                       <span className="font-mono text-white font-semibold">{vat.toLocaleString()}đ</span>
                     </div>
                     
-                    <div className="border-t border-dashed border-slate-800 pt-3 space-y-1">
-                      {paymentMethod !== 'CASH' && paymentMethod !== 'BANK_TRANSFER' && paymentOption === 'PARTIAL' && (
-                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
-                          <span>Còn lại (Trả tại sân):</span>
-                          <span className="font-mono text-slate-300 font-semibold">{Math.round(finalPrice * 0.7).toLocaleString()}đ</span>
-                        </div>
-                      )}
-                      {paymentMethod === 'BANK_TRANSFER' && paymentOption === 'PARTIAL' && (
-                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
-                          <span>Còn lại (Trả tại sân):</span>
-                          <span className="font-mono text-slate-300 font-semibold">{Math.round(finalPrice * 0.7).toLocaleString()}đ</span>
-                        </div>
-                      )}
+                    <div className="border-t border-dashed border-white/10 pt-3 space-y-1.5">
                       <div className="flex justify-between items-baseline">
                         <span className="font-bold text-white text-xs uppercase tracking-wider">Tổng tiền hóa đơn:</span>
                         <span className="text-lg font-black text-slate-200 font-mono">
@@ -1019,8 +1063,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       </div>
                       
                       <div className="flex justify-between items-baseline pt-1">
-                        <span className="font-extrabold text-amber-400 text-xs uppercase tracking-wider">Thanh toán ngay:</span>
-                        <span className="text-xl font-black text-amber-400 font-mono">
+                        <span className="font-black text-emerald-400 text-xs uppercase tracking-wider">Thanh toán ngay:</span>
+                        <span className="text-2xl font-black text-emerald-400 font-mono">
                           {paymentMethod === 'CASH' 
                             ? '0' 
                             : paymentOption === 'PARTIAL' 
@@ -1031,27 +1075,27 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                       </div>
 
                       {paymentMethod === 'CASH' && (
-                        <div className="flex justify-between items-center text-slate-450 text-[10px] pt-0.5">
+                        <div className="flex justify-between items-center text-slate-400 text-[11px] pt-1 font-medium">
                           <span>Số tiền trả tại sân:</span>
-                          <span className="font-mono text-slate-300 font-semibold">{finalPrice.toLocaleString()}đ</span>
+                          <span className="font-mono text-white font-bold">{finalPrice.toLocaleString()}đ</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Phương thức thanh toán */}
-                  <div className="space-y-2 border-t border-slate-800/80 pt-4 text-left">
-                    <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">4. Phương thức thanh toán</span>
+                  <div className="space-y-2 border-t border-white/10 pt-4 text-left">
+                    <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block">4. Phương thức thanh toán</span>
                     <div className="grid grid-cols-2 gap-2">
                       {(['BANK_TRANSFER', 'CASH'] as const).map(method => (
                         <button
                           key={method}
                           type="button"
                           onClick={() => setPaymentMethod(method)}
-                          className={`py-2.5 text-[9px] font-extrabold rounded-xl border transition cursor-pointer text-center ${
+                          className={`py-2.5 text-[10px] font-black rounded-xl border transition cursor-pointer text-center ${
                             paymentMethod === method
-                              ? 'bg-amber-500/10 border-amber-500 text-amber-400 shadow-md shadow-amber-500/5'
-                              : 'bg-slate-955 border-slate-855 text-slate-500 hover:text-slate-350'
+                              ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-400 text-emerald-300 shadow-md shadow-emerald-500/10'
+                              : 'bg-slate-950 border-white/10 text-slate-400 hover:text-slate-200'
                           }`}
                         >
                           {method === 'BANK_TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt'}
@@ -1060,23 +1104,23 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                     </div>
                   </div>
 
-                  {/* Lựa chọn thanh toán (nếu chọn cổng trực tuyến hoặc chuyển khoản) */}
+                  {/* Lựa chọn thanh toán (nếu chọn chuyển khoản) */}
                   {paymentMethod !== 'CASH' && (
-                    <div className="space-y-2 border-t border-slate-800/80 pt-4 text-left">
-                      <span className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider block">5. Lựa chọn thanh toán</span>
+                    <div className="space-y-2 border-t border-white/10 pt-4 text-left">
+                      <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block">5. Lựa chọn thanh toán</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(['FULL', 'PARTIAL'] as const).map(option => (
                           <button
                             key={option}
                             type="button"
                             onClick={() => setPaymentOption(option)}
-                            className={`py-2 text-[9px] font-extrabold rounded-xl border transition cursor-pointer text-center ${
+                            className={`py-2 text-[10px] font-black rounded-xl border transition cursor-pointer text-center ${
                               paymentOption === option
-                                ? 'bg-amber-500/10 border-amber-500 text-amber-400 shadow-md shadow-amber-500/5'
-                                : 'bg-slate-955 border-slate-855 text-slate-500 hover:text-slate-350'
+                                ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-400 text-emerald-300 shadow-md shadow-emerald-500/10'
+                                : 'bg-slate-955 border-white/10 text-slate-400 hover:text-slate-200'
                             }`}
                           >
-                            {option === 'FULL' ? 'Thanh toán 100%' : 'Thanh toán cọc 30%'}
+                            {option === 'FULL' ? 'Thanh toán 100%' : 'Đặt cọc 30%'}
                           </button>
                         ))}
                       </div>
@@ -1085,49 +1129,37 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
 
                   {/* Hướng dẫn chuyển khoản VietQR */}
                   {paymentMethod === 'BANK_TRANSFER' && (
-                    <div className="space-y-3 border-t border-slate-800/80 pt-4 text-left">
-                      <span className="text-amber-500 font-extrabold text-[10px] uppercase tracking-wider block">6. Quét mã VietQR chuyển khoản</span>
+                    <div className="space-y-3 border-t border-white/10 pt-4 text-left">
+                      <span className="text-emerald-400 font-extrabold text-[10px] uppercase tracking-wider block">6. Quét mã VietQR chuyển khoản</span>
                       {location?.partner?.bankAccountNumber ? (
-                        <div className="bg-slate-905 border border-slate-800/60 rounded-2xl p-4 space-y-4">
+                        <div className="bg-slate-950 border border-emerald-500/30 rounded-2xl p-4 space-y-4">
                           <div className="text-xs space-y-2 text-slate-300 font-sans">
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Ngân hàng:</span>
-                              <span className="font-extrabold text-white">{location.partner.bankName}</span>
+                              <span className="text-slate-400">Ngân hàng:</span>
+                              <span className="font-black text-white">{location.partner.bankName}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Số tài khoản:</span>
-                              <span className="font-extrabold text-white font-mono">{location.partner.bankAccountNumber}</span>
+                              <span className="text-slate-400">Số tài khoản:</span>
+                              <span className="font-black text-white font-mono">{location.partner.bankAccountNumber}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Chủ tài khoản:</span>
-                              <span className="font-extrabold text-white uppercase">{location.partner.bankAccountName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Số tiền chuyển:</span>
-                              <span className="font-extrabold text-amber-400 font-mono">
-                                {(paymentOption === 'PARTIAL' ? Math.round(finalPrice * 0.3) : finalPrice).toLocaleString()}đ
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Nội dung chuyển:</span>
-                              <span className="font-extrabold text-amber-500 font-mono">
-                                DAT SAN {userPhone || 'QUET QR'}
-                              </span>
+                              <span className="text-slate-400">Chủ tài khoản:</span>
+                              <span className="font-black text-white uppercase">{location.partner.bankAccountName}</span>
                             </div>
                           </div>
 
-                          <div className="bg-white p-3 rounded-2xl flex flex-col items-center justify-center space-y-2 max-w-[180px] mx-auto shadow-md">
+                          <div className="bg-white p-3 rounded-2xl flex flex-col items-center justify-center space-y-2 max-w-[180px] mx-auto shadow-lg">
                             <img
                               src={`https://img.vietqr.io/image/${getBankId(location.partner.bankName)}-${location.partner.bankAccountNumber}-compact2.png?amount=${paymentOption === 'PARTIAL' ? Math.round(finalPrice * 0.3) : finalPrice}&addInfo=${encodeURIComponent(`DAT SAN ${userPhone || 'QUET QR'}`)}&accountName=${encodeURIComponent(location.partner.bankAccountName)}`}
                               alt="VietQR code"
                               className="w-36 h-36 object-contain"
                             />
-                            <span className="text-[8px] text-slate-800 font-black tracking-wider uppercase">Chuyển khoản an toàn</span>
+                            <span className="text-[9px] text-slate-950 font-black tracking-wider uppercase">Chuyển khoản an toàn</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="p-3.5 bg-rose-950/20 border border-rose-900/30 rounded-xl text-[10px] text-rose-450 font-semibold leading-relaxed">
-                          ⚠️ Đối tác này chưa cập nhật thông tin tài khoản ngân hàng để nhận chuyển khoản. Vui lòng chọn phương thức khác.
+                        <div className="p-3.5 bg-rose-950/20 border border-rose-900/30 rounded-xl text-[11px] text-rose-400 font-semibold leading-relaxed">
+                          ⚠️ Đối tác này chưa cập nhật tài khoản ngân hàng. Vui lòng chọn Tiền mặt.
                         </div>
                       )}
                     </div>
@@ -1138,26 +1170,26 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                     <Button 
                       onClick={handleCheckout}
                       variant="primary" 
-                      className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-xs font-black text-slate-950 hover:text-slate-950 rounded-2xl shadow-xl shadow-amber-500/15 transition active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 border-0"
+                      className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] text-xs font-black text-slate-950 rounded-2xl shadow-xl shadow-emerald-500/25 transition duration-200 cursor-pointer flex items-center justify-center gap-2 border-0 uppercase tracking-wide"
                     >
-                      <CreditCard className="w-4 h-4 shrink-0 text-slate-950" />
-                      Xác Nhận & Đặt Sân Ngay
+                      <CreditCard className="w-4.5 h-4.5 shrink-0 stroke-[2.5]" />
+                      XÁC NHẬN & ĐẶT SÂN NGAY
                     </Button>
                   </div>
 
                   {/* Bảo vệ thanh toán */}
-                  <div className="bg-slate-950/60 border border-slate-855 rounded-xl p-3 flex gap-2 items-start text-left">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <p className="text-[9px] text-slate-500 m-0 leading-relaxed">
-                      SportZone bảo vệ giao dịch của bạn. Tiền thanh toán sẽ được hệ thống tạm giữ an toàn và chỉ kết chuyển cho đối tác chủ sân sau khi trận đấu kết thúc 2 giờ.
+                  <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 flex gap-2 items-start text-left">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                    <p className="text-[10px] text-slate-400 m-0 leading-relaxed font-medium">
+                      SportZone bảo vệ giao dịch của bạn. Tiền thanh toán sẽ được hệ thống giữ an toàn và chỉ kết chuyển cho chủ sân sau khi trận đấu kết thúc.
                     </p>
                   </div>
 
                 </div>
               ) : (
-                <div className="py-8 text-center text-xs text-slate-500 space-y-2 text-left flex flex-col items-center">
-                  <AlertCircle className="w-8 h-8 text-amber-500/40" />
-                  <p className="m-0 max-w-[200px] text-center">Vui lòng chọn ca đấu hoạt động trống bên cột trái để tiến hành thanh toán hóa đơn.</p>
+                <div className="py-10 text-center text-xs text-slate-400 space-y-3 text-left flex flex-col items-center">
+                  <AlertCircle className="w-9 h-9 text-emerald-400/60" />
+                  <p className="m-0 max-w-[200px] text-center font-medium leading-relaxed">Vui lòng chọn ca đấu trống bên cột trái để tiến hành thanh toán hóa đơn.</p>
                 </div>
               )}
 

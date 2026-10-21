@@ -78,6 +78,7 @@ export const PartnerLoginPage: React.FC<PartnerLoginPageProps> = ({
       try {
         const res = await fetch(
           `http://localhost:3000/partners/user/${parsed.id}`,
+          { headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` } },
         );
         const data = await res.json();
 
@@ -119,7 +120,9 @@ export const PartnerLoginPage: React.FC<PartnerLoginPageProps> = ({
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:3000/partners/user/${userInfo.id}`);
+        const res = await fetch(`http://localhost:3000/partners/user/${userInfo.id}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` },
+        });
         if (res.ok) {
           const data = await res.json();
           if (data) {
@@ -158,9 +161,8 @@ export const PartnerLoginPage: React.FC<PartnerLoginPageProps> = ({
     try {
       const res = await fetch('http://localhost:3000/partners', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('user_token')}` },
         body: JSON.stringify({
-          userId: userInfo.id,
           businessName: businessName.trim(),
           taxCode: taxCode.trim() || undefined,
           businessLicenseUrl: businessLicenseUrl.trim() || undefined,
