@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { 
-  Search, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  SlidersHorizontal,
-  ChevronRight,
-  PlusCircle
+import {
+  Search,
+  PlusCircle,
+  Moon,
+  Flame,
+  Smile,
+  Swords,
+  Radio,
+  Users,
+  X,
 } from 'lucide-react';
 
 import type { MatchPost } from '../../../types';
 import { ApplyJoinModal } from './ApplyJoinModal';
 import { MatchDetailsModal } from './MatchDetailsModal';
+import { MatchLobbyCard } from './MatchLobbyCard';
+import { getMatchStart, SKILL_META, type SkillKey } from './matchmakingUtils';
 import { toast } from 'sonner';
 
 interface MatchmakingProps {
@@ -24,6 +26,24 @@ interface MatchmakingProps {
   onLogout?: () => void;
 }
 
+type QuickFilter = 'tonight' | 'need-one' | 'chill' | 'intense';
+
+const SPORT_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả' },
+  { value: 'cau-long', label: 'Cầu Lông' },
+  { value: 'bong-da', label: 'Bóng Đá' },
+  { value: 'tennis', label: 'Tennis' },
+  { value: 'pickleball', label: 'Pickleball' },
+];
+
+const toLocalDateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const getMissing = (m: MatchPost) => {
+  const joined = (m.participants || []).filter(p => p.status === 'JOINED').length;
+  return Math.max(0, m.maxPlayers - Math.max(m.currentPlayers, joined));
+};
+
 export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, onLogout }) => {
   // Trạng thái danh sách
   const [matches, setMatches] = useState<MatchPost[]>([]);
@@ -31,24 +51,29 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   const [activeTab, setActiveTab] = useState<'all' | 'my-posts'>('all');
 
   // Bộ lọc
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sportFilter, setSportFilter] = useState<string>('ALL');
-  const [skillFilter, setSkillFilter] = useState<'ALL' | 'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp'>('ALL');
+  const [skillFilter, setSkillFilter] = useState<'ALL' | SkillKey>('ALL');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter | null>(null);
 
-  const getSportTypeName = (type?: string): string => {
-    if (!type) return 'Thể thao';
-    const t = type.toLowerCase().trim();
-    if (t === 'cau-long' || t === 'badminton' || t === 'cầu lông') return 'Cầu Lông';
-    if (t === 'bong-da' || t === 'football' || t === 'soccer' || t === 'bóng đá') return 'Bóng Đá';
-    if (t === 'tennis' || t === 'quần vợt') return 'Tennis';
-    if (t === 'pickleball') return 'Pickleball';
-    if (t === 'bong-ro' || t === 'basketball' || t === 'bóng rổ') return 'Bóng Rổ';
-    return type;
-  };
+  // Đồng hồ chung cho các bộ đếm ngược trên card
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // Debounce ô tìm kiếm để không gọi API mỗi phím gõ
+  useEffect(() => {
+    const id = window.setTimeout(() => setSearchQuery(searchInput.trim()), 350);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
+
   // Modals state
   const [selectedMatch, setSelectedMatch] = useState<MatchPost | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
-  
+
   // Ứng tuyển tham gia
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyNote, setApplyNote] = useState('');
@@ -61,7 +86,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
     setLoading(true);
     try {
       let url = 'http://localhost:3000/matchmaking/posts/public';
-      
+
       // Nếu activeTab là 'my-posts', cần gọi API riêng
       if (activeTab === 'my-posts') {
         url = 'http://localhost:3000/matchmaking/posts/my-posts';
@@ -101,7 +126,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         if (sportFilter && sportFilter !== 'ALL') params.append('sport', sportFilter);
         if (skillFilter && skillFilter !== 'ALL') params.append('skillLevel', skillFilter);
         if (searchQuery) params.append('search', searchQuery);
-        
+
         const res = await fetch(`${url}?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
@@ -126,7 +151,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
   };
 
   // Gọi API lấy dữ liệu khi khởi chạy hoặc thay đổi bộ lọc/tab
-  React.useEffect(() => {
+  useEffect(() => {
     fetchMatches();
   }, [activeTab, sportFilter, skillFilter, searchQuery]);
 
@@ -227,246 +252,278 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
     }
   };
 
-  const getSportIcon = (sport: string) => {
-    if (!sport) return '🏆';
-    const val = sport.toLowerCase().trim();
-    switch (val) {
-      case 'cau-long':
-      case 'badminton':
-      case 'cầu lông':
-        return '🏸';
-      case 'bong-da':
-      case 'football':
-      case 'soccer':
-      case 'bóng đá':
-        return '⚽';
-      case 'pickleball':
-        return '🏓';
-      case 'tennis':
-      case 'quần vợt':
-        return '🎾';
-      case 'bong-ro':
-      case 'basketball':
-      case 'bóng rổ':
-        return '🏀';
-      default:
-        return '🏆';
+  // ── Quick filter theo tâm trạng / nhu cầu (lọc phía client trên dữ liệu đã tải) ──
+  const quickPredicates: Record<QuickFilter, (m: MatchPost) => boolean> = useMemo(() => {
+    const todayKey = toLocalDateKey(new Date(now));
+    return {
+      tonight: m => {
+        const s = getMatchStart(m);
+        return !!s && m.playDate === todayKey && s.getHours() >= 17 && s.getTime() > now;
+      },
+      'need-one': m => m.status === 'OPEN' && getMissing(m) === 1,
+      chill: m => m.skillLevel === 'ANY' || m.skillLevel === 'BEGINNER',
+      intense: m => m.skillLevel === 'ADVANCED',
+    };
+    // Chỉ cần tính lại theo phút để đếm "tối nay" không giật mỗi giây
+  }, [Math.floor(now / 60000)]);
+
+  const QUICK_FILTERS: { key: QuickFilter; label: string; Icon: React.ElementType; tone: string }[] = [
+    { key: 'tonight', label: 'Kèo tối nay', Icon: Moon, tone: 'data-[on=true]:bg-violet-400 data-[on=true]:text-zinc-950 data-[on=true]:border-violet-300' },
+    { key: 'need-one', label: 'Thiếu 1 người', Icon: Flame, tone: 'data-[on=true]:bg-orange-400 data-[on=true]:text-zinc-950 data-[on=true]:border-orange-300' },
+    { key: 'chill', label: 'Giao lưu vui vẻ', Icon: Smile, tone: 'data-[on=true]:bg-sky-400 data-[on=true]:text-zinc-950 data-[on=true]:border-sky-300' },
+    { key: 'intense', label: 'Kèo căng cực', Icon: Swords, tone: 'data-[on=true]:bg-rose-400 data-[on=true]:text-zinc-950 data-[on=true]:border-rose-300' },
+  ];
+
+  // Sắp xếp: kèo sắp diễn ra lên trước, kèo đã qua xuống cuối
+  const visibleMatches = useMemo(() => {
+    const list = quickFilter ? matches.filter(quickPredicates[quickFilter]) : matches;
+    return [...list].sort((a, b) => {
+      const ta = getMatchStart(a)?.getTime() ?? Infinity;
+      const tb = getMatchStart(b)?.getTime() ?? Infinity;
+      const pa = ta < now ? 1 : 0;
+      const pb = tb < now ? 1 : 0;
+      return pa - pb || (pa ? tb - ta : ta - tb);
+    });
+  }, [matches, quickFilter, quickPredicates, Math.floor(now / 60000)]);
+
+  const openMatches = matches.filter(m => m.status === 'OPEN' && (getMatchStart(m)?.getTime() ?? 0) > now);
+  const openSlots = openMatches.reduce((acc, m) => acc + getMissing(m), 0);
+
+  const openDetails = (m: MatchPost) => {
+    setSelectedMatch(m);
+    setShowDetailsModal(true);
+  };
+
+  const quickJoin = (m: MatchPost) => {
+    if (!userName || !getClientToken()) {
+      toast.warning('Vui lòng đăng nhập để tham gia kèo');
+      onNavigate?.('auth', 'login');
+      return;
+    }
+    setSelectedMatch(m);
+    setShowApplyModal(true);
+  };
+
+  const goCreate = () => {
+    if (!userName) {
+      toast.warning('Vui lòng đăng nhập trước khi đăng bài tìm đội giao hữu');
+      onNavigate?.('auth', 'login');
+    } else {
+      onNavigate?.('matchmaking/create');
     }
   };
 
+  const hasActiveFilters = quickFilter || sportFilter !== 'ALL' || skillFilter !== 'ALL' || searchQuery;
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-400">
-      
-      {/* Header */}
+    <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-100 overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
-      {/* BACKGROUND DECORATIVE GLOW EFFECTS */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-emerald-500/10 rounded-full blur-[140px] opacity-70"></div>
-        <div className="absolute bottom-1/3 right-10 w-[400px] h-[300px] bg-teal-500/10 rounded-full blur-[120px] opacity-60"></div>
-      </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 flex-grow w-full relative">
 
-      {/* Main Hub */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow w-full space-y-8 relative z-10">
-        
-        {/* Banner Giới thiệu */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-950/60">
-          <div className="text-left space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-[11px] uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Kết nối cộng đồng thể thao
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-black text-white m-0 tracking-tight">
-              Cộng Đồng Ghép Đội & Tìm Bạn Chơi
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-xl m-0 leading-relaxed">
-              Thiếu chân sút bóng đá, thiếu đối thủ pickleball hay tìm cặp đôi giao lưu cầu lông? Tìm kiếm và giao lưu thể thao tức thì.
+        {/* ── HERO: bố cục lệch, số liệu live bên phải ── */}
+        <section className="grid lg:grid-cols-12 gap-6 lg:gap-10 items-end mb-10">
+          <div className="lg:col-span-7 text-left space-y-4">
+            <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">
+              <Radio className="w-3.5 h-3.5 animate-pulse" /> Lobby đang mở
+            </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-zinc-50 m-0 leading-[0.95]">
+              Tìm kèo.<br />
+              <span className="text-zinc-500">Ghép đội.</span> <span className="text-emerald-400">Ra sân.</span>
+            </h1>
+            <p className="text-sm text-zinc-400 max-w-md m-0 leading-relaxed">
+              Thiếu chân sút, thiếu bạn đánh đôi? Chọn một chỗ trống, share tiền sân và vào trận trong vài phút.
             </p>
           </div>
 
-          <Button
-            onClick={() => {
-              if (!userName) {
-                toast.warning('Vui lòng đăng nhập trước khi đăng bài tìm đội giao hữu');
-                onNavigate?.('auth', 'login');
-              } else {
-                onNavigate?.('matchmaking/create');
-              }
-            }}
-            variant="primary"
-            className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black rounded-2xl shadow-xl shadow-emerald-500/25 cursor-pointer flex items-center justify-center gap-2 transition duration-200 active:scale-95 shrink-0 uppercase tracking-wide border-0"
-          >
-            <PlusCircle className="w-5 h-5 stroke-[2.5]" /> ĐĂNG CA TÌM TEAMMATE
-          </Button>
-        </div>
-
-        {/* Tab Selector */}
-        <div className="flex border-b border-white/10">
-          <button
-            onClick={() => {
-              setActiveTab('all');
-              setSelectedMatch(null);
-              setShowDetailsModal(false);
-            }}
-            className={`px-6 py-3.5 text-xs sm:text-sm font-black transition duration-200 border-b-2 cursor-pointer ${
-              activeTab === 'all'
-                ? 'border-emerald-400 text-emerald-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Tất cả ca ghép đôi
-          </button>
-          {userName && (
+          <div className="lg:col-span-5 grid grid-cols-3 gap-px bg-zinc-800 rounded-2xl overflow-hidden border border-zinc-800">
+            {[
+              { v: openMatches.length, l: 'Kèo đang mở' },
+              { v: openSlots, l: 'Chỗ trống' },
+              { v: matches.filter(quickPredicates.tonight).length, l: 'Kèo tối nay' },
+            ].map(s => (
+              <div key={s.l} className="bg-zinc-900 px-4 py-4 text-left">
+                <span className="block text-3xl font-black font-mono tabular-nums text-zinc-50 leading-none">{loading ? '–' : s.v}</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mt-2">{s.l}</span>
+              </div>
+            ))}
             <button
-              onClick={() => {
-                setActiveTab('my-posts');
-                setSelectedMatch(null);
-                setShowDetailsModal(false);
-              }}
-              className={`px-6 py-3.5 text-xs sm:text-sm font-black transition duration-200 border-b-2 cursor-pointer ${
-                activeTab === 'my-posts'
-                  ? 'border-emerald-400 text-emerald-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              type="button"
+              onClick={goCreate}
+              className="col-span-3 bg-emerald-400 hover:bg-emerald-300 text-zinc-950 px-4 py-3.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-0 cursor-pointer transition-colors"
             >
-              Bài đăng của tôi
+              <PlusCircle className="w-4 h-4 stroke-[2.5]" /> Đăng kèo tìm teammate
             </button>
-          )}
-        </div>
-
-        {/* Thanh lọc & tìm kiếm */}
-        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-lg">
-          <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên sân, môn, tiêu đề..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950/80 border border-white/10 focus:border-emerald-400 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white outline-none transition font-medium"
-            />
           </div>
+        </section>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Môn:</span>
-              <select
-                value={sportFilter}
-                onChange={(e) => setSportFilter(e.target.value as any)}
-                className="bg-slate-950 border border-white/10 text-[11px] font-bold text-white px-3 py-2 rounded-xl outline-none cursor-pointer focus:border-emerald-400"
-              >
-                <option value="ALL">Tất cả môn</option>
-                <option value="cau-long">Cầu Lông</option>
-                <option value="bong-da">Bóng Đá</option>
-                <option value="pickleball">Pickleball</option>
-                <option value="tennis">Tennis</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Trình độ:</span>
-              <select
-                value={skillFilter}
-                onChange={(e) => setSkillFilter(e.target.value as any)}
-                className="bg-slate-950 border border-white/10 text-[11px] font-bold text-white px-3 py-2 rounded-xl outline-none cursor-pointer focus:border-emerald-400"
-              >
-                <option value="ALL">Mọi trình độ</option>
-                <option value="Bất kỳ">Bất kỳ</option>
-                <option value="Mới chơi">Mới chơi</option>
-                <option value="Khá">Khá</option>
-                <option value="Chuyên nghiệp">Chuyên nghiệp</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Khung nội dung chính */}
-        <div className="max-w-4xl mx-auto">
-          {loading ? (
-            <div className="text-center py-12 text-slate-400 text-xs font-bold">
-              Đang tải dữ liệu ghép đôi...
-            </div>
-          ) : matches.length === 0 ? (
-            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center space-y-3 shadow-xl">
-              <span className="text-4xl block">🔍</span>
-              <h4 className="text-base sm:text-lg font-black text-white m-0">Không tìm thấy ca ghép đội nào</h4>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">Thử đổi từ khóa tìm kiếm hoặc lọc các môn thể thao khác để kết nối với những người chơi khác.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {matches.map(m => (
-                <div
-                  key={m.id}
+        {/* ── THANH ĐIỀU KHIỂN: tab + tìm kiếm + quick filter ── */}
+        <section className="sticky top-16 z-30 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 bg-zinc-950/85 backdrop-blur-xl mb-6 space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <div className="inline-flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl shrink-0 self-start">
+              {(['all', ...(userName ? ['my-posts'] : [])] as ('all' | 'my-posts')[]).map(t => (
+                <button
+                  key={t}
+                  type="button"
                   onClick={() => {
-                    setSelectedMatch(m);
-                    setShowDetailsModal(true);
+                    setActiveTab(t);
+                    setSelectedMatch(null);
+                    setShowDetailsModal(false);
                   }}
-                  className="bg-slate-900/60 backdrop-blur-xl border border-white/10 hover:border-emerald-500/40 transition-all duration-300 rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 cursor-pointer shadow-xl group hover:translate-y-[-2px]"
+                  className={`px-4 py-2 text-xs font-black rounded-lg border-0 cursor-pointer transition ${
+                    activeTab === t ? 'bg-zinc-100 text-zinc-950' : 'bg-transparent text-zinc-400 hover:text-zinc-100'
+                  }`}
                 >
-                  <div className="space-y-3 flex-grow text-left">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="text-2xl select-none">{getSportIcon(m.sport)}</span>
-                      <span className="text-xs bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg text-emerald-400 font-mono font-black uppercase">{getSportTypeName(m.sport)}</span>
-                      <span className="text-[11px] text-slate-400 font-medium">Trình độ: <strong className="text-slate-200 font-bold">{m.skillLevel}</strong></span>
-                      
-                      {m.status === 'PENDING' ? (
-                        <Badge status="warning">Chờ duyệt</Badge>
-                      ) : m.status === 'REJECTED' ? (
-                        <Badge status="danger">Bị từ chối</Badge>
-                      ) : m.status === 'FULL' ? (
-                        <Badge status="info">Đủ người</Badge>
-                      ) : (
-                        <Badge status="success">Cần thêm {m.maxPlayers - m.currentPlayers} người</Badge>
-                      )}
-                    </div>
-
-                    <h4 className="text-base sm:text-xl font-black text-white m-0 group-hover:text-emerald-400 transition-colors leading-snug">
-                      {m.title}
-                    </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs text-slate-300 font-medium">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
-                        <span className="font-bold">{m.playDate}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
-                        <span className="font-bold">{m.startTime} - {m.endTime}</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:col-span-2 text-slate-400">
-                        <MapPin className="w-4 h-4 text-slate-500 shrink-0 stroke-[2]" />
-                        <span className="truncate">{m.courtName}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 border-t md:border-t-0 border-white/10 pt-4 md:pt-0 shrink-0">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-8 h-8 rounded-full bg-slate-950 border border-white/10 flex items-center justify-center text-xs font-bold select-none text-emerald-400 shadow-md">{m.hostAvatar}</span>
-                      <div className="text-left leading-none">
-                        <span className="text-[9px] text-slate-400 font-black uppercase block">Host</span>
-                        <strong className="text-xs text-white block font-bold mt-0.5">{m.hostName}</strong>
-                      </div>
-                    </div>
-
-                    <button className="flex items-center gap-1.5 text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-500/10 cursor-pointer">
-                      Xem & ứng tuyển <ChevronRight className="w-4 h-4 text-slate-950 stroke-[3]" />
-                    </button>
-                  </div>
-                </div>
+                  {t === 'all' ? 'Tất cả kèo' : 'Kèo của tôi'}
+                </button>
               ))}
             </div>
-          )}
-        </div>
 
-      </div>
+            <div className="relative flex-1 md:max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                id="matchmaking-search"
+                type="text"
+                placeholder="Tìm theo sân, tiêu đề kèo..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-400/70 rounded-xl pl-10 pr-4 py-2.5 text-xs text-zinc-100 outline-none transition placeholder:text-zinc-600 font-medium"
+              />
+            </div>
 
-      {/* ======================================================================
-          MODALS & FORMS TƯƠNG TÁC
-          ====================================================================== */}
-      
-      {/* 2. MODAL ỨNG TUYỂN (APPLY TO JOIN) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar md:ml-auto">
+              {SPORT_OPTIONS.map(s => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setSportFilter(s.value)}
+                  className={`shrink-0 px-3 py-2 text-[11px] font-bold rounded-lg border cursor-pointer transition ${
+                    sportFilter === s.value
+                      ? 'border-emerald-400/60 text-emerald-300 bg-emerald-400/10'
+                      : 'border-zinc-800 text-zinc-400 bg-transparent hover:text-zinc-100 hover:border-zinc-700'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {QUICK_FILTERS.map(({ key, label, Icon, tone }) => {
+              const on = quickFilter === key;
+              const count = matches.filter(quickPredicates[key]).length;
+              return (
+                <button
+                  key={key}
+                  id={`quick-filter-${key}`}
+                  type="button"
+                  data-on={on}
+                  onClick={() => setQuickFilter(on ? null : key)}
+                  className={`group inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full border border-zinc-800 bg-zinc-900 text-zinc-300 text-[12px] font-extrabold tracking-tight cursor-pointer transition-all duration-200 hover:border-zinc-600 hover:text-white active:scale-95 ${tone}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  <span className={`min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black font-mono flex items-center justify-center ${
+                    on ? 'bg-zinc-950/20' : 'bg-zinc-800 text-zinc-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+
+            <span className="hidden sm:block w-px h-5 bg-zinc-800 mx-1" />
+
+            <div className="flex items-center gap-1">
+              {(['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const).map(k => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setSkillFilter(k)}
+                  className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg border-0 cursor-pointer transition ${
+                    skillFilter === k ? 'bg-zinc-800 text-white' : 'bg-transparent text-zinc-500 hover:text-zinc-200'
+                  }`}
+                >
+                  {k === 'ALL' ? 'Mọi trình độ' : SKILL_META[k].label}
+                </button>
+              ))}
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => { setQuickFilter(null); setSportFilter('ALL'); setSkillFilter('ALL'); setSearchInput(''); }}
+                className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-zinc-200 bg-transparent border-0 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" /> Xoá lọc
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* ── LOBBY GRID ── */}
+        {loading ? (
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-[340px] rounded-2xl bg-zinc-900 border border-zinc-800 p-5 space-y-4 animate-pulse">
+                <div className="h-3 w-32 bg-zinc-800 rounded" />
+                <div className="h-5 w-3/4 bg-zinc-800 rounded" />
+                <div className="h-3 w-1/2 bg-zinc-800 rounded" />
+                <div className="h-px bg-zinc-800 mt-12" />
+                <div className="flex gap-1.5">
+                  {[0, 1, 2, 3].map(j => <div key={j} className="w-9 h-9 rounded-full bg-zinc-800" />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : visibleMatches.length === 0 ? (
+          <div className="grid md:grid-cols-12 gap-6 items-center border border-dashed border-zinc-800 rounded-3xl p-8 sm:p-12">
+            <div className="md:col-span-7 text-left space-y-3">
+              <h2 className="text-2xl font-black text-zinc-50 m-0">
+                {quickFilter ? 'Chưa có kèo khớp bộ lọc này' : 'Lobby đang trống'}
+              </h2>
+              <p className="text-sm text-zinc-400 m-0 max-w-md leading-relaxed">
+                {quickFilter
+                  ? 'Thử bỏ bộ lọc nhanh hoặc đổi bộ môn. Hoặc tự mở một kèo — người chơi gần bạn sẽ thấy ngay.'
+                  : 'Hãy là người mở kèo đầu tiên. Đặt sân, đăng kèo, và chờ đồng đội vào.'}
+              </p>
+              <button
+                type="button"
+                onClick={goCreate}
+                className="mt-2 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 text-xs font-black uppercase tracking-wide border-0 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" /> Mở kèo mới
+              </button>
+            </div>
+            <div className="md:col-span-5 flex md:justify-end">
+              <div className="flex items-center">
+                {[0, 1, 2, 3].map(i => (
+                  <span key={i} className="ml-2 first:ml-0 w-12 h-12 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center text-zinc-600">
+                    <Users className="w-4 h-4" />
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {visibleMatches.map((m, i) => (
+              <MatchLobbyCard
+                key={m.id}
+                match={m}
+                now={now}
+                index={i}
+                userName={userName}
+                onOpen={openDetails}
+                onJoin={quickJoin}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* MODAL ỨNG TUYỂN (APPLY TO JOIN) */}
       <ApplyJoinModal
         isOpen={showApplyModal}
         match={selectedMatch}
@@ -479,7 +536,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         onConfirm={handleApplyToJoin}
       />
 
-      {/* 3. MODAL CHI TIẾT CA GHÉP (POPUP TO) */}
+      {/* MODAL CHI TIẾT CA GHÉP */}
       <MatchDetailsModal
         isOpen={showDetailsModal}
         match={selectedMatch}
@@ -496,9 +553,7 @@ export const Matchmaking: React.FC<MatchmakingProps> = ({ onNavigate, userName, 
         onCancelMatch={handleCancelMatch}
       />
 
-      {/* Footer */}
       <Footer />
-
     </div>
   );
 };

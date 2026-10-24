@@ -389,13 +389,13 @@ export const PartnerManagement: React.FC<PartnerManagementProps> = ({ onSubPageA
                         {/* CHIẾT KHẤU / HOA HỒNG */}
                         <td className="admin-table-td text-center">
                           <div className="font-mono text-xs font-bold text-teal-400">
-                            {partner.commissionType === 'PERCENTAGE' || partner.commissionType === 'PERCENT' ? (
-                              <span>{partner.commissionRate}%</span>
+                            {partner.commissionType === 'PERCENTAGE' ? (
+                              <span>{partner.commissionRate ?? 0}%</span>
                             ) : (
-                              <span>{partner.commissionFixedAmount.toLocaleString()}đ</span>
+                              <span>{(partner.commissionFixedAmount ?? 0).toLocaleString()}đ</span>
                             )}
                             <span className="text-[9px] text-slate-500 block font-sans font-normal mt-0.5">
-                              {partner.commissionType === 'PERCENTAGE' || partner.commissionType === 'PERCENT' ? 'Theo doanh thu' : 'Cố định/đơn'}
+                              {partner.commissionType === 'PERCENTAGE' ? 'Theo doanh thu' : 'Cố định/đơn'}
                             </span>
                           </div>
                         </td>

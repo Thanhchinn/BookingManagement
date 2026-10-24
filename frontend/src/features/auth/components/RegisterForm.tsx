@@ -5,8 +5,6 @@ import { MailCheck, ShieldAlert, Clock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '../../../services/apiClient';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 
 interface RegisterFormProps {
   onSwitchMode: () => void;

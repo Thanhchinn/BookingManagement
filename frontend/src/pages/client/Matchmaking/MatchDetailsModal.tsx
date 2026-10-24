@@ -11,6 +11,7 @@ import {
 import type { MatchPost } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 import { toast } from 'sonner';
+import { getSkillMeta } from './matchmakingUtils';
 
 interface MatchDetailsModalProps {
   isOpen: boolean;
@@ -182,7 +183,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Yêu cầu trình độ:</span>
-              <strong className="text-slate-200">{match.skillLevel}</strong>
+              <strong className="text-slate-200">{getSkillMeta(match.skillLevel).label}</strong>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Ngày chơi:</span>

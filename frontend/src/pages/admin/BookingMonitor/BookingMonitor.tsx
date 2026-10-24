@@ -8,16 +8,13 @@ import {
   RefreshCw, 
   AlertTriangle, 
   TrendingUp, 
-  Percent, 
   ShieldAlert,
   Download,
   CreditCard,
   FileText,
-  DollarSign,
   User,
   Phone,
   MapPin,
-  Tag,
   ShoppingBag
 } from 'lucide-react';
 import { toast } from 'sonner';

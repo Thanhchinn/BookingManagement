@@ -1,191 +1,182 @@
-# 🏆 SportBooker - Hệ Thống Đặt Lịch Sân Thể Thao Real-Time Mượt Mà
+# 🏆 SportBooker (SportZone) - Hệ Thống Quản Lý & Đặt Lịch Sân Thể Thao
 
-**SportBooker** là nền tảng quản lý và đặt lịch sân thể thao trực tuyến thời gian thực (đá bóng, cầu lông, tennis, bóng rổ,...). Hệ thống được thiết kế nhằm tối ưu hóa trải nghiệm người dùng, hiển thị trạng thái sân trống tức thì (real-time) để tránh trùng lịch hẹn và mang lại tốc độ phản hồi cực kỳ nhanh chóng.
+**SportBooker (SportZone)** là nền tảng quản lý tổ hợp sân thể thao, đặt lịch trực tuyến, ghép đội giao hữu (Matchmaking) và đối soát hoa hồng minh bạch theo mô hình sổ cái (Double-Entry Ledger) cho nhiều bộ môn (Bóng đá, Cầu lông, Tennis, Pickleball, Bóng rổ,...).
 
 ---
 
-## ⚡ Các Tính Năng Nổi Bật (Features)
+## ⚡ Các Tính Năng Trọng Tâm Hiện Có (Core Features)
 
-1.  **⚡ Trải Nghiệm Đặt Sân Real-Time:**
-    - Sử dụng **WebSockets (Socket.io)** giúp cập nhật trạng thái sân trống/đã đặt lập tức mà không cần F5 tải lại trang.
-    - Khi có khách hàng khác đang đặt hoặc đã đặt thành công một khung giờ, giao diện của tất cả người dùng khác sẽ được cập nhật trạng thái "Đang được chọn" hoặc "Đã đặt" ngay lập tức.
-2.  **📅 Lịch Đặt Sân Trực Quan (Interactive Scheduler):**
-    - Bảng lưới (Grid) hiển thị khung giờ trống theo ngày cực kỳ trực quan và mượt mà.
-    - Hỗ trợ kéo/thả hoặc click chọn nhanh nhiều khung giờ liên tục.
-3.  **🔍 Tìm Kiếm & Bộ Lọc Thông Minh:**
-    - Tìm kiếm sân theo khu vực gần bạn nhất.
-    - Lọc theo bộ môn thể thao (Bóng đá, Cầu lông, Tennis, Pickleball,...), khung giờ hoạt động và mức giá.
-4.  **👤 Phân Quyền Người Dùng Rõ Ràng (Roles & Auth):**
-    - **Khách hàng (Customer):** Tìm kiếm sân, đặt lịch, thanh toán, quản lý lịch sử đặt chỗ.
-    - **Chủ sân (Court Owner):** Quản lý tổ hợp cơ sở kinh doanh với mô hình đa sân (Multi-Court/Multi-Sport) trên cùng một địa điểm. Tích hợp công cụ **"Smart Slots"** sinh tự động khung giờ (giờ chẵn/lẻ/1h/1.5h), quản lý trạng thái hoạt động độc lập của từng sân đấu, duyệt lịch đặt, xem báo cáo doanh thu và đối soát hoa hồng hàng tháng.
-    - **Quản trị viên (Admin):** Kiểm duyệt chủ sân, cấu hình hoa hồng linh hoạt (theo phần trăm hoặc cố định trên lượt đặt) cho từng đối tác, kiểm duyệt hóa đơn hoa hồng và quản lý danh mục môn thể thao, giám sát hệ thống.
-5.  **🔔 Hệ Thống Thông Báo Tức Thời:**
-    - Gửi thông báo đẩy (Push Notification) real-time khi đặt lịch thành công hoặc có thay đổi trạng thái sân.
+1. **🏟️ Quản Lý Cơ Sở Đa Sân & Địa Giới Hành Chính 2 Cấp:**
+   - Hỗ trợ mô hình **1 Đối tác (Partner) -> Nhiều Cơ sở (Location) -> Nhiều Sân đấu (SportsPitch)** thuộc nhiều bộ môn khác nhau.
+   - Tích hợp chuẩn **Địa giới hành chính 2 cấp mới của Việt Nam** (`LocationProvince` - Tỉnh/Thành phố & `LocationWard` - Phường/Xã) cùng tìm kiếm vị trí tọa độ GPS lân cận (`/public/locations/nearby`).
+2. **📅 Lịch Đặt Sân Động & Chống Trùng Lịch Cấp Độ Database:**
+   - Quản lý khung giờ theo thứ trong tuần (`TimeSlot`) kết hợp ghi đè lịch/giá vào ngày lễ hoặc bảo trì (`SlotOverride`).
+   - Hỗ trợ tính giá động (`basePricePerHour * priceModifier * durationHours`), đặt kèm sản phẩm/dịch vụ tại cơ sở (`Product`, `ProductCategory`), áp mã giảm giá (`Promotion` & `PromotionRedemption`).
+   - **Chống đặt trùng tuyệt đối (Zero Double-Booking):** Kết hợp khóa dòng `SELECT ... FOR UPDATE` trong Transaction và ràng buộc **`EXCLUDE USING gist (bookings_no_overlap)`** trực tiếp dưới PostgreSQL.
+3. **💰 Đối Soát Tài Chính & Sổ Cái Hoa Hồng (Partner Ledger):**
+   - Lưu vết toàn bộ biến động công nợ hoa hồng giữa Đối tác và Nền tảng qua bảng bất biến `PartnerLedgerEntry` (`COMMISSION_CHARGE`, `COMMISSION_REVERSAL`, `COMMISSION_PAYMENT`, `ADJUSTMENT`).
+   - Tự động hạch toán nợ hoa hồng khi đơn hoàn thành (`COMPLETED`) và tự động hoàn hoa hồng khi đơn hoàn tiền (`REFUNDED`).
+   - Lưu vết toàn bộ lịch sử chuyển trạng thái đơn và thanh toán qua `BookingStatusHistory`.
+4. **🤝 Cộng Đồng Ghép Đội (Matchmaking) & Chat Đa Kênh:**
+   - Đăng tin tìm đối thủ / tuyển thành viên giao hữu (`MatchPost`), duyệt người tham gia (`MatchParticipant`), kiểm duyệt bài đăng bởi Admin.
+   - Hệ thống phòng Chat (`ChatRoom`, `Message`) hỗ trợ 3 luồng: Chat cá nhân (`INDIVIDUAL`), Chat nhóm ghép trận (`MATCH`), và Kênh hỗ trợ Đối tác - Admin (`SUPPORT`).
+5. **🔐 Bảo Mật & Phân Quyền 3 Tầng (Client / Partner / Admin):**
+   - Xác thực JWT qua Cookie `httpOnly` và Bearer Token, xác thực đăng ký bằng OTP băm `SHA-256` (`OtpVerification`).
+   - Bảo vệ toàn cục với `ThrottlerGuard` (Rate Limiting), `JwtAuthGuard`, `RolesGuard` và tự động ẩn trường nhạy cảm (`password`) tại tầng `PrismaService`.
+   - Hỗ trợ đa ngôn ngữ (**Tiếng Việt / Tiếng Anh**) với `i18next`.
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
-### 🎨 Frontend (Client-side)
+### 🎨 Frontend (`/frontend`)
+- **Framework:** React 19 + TypeScript + Vite 8
+- **Styling & UI:** Tailwind CSS v4 (`@tailwindcss/postcss`), Lucide React Icons, AOS (Animate On Scroll), Swiper, Sonner (Toast)
+- **State & Routing:** Zustand (`useAuthStore`, `useAppStore`), React Router DOM v7
+- **Đa ngôn ngữ & HTTP:** `i18next` + `react-i18next`, Axios
 
-- **React 19** + **TypeScript** + **Vite** (Khởi chạy cực nhanh).
-- **Tailwind CSS** (Thiết kế giao diện hiện đại, responsive mượt mà).
-- **Socket.io Client** (Xử lý giao tiếp Real-time với Backend).
-- **Lucide React** (Bộ icons chất lượng cao).
-
-### ⚙️ Backend (Server-side & Database)
-
-- **NestJS** (Framework Node.js mạnh mẽ, cấu trúc modular vững chắc như Laravel).
-- **Prisma ORM** (Công cụ tương tác database an toàn về kiểu dữ liệu).
-- **PostgreSQL** (Hệ quản trị cơ sở dữ liệu quan hệ mạnh mẽ, hiệu năng cao).
-- **Socket.io (WebSockets)** (Xử lý kết nối và đồng bộ dữ liệu thời gian thực).
+### ⚙️ Backend (`/backend`)
+- **Framework:** NestJS v11 (TypeScript, Modular Architecture)
+- **Database & ORM:** PostgreSQL + Prisma ORM v7 (`@prisma/client`, `@prisma/adapter-pg`, `pg` connection pool)
+- **Security & Validation:** Passport JWT, `bcrypt`, `@nestjs/throttler`, `class-validator`, `class-transformer`, `cookie-parser`
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy Dự Án Từ Đầu
+## 🚀 Hướng Dẫn Cài Đặt & Chạy Dự Án
 
 ### 📋 Yêu cầu hệ thống
-
-- Đã cài đặt **Node.js** (Phiên bản khuyên dùng: `v18` hoặc `v20` trở lên).
-- Đã cài đặt cơ sở dữ liệu **PostgreSQL** (Có thể chạy cục bộ hoặc qua Docker).
+- **Node.js:** `v20+` (khuyên dùng `v22` hoặc `v24`)
+- **PostgreSQL:** `v14+` (hỗ trợ extension `btree_gist`)
 
 ---
 
-### 1. Cấu Hình & Chạy Backend (NestJS)
+### 1. Cấu Hình & Chạy Backend (`/backend`)
 
-Mở terminal tại thư mục gốc của dự án, truy cập vào thư mục `backend`:
-
-#### **Bước 1.1: Cài đặt thư viện dependencies**
-
+#### **Bước 1.1: Cài đặt thư viện**
 ```bash
 cd backend
 npm install
 ```
 
 #### **Bước 1.2: Cấu hình biến môi trường (`.env`)**
-
-Tạo file `.env` trong thư mục `backend` (nếu chưa có) và cập nhật đường dẫn kết nối PostgreSQL của bạn:
-
+Sao chép từ `.env.example` sang `.env` và cập nhật chuỗi kết nối PostgreSQL:
 ```env
-PORT=3000
-DATABASE_URL="postgresql://postgres:matkhaucuaban@localhost:5432/sport_booking_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/booking_management"
+DATABASE_POOL_MAX=10
 JWT_SECRET="thay-bang-chuoi-ngau-nhien-toi-thieu-32-ky-tu"
+NODE_ENV=development
+PORT=3000
 ```
 
-_(Thay thế `postgres:matkhaucuaban` bằng tài khoản và mật khẩu PostgreSQL của bạn. Tạo `JWT_SECRET` ngẫu nhiên bằng: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Xem đầy đủ các biến trong `backend/.env.example`)_
-
-#### **Bước 1.3: Khởi tạo Cơ sở dữ liệu với Prisma**
-
-**Database mới (chưa có bảng):** tạo cấu trúc bảng và dữ liệu mẫu:
-
+#### **Bước 1.3: Khởi tạo Database & Seed dữ liệu mẫu**
 ```bash
 npx prisma migrate deploy
 npx prisma db seed
 ```
+*(Khi phát triển và có chỉnh sửa `prisma/schema.prisma`, sử dụng `npx prisma migrate dev --name <ten_migration>`).*
 
-**Database đã tạo trước tháng 10/2026** (từng dùng `prisma db push` hoặc chuỗi migration cũ): làm theo [backend/prisma/baseline/README.md](backend/prisma/baseline/README.md) **một lần duy nhất**. Không chạy `prisma migrate dev` trước khi hoàn tất bước này.
-
-Khi thay đổi `schema.prisma` về sau: `npx prisma migrate dev --name <ten_thay_doi>`.
-
-#### **Bước 1.4: Khởi động Server Backend phát triển**
-
+#### **Bước 1.4: Khởi động máy chủ Backend**
 ```bash
 npm run start:dev
 ```
-
-👉 Server Backend sẽ chạy tại: `http://localhost:3000`
+👉 Backend chạy mặc định tại: `http://localhost:3000`
 
 ---
 
-### 2. Cấu Hình & Chạy Frontend (ReactJS)
+### 2. Cấu Hình & Chạy Frontend (`/frontend`)
 
-Mở một cửa sổ terminal mới, truy cập vào thư mục `frontend`:
-
-#### **Bước 2.1: Cài đặt thư viện dependencies**
-
+#### **Bước 2.1: Cài đặt thư viện**
 ```bash
 cd frontend
 npm install
 ```
 
-#### **Bước 2.2: Cài đặt Tailwind CSS (nếu chưa cấu hình)**
-
-```bash
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-```
-
-_Cấu hình file `tailwind.config.js` nội dung như sau:_
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};
-```
-
-_Thêm các dòng sau vào đầu file `src/index.css` để kích hoạt Tailwind:_
-
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
-
-#### **Bước 2.3: Khởi động Server Frontend**
-
+#### **Bước 2.2: Khởi động máy chủ Frontend**
 ```bash
 npm run dev
 ```
-
-👉 Server Frontend sẽ chạy tại: `http://localhost:5173` (hoặc cổng bất kỳ được hiển thị trong terminal).
+👉 Frontend chạy mặc định tại: `http://localhost:5173`
 
 ---
 
-## 📂 Cấu Trúc Dự Án (Project Structure)
+## 📂 Cấu Trúc Dự Án Thực Tế (Project Structure)
 
 ```text
 BookingManagement/
-├── backend/                   # ⚙️ NestJS Backend (NestJS v11)
-│   ├── prisma/                # Cấu hình Database & Schema
-│   │   └── schema.prisma      # Nơi định nghĩa 29 bảng dữ liệu hệ thống
-│   ├── src/                   # Source code APIs NestJS
-│   ├── .env                   # Biến môi trường
+├── backend/                        # ⚙️ NestJS v11 Backend Server
+│   ├── docs/                       # Tài liệu kỹ thuật nội bộ (Routing, Lifecycle, Postman...)
+│   ├── prisma/
+│   │   ├── schema.prisma           # Định nghĩa 25 Models & 17 Enums (PostgreSQL)
+│   │   ├── migrations/             # Lịch sử migration SQL (bao gồm EXCLUDE & CHECK constraints)
+│   │   ├── seed.ts                 # Script khởi tạo dữ liệu mẫu
+│   │   └── seeders/                # Seeders chi tiết (admin, user, category, location, promotion)
+│   ├── src/
+│   │   ├── admins/                 # Quản trị viên hệ thống (/admins)
+│   │   ├── auth/                   # Xác thực, OTP, Guards & Strategies (/auth)
+│   │   ├── bookings/               # Đặt sân, báo giá, duyệt đơn, hoàn tiền (/bookings)
+│   │   ├── categories/             # Danh mục môn thể thao (/categories)
+│   │   ├── chat/                   # Phòng chat cộng đồng, ghép trận & hỗ trợ (/chats)
+│   │   ├── common/                 # Interceptors (Transform BigInt/Decimal) & Utilities
+│   │   ├── locations/              # Quản lý cơ sở kinh doanh & tiện ích (/locations)
+│   │   ├── matchmaking/            # Đăng tin ghép đội & duyệt thành viên (/matchmaking)
+│   │   ├── partners/               # Hồ sơ đối tác & Sổ cái hoa hồng (/partners)
+│   │   ├── prisma/                 # PrismaService kết nối PostgreSQL Pool
+│   │   ├── products/               # Sản phẩm & danh mục bán kèm tại cơ sở (/products, /product-categories)
+│   │   ├── public/                 # API tra cứu công khai cho khách hàng (/public)
+│   │   ├── services/               # Quản lý sân đấu, khung giờ & phản hồi đánh giá (/services)
+│   │   ├── users/                  # Quản lý người dùng & upload avatar (/users)
+│   │   ├── app.module.ts           # Root Module
+│   │   └── main.ts                 # Entrypoint (CORS, ValidationPipe, Static /uploads)
+│   ├── uploads/                    # Lưu trữ tệp tải lên (avatars...)
+│   ├── prisma.config.ts            # Cấu hình Prisma v7
 │   └── package.json
 │
-├── frontend/                  # 🎨 React Frontend (React 19 + Tailwind v4)
-│   ├── src/                   # Source code giao diện React
-│   │   ├── assets/            # Hình ảnh, icons tĩnh
-│   │   ├── components/        # Các UI Components dùng chung (Navbar, Layout...)
-│   │   ├── features/          # Cấu trúc Features-based (auth, sports-field...)
-│   │   ├── pages/             # Các trang ứng dụng (client, admin...)
-│   │   ├── App.tsx            # Component chính của ứng dụng
-│   │   ├── index.css          # CSS v4 & Tailwind import
-│   │   └── main.tsx           # Điểm khởi chạy React
-│   ├── index.html
-│   ├── vite.config.ts         # Cấu hình Vite
+├── frontend/                       # 🎨 React 19 + Vite 8 + Tailwind CSS v4
+│   ├── public/                     # Hình ảnh tĩnh & locales đa ngôn ngữ
+│   ├── src/
+│   │   ├── components/             # UI Components dùng chung (Navbar, ProtectedRoute...)
+│   │   ├── context/                # React Contexts
+│   │   ├── features/               # Các phân hệ tính năng chuyên biệt
+│   │   ├── hooks/                  # Custom React Hooks
+│   │   ├── pages/
+│   │   │   ├── client/             # Trang khách hàng (Home, Search, CourtDetails, MyBookings, Matchmaking, CommunityChat, Profile...)
+│   │   │   ├── partner/            # Trang chủ sân (PartnerLayout, Quản lý Cơ sở, Sân, Đơn đặt, Sản phẩm...)
+│   │   │   └── admin/              # Trang quản trị viên (AdminLayout, Duyệt đối tác, Sổ cái, Người dùng...)
+│   │   ├── services/               # Tầng giao tiếp API
+│   │   ├── store/                  # Zustand Stores (useAuthStore, useAppStore)
+│   │   ├── types/                  # Định nghĩa TypeScript Interfaces
+│   │   ├── utils/                  # Hàm tiện ích
+│   │   ├── i18n.ts                 # Cấu hình đa ngôn ngữ (VI/EN)
+│   │   ├── App.tsx                 # Định tuyến trung tâm (React Router v7)
+│   │   └── main.tsx                # Entrypoint React
 │   └── package.json
 │
-├── learning-frontend.md       # 📚 Cẩm nang tự học FE cho Laravel Dev
-├── learning-backend.md        # 📚 Cẩm nang tự học BE cho Laravel Dev
-└── README.md                  # 📖 Tài liệu hướng dẫn hiện tại
+└── README.md                       # 📖 Tài liệu tổng quan dự án
 ```
 
 ---
 
-## 🗓️ Lộ Trình Phát Triển Đề Xuất (System Roadmap)
+## 🗄️ Tổng Quan Kiến Trúc Cơ Sở Dữ Liệu (25 Bảng / 7 Phân Hệ)
 
-- [ ] **Giai đoạn 1 (Core DB Schema & Prisma Migration):** Đồng bộ hóa đầy đủ 29 bảng trong file `schema.prisma`. Chạy migration tạo bảng hoàn chỉnh trong PostgreSQL.
-- [ ] **Giai đoạn 2 (Core REST APIs & Auth):** Phát triển hệ thống đăng nhập, đăng ký và phân quyền cho 3 nhóm vai trò (User, Partner, Admin).
-- [ ] **Giai đoạn 3 (Lịch Trống & Xử Lý Đặt Sân Real-Time):** Tạo thuật toán tính toán lịch trống động kết hợp cơ chế khóa slot giữ chỗ 10 phút. Tích hợp WebSockets/Socket.IO để cập nhật real-time.
-- [ ] **Giai đoạn 4 (Sản Phẩm Đi Kèm & Cổng Thanh Toán):** Cho phép đặt thêm sản phẩm dịch vụ phụ trợ. Tích hợp cổng thanh toán MoMo/VNPAY và xử lý Webhook.
-- [ ] **Giai đoạn 5 (Cộng Đồng Ghép Đội & Chat Nhóm):** Lập trình tính năng Matchmaking và tự động tạo phòng Chat room Socket.IO.
-- [ ] **Giai đoạn 6 (Disputes & Đối Soát Tài Chính):** Hoàn thiện module giải quyết khiếu nại của Admin và hệ thống hóa đơn hoa hồng hàng tháng (Partner Commission Bill) thay thế cho cơ chế yêu cầu rút tiền thủ công.
-- [x] **Giai đoạn 7 (Quản Lý Sân & Vị Trí Cơ Sở Đối Tác Chuyên Sâu):** Phát triển phân hệ Quản lý Sân (Services) và Cơ sở (Locations) độc lập dạng Trang chuyên biệt (Dedicated Page) thay thế cho popup modal. Tích hợp quản lý Tiện ích (Amenities), Khung giờ bảng giá động (TimeSlots), Sản phẩm bán kèm (Products) và Phản hồi đánh giá của khách (Reviews).
+Hệ thống cơ sở dữ liệu PostgreSQL (`prisma/schema.prisma`) bao gồm **25 bảng (models)** và **17 kiểu liệt kê (enums)** chia thành 7 nhóm nghiệp vụ:
+
+1. **Người dùng & Phân quyền (5 bảng):** `users`, `otp_verifications`, `admins`, `partner_profiles`, `user_sport_preferences`
+2. **Địa giới & Cơ sở kinh doanh (8 bảng):** `location_provinces`, `location_wards`, `locations`, `categories`, `sports_pitches`, `amenities`, `location_amenities`, `products`, `product_categories`
+3. **Lịch trình & Bảng giá (2 bảng):** `time_slots`, `slot_overrides`
+4. **Đặt sân, Khuyến mãi & Thanh toán (6 bảng):** `bookings`, `booking_details`, `payments`, `promotions`, `promotion_redemptions`, `booking_status_history`
+5. **Ghép đội & Cộng đồng (2 bảng):** `match_posts`, `match_participants`
+6. **Chat & Giao tiếp (3 bảng):** `chat_rooms`, `chat_room_members`, `messages`
+7. **Hỗ trợ, Đánh giá & Tài chính (4 bảng):** `disputes`, `partner_commission_bills`, `partner_ledger_entries`, `notifications`, `reviews`
 
 ---
 
+## 🗺️ Hiện Trạng & Lộ Trình Phát Triển (Roadmap)
+
+- [x] **Core DB Schema & Hardening:** Hoàn thiện 25 bảng dữ liệu chuẩn hóa, bổ sung `EXCLUDE USING gist` chống trùng lịch, 25+ ràng buộc `CHECK` bảo vệ dữ liệu tiền tệ/thời gian ở tầng PostgreSQL.
+- [x] **Authentication & RBAC:** Đăng ký xác thực OTP, đăng nhập 3 vai trò (Client, Partner, Admin), phân quyền Guard toàn cục.
+- [x] **Partner & Location Management:** Quản lý đa cơ sở, đa sân đấu, tiện ích, cấu hình khung giờ (`TimeSlot`), sản phẩm bán kèm (`Product`), trả lời đánh giá (`Review`).
+- [x] **Booking Flow & Promotion Engine:** Báo giá tự động (`/bookings/quote`), tạo đơn đặt sân, áp mã khuyến mãi có hoàn lượt khi hủy, lưu vết `BookingStatusHistory` và hạch toán sổ cái `PartnerLedgerEntry`.
+- [x] **Matchmaking & Multi-Room Chat:** Đăng bài tìm đối, xin vào đội, duyệt thành viên và chat trao đổi trực tiếp.
+- [ ] **Real-Time WebSocket (Socket.IO):** Tích hợp `@nestjs/websockets` và `socket.io` để đẩy thông báo (`Notification`), tin nhắn chat và trạng thái giữ chỗ theo thời gian thực thay cho cơ chế HTTP Polling hiện tại.
+- [ ] **Payment Gateway Webhooks:** Tích hợp tự động cổng thanh toán VNPAY / MoMo / VietQR Webhook đối soát tức thì.
+- [ ] **Automated Monthly Commission Billing:** Cronjob tự động chốt sổ cái `PartnerLedgerEntry` hàng tháng thành hóa đơn `PartnerCommissionBill`.

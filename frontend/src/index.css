@@ -20,68 +20,75 @@
   --color-slate-950: var(--slate-950);
 }
 
+/* Default Dark Mode (Sports Athletic Theme) */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --surface-1: #ffffff;
-  --surface-2: #f8fafc;
-  --surface-3: #eef2f7;
-  --ring: rgba(20, 184, 166, 0.24);
-  --brand: #0f766e;
-  --brand-strong: #0d9488;
-  --brand-soft: rgba(20, 184, 166, 0.12);
-  --warning: #d97706;
-  --danger: #e11d48;
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --text: #a1a1aa;
+  --text-h: #fafafa;
+  --bg: #09090b;
+  --border: rgba(39, 39, 42, 0.8);
+  --code-bg: #18181b;
+  --accent: #10b981;
+  --accent-bg: rgba(16, 185, 129, 0.1);
+  --accent-border: rgba(16, 185, 129, 0.4);
+  --social-bg: rgba(39, 39, 42, 0.5);
+  --surface-1: #09090b;
+  --surface-2: #18181b;
+  --surface-3: #27272a;
+  --ring: rgba(16, 185, 129, 0.35);
+  --brand: #10b981;
+  --brand-strong: #34d399;
+  --brand-soft: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --danger: #f43f5e;
+  --shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
 
-  /* Bảng màu slate động cho Dark/Light mode */
-  --slate-50: #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-450: #94a3b8;
-  --slate-455: #94a3b8;
-  --slate-460: #94a3b8;
-  --slate-500: #64748b;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-750: #1e293b;
-  --slate-800: #1e293b;
-  --slate-850: #0f172a;
-  --slate-900: #0f172a;
-  --slate-950: #020617;
+  /* Bảng màu slate/zinc động */
+  --slate-50: #fafafa;
+  --slate-100: #f4f4f5;
+  --slate-200: #e4e4e7;
+  --slate-300: #d4d4d8;
+  --slate-400: #a1a1aa;
+  --slate-450: #a1a1aa;
+  --slate-455: #71717a;
+  --slate-460: #71717a;
+  --slate-500: #71717a;
+  --slate-600: #52525b;
+  --slate-700: #3f3f46;
+  --slate-750: #27272a;
+  --slate-800: #27272a;
+  --slate-850: #18181b;
+  --slate-900: #18181b;
+  --slate-950: #09090b;
 }
 
 /* Ghi đè Light mode khi root có lớp .light */
 :root.light {
-  --slate-50: #0f172a;
-  --slate-100: #0f172a;
-  --slate-200: #1e293b;
-  --slate-300: #334155;
-  --slate-400: #475569;
-  --slate-450: #475569;
-  --slate-455: #475569;
-  --slate-460: #475569;
-  --slate-500: #64748b;
-  --slate-600: #94a3b8;
-  --slate-700: #cbd5e1;
-  --slate-750: #cbd5e1;
-  --slate-800: #cbd5e1;
-  --slate-850: #f1f5f9;
+  --text: #52525b;
+  --text-h: #09090b;
+  --bg: #ffffff;
+  --border: #e4e4e7;
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #e4e4e7;
+  --slate-50: #09090b;
+  --slate-100: #18181b;
+  --slate-200: #27272a;
+  --slate-300: #3f3f46;
+  --slate-400: #52525b;
+  --slate-450: #52525b;
+  --slate-455: #71717a;
+  --slate-460: #71717a;
+  --slate-500: #71717a;
+  --slate-600: #a1a1aa;
+  --slate-700: #d4d4d8;
+  --slate-750: #e4e4e7;
+  --slate-800: #e4e4e7;
+  --slate-850: #f4f4f5;
   --slate-900: #ffffff;
   --slate-950: #f8fafc;
 }
 
-/* Hiệu ứng chuyển động mượt mà cho toàn trang (Smooth transitions & animations) */
+/* Hiệu ứng chuyển động mượt mà */
 *, ::before, ::after {
   transition-property: background-color, border-color, text-color, fill, stroke, opacity, box-shadow, transform;
   transition-duration: 250ms;
@@ -116,58 +123,23 @@
   animation-delay: 350ms;
 }
 
-
 :root {
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 16px/150% var(--sans);
   letter-spacing: 0;
-  color-scheme: light dark;
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --surface-1: #0f172a;
-    --surface-2: #111827;
-    --surface-3: #1e293b;
-    --ring: rgba(45, 212, 191, 0.2);
-    --brand: #14b8a6;
-    --brand-strong: #2dd4bf;
-    --brand-soft: rgba(20, 184, 166, 0.12);
-    --warning: #f59e0b;
-    --danger: #fb7185;
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
 }
 
 #root {
-  /* width: 1126px; */
   max-width: 100%;
   margin: 0 auto;
   text-align: inherit;
@@ -181,36 +153,22 @@
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 28rem),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  background-color: #09090b;
+  color: #fafafa;
 }
 
 h1,
-h2 {
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+  font-weight: inherit;
+  color: inherit;
+  margin: 0;
 }
 
-h1 {
-  font-size: 36px;
-  letter-spacing: 0;
-  /* margin: 32px 0; */
-  @media (max-width: 1024px) {
-    font-size: 24px;
-    /* margin: 20px 0; */
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: 0;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
 p {
   margin: 0;
 }
@@ -227,48 +185,57 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--ring);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: rgba(20, 184, 166, 0.22);
-  color: var(--text-h);
+  background: rgba(16, 185, 129, 0.3);
+  color: #fafafa;
 }
 
-/* SaaS 2025-2026 shared UI primitives: giữ chức năng cũ, chỉ chuẩn hóa bề mặt hiển thị */
+/* SaaS SportZone UI Primitives */
 .sz-page {
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 1) 42%, rgba(15, 23, 42, 1) 100%);
+  background-color: #09090b;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(16, 185, 129, 0.12), transparent 70%),
+    radial-gradient(circle at 100% 60%, rgba(20, 184, 166, 0.08), transparent 35rem),
+    radial-gradient(circle at 0% 40%, rgba(132, 204, 22, 0.05), transparent 30rem);
 }
 
 .sz-page-light {
-  background:
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
 }
 
 .sz-card,
 .sz-panel {
-  background: rgba(15, 23, 42, 0.76);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 8px;
-  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.24);
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  border-radius: 1rem;
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.5);
 }
 
 .sz-card:hover {
-  border-color: rgba(45, 212, 191, 0.28);
-  transform: translateY(-2px);
-  box-shadow: 0 24px 54px rgba(2, 6, 23, 0.32);
+  border-color: rgba(52, 211, 153, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.15);
 }
 
 .sz-kpi {
   position: relative;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.82)),
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.16), transparent 18rem);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(24, 24, 27, 0.95), rgba(39, 39, 42, 0.75));
+  border: 1px solid rgba(63, 63, 70, 0.6);
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+}
+
+.sz-kpi:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+  transform: translateY(-2px);
 }
 
 .sz-admin-shell {
@@ -287,7 +254,7 @@ textarea:focus-visible {
   border-color: #cbd5e1;
 }
 
-/* Admin enterprise mode: các trang con cũ vẫn giữ logic/className, lớp này chỉ làm sạch màu hiển thị */
+/* Admin enterprise mode: các trang con cũ vẫn giữ logic/className */
 .sz-admin-shell .bg-slate-950,
 .sz-admin-shell .bg-slate-950\/40,
 .sz-admin-shell .bg-slate-950\/60,
@@ -357,34 +324,33 @@ textarea:focus-visible {
 }
 
 .sz-empty {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.52));
-  border: 1px dashed rgba(148, 163, 184, 0.24);
-  border-radius: 8px;
+  background: rgba(24, 24, 27, 0.6);
+  border: 1px dashed rgba(63, 63, 70, 0.8);
+  border-radius: 1rem;
 }
 
 .sz-hero-vignette {
   background:
-    linear-gradient(90deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.88) 46%, rgba(15, 23, 42, 0.2) 100%),
-    linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.72) 100%);
+    linear-gradient(90deg, rgba(9, 9, 11, 0.98) 0%, rgba(9, 9, 11, 0.85) 50%, rgba(9, 9, 11, 0.3) 100%),
+    linear-gradient(180deg, rgba(9, 9, 11, 0.15) 0%, rgba(9, 9, 11, 0.95) 100%);
 }
 
 .sz-filter-shell {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  box-shadow:
-    0 24px 60px rgba(2, 6, 23, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 
 .sz-filter-field {
   min-height: 52px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .sz-filter-field:focus-within {
-  background: #f8fafc;
-  box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.28);
+  background: rgba(39, 39, 42, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.4);
 }
 
 .sz-card-media {
@@ -399,7 +365,7 @@ textarea:focus-visible {
 }
 
 .sz-card-lift:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 
 .scrollbar-none {
@@ -410,15 +376,12 @@ textarea:focus-visible {
   display: none;
 }
 
-/* Giảm bo góc quá lớn để giao diện quản trị và SaaS trông gọn, cao cấp hơn */
-.rounded-3xl,
-.rounded-\[28px\],
-.rounded-\[20px\] {
-  border-radius: 8px !important;
-}
-
-.rounded-2xl,
-.rounded-xl {
+/* Bo góc cho Admin gọn gàng, không ghi đè Landing Page */
+.sz-admin-shell .rounded-3xl,
+.sz-admin-shell .rounded-\[28px\],
+.sz-admin-shell .rounded-\[20px\],
+.sz-admin-shell .rounded-2xl,
+.sz-admin-shell .rounded-xl {
   border-radius: 8px !important;
 }
 
@@ -502,3 +465,17 @@ input.bg-slate-50:-webkit-autofill {
   -webkit-text-fill-color: #0f172a !important;
   caret-color: #0f172a !important;
 }
+
+/* Court Details: floating checkout + QR match pass */
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes passIn { from { transform: translateY(24px) scale(0.94); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes pricePop { 0% { transform: scale(1.12); color: #6ee7b7; } 100% { transform: scale(1); } }
+@keyframes qrScan { 0%, 100% { top: 8px; } 50% { top: calc(100% - 10px); } }
+
+/* Matchmaking: Lobby Ticket Card & Slot Pulse */
+@keyframes lobbyIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes slotPulse { 0%, 100% { border-color: rgba(52, 211, 153, 0.4); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.3); } 50% { border-color: rgba(52, 211, 153, 0.9); box-shadow: 0 0 12px 2px rgba(52, 211, 153, 0.25); } }
+
+@media (prefers-reduced-motion: reduce) { [class*='animate-['] { animation: none !important; } }
+

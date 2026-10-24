@@ -38,7 +38,7 @@ export const MatchmakingCreate: React.FC<MatchmakingCreateProps> = ({ onNavigate
   const [newDate, setNewDate] = useState('');
   const [newStart, setNewStart] = useState('18:00');
   const [newEnd, setNewEnd] = useState('20:00');
-  const [newSkill, setNewSkill] = useState<'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp'>('Bất kỳ');
+  const [newSkill, setNewSkill] = useState<'ANY' | 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'>('ANY');
   const [newMax, setNewMax] = useState(4);
   const [neededPlayers, setNeededPlayers] = useState(3); // Số lượng cần tuyển thêm
   const [newDesc, setNewDesc] = useState('');
@@ -211,10 +211,10 @@ export const MatchmakingCreate: React.FC<MatchmakingCreateProps> = ({ onNavigate
                   onChange={(e) => setNewSkill(e.target.value as any)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-emerald-500/50 transition cursor-pointer"
                 >
-                  <option value="Bất kỳ">Bất kỳ trình độ</option>
-                  <option value="Mới chơi">Mới chơi (Beginner)</option>
-                  <option value="Khá">Khá (Intermediate)</option>
-                  <option value="Chuyên nghiệp">Chuyên nghiệp (Advanced)</option>
+                  <option value="ANY">Bất kỳ trình độ</option>
+                  <option value="BEGINNER">Newbie (Mới chơi)</option>
+                  <option value="INTERMEDIATE">Bán chuyên (Khá)</option>
+                  <option value="ADVANCED">Pro (Chuyên nghiệp)</option>
                 </select>
               </div>
             </div>

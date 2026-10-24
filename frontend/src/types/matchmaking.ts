@@ -34,10 +34,14 @@ export interface MatchPost {
   playDate: string;                                                           // Ngày diễn ra trận đấu
   startTime: string;                                                          // Giờ mở màn trận đấu
   endTime: string;                                                            // Giờ kết thúc ca đấu
-  skillLevel: 'Bất kỳ' | 'Mới chơi' | 'Khá' | 'Chuyên nghiệp';                // Yêu cầu trình độ của người tham gia
+  skillLevel: 'ANY' | 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';               // Yêu cầu trình độ (enum backend: Bất kỳ / Newbie / Bán chuyên / Pro)
   maxPlayers: number;                                                         // Số lượng người chơi tối đa cần tuyển
   currentPlayers: number;                                                     // Số lượng thành viên hiện tại đã chốt
   description: string;                                                        // Nội dung mô tả chi tiết trận đấu và lưu ý
   status: 'PENDING' | 'OPEN' | 'FULL' | 'CANCELLED' | 'REJECTED';              // Trạng thái bài đăng
   participants: Participant[];                                                // Danh sách những người đã gửi yêu cầu tham gia bài đăng này
+  courtAddress?: string;                                                      // Địa chỉ cụm sân
+  courtCost?: number;                                                         // Tổng tiền sân (theo đơn đặt nếu có, ngược lại ước tính theo giá giờ)
+  costPerHead?: number;                                                       // Chi phí chia đầu người = courtCost / maxPlayers
+  isCostEstimated?: boolean;                                                  // true nếu chưa gắn đơn đặt sân (giá ước tính)
 }

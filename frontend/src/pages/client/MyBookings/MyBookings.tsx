@@ -41,7 +41,7 @@ const getSportEmoji = (sport: string) => {
   return '🏆';
 };
 
-const getBookingCountdown = (bookingDate: string, startTime: string, status: string) => {
+const getBookingCountdown = (bookingDate: string, _startTime: string, status: string) => {
   if (status !== 'CONFIRMED' && status !== 'PENDING') return null;
   try {
     const todayStr = new Date().toISOString().split('T')[0];

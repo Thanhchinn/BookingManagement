@@ -122,11 +122,21 @@ export class BookingsService {
         `Đơn hàng cần tối thiểu ${promotion.minOrderValue.toNumber().toLocaleString('vi-VN')}đ để dùng mã này.`,
       );
     }
-    const used = await db.promotionRedemption.findUnique({
-      where: { promotionId_userId: { promotionId: promotion.id, userId } },
-    });
-    if (used?.status === RedemptionStatus.APPLIED) {
-      throw new BadRequestException('Bạn đã sử dụng mã khuyến mãi này trước đó.');
+    if (promotion.perUserLimit > 0) {
+      const userAppliedCount = await db.promotionRedemption.count({
+        where: {
+          promotionId: promotion.id,
+          userId,
+          status: RedemptionStatus.APPLIED,
+        },
+      });
+      if (userAppliedCount >= promotion.perUserLimit) {
+        throw new BadRequestException(
+          promotion.perUserLimit === 1
+            ? 'Bạn đã sử dụng mã khuyến mãi này trước đó.'
+            : `Bạn đã sử dụng hết giới hạn ${promotion.perUserLimit} lượt của mã khuyến mãi này.`,
+        );
+      }
     }
     return promotion;
   }
@@ -245,7 +255,7 @@ export class BookingsService {
       select: { startTime: true, endTime: true },
     });
     const isBooked = booked.some((b) =>
-      rangesOverlap(startMinutes, endMinutes, timeToMinutes(b.startTime), timeToMinutes(b.endTime)),
+      rangesOverlap(startMinutes, endMinutes, timeToMinutes(b.startTime), timeToMinutes(b.endTime, true)),
     );
     if (isBooked) {
       throw new ConflictException(OVERLAP_MESSAGE);
@@ -334,6 +344,9 @@ export class BookingsService {
             bookingDate: prepared.bookingDate,
             startTime: minutesToTime(prepared.startMinutes),
             endTime: minutesToTime(prepared.endMinutes),
+            startAt: new Date(prepared.bookingDate.getTime() + prepared.startMinutes * 60_000 - 7 * 3600_000),
+            endAt: new Date(prepared.bookingDate.getTime() + prepared.endMinutes * 60_000 - 7 * 3600_000),
+            holdExpiresAt: isCash ? null : new Date(Date.now() + 15 * 60_000),
             basePrice: pricing.courtCost,
             serviceAmount: pricing.serviceCost,
             discountAmount: pricing.discountAmount,
@@ -375,11 +388,15 @@ export class BookingsService {
         });
 
         if (promotion) {
-          // Ghi nhận lượt dùng mã gắn với đơn (dùng lại dòng cũ nếu lượt trước đã được trả)
-          await tx.promotionRedemption.upsert({
-            where: { promotionId_userId: { promotionId: promotion.id, userId } },
-            create: { promotionId: promotion.id, userId, bookingId: newBooking.id, discountAmount: pricing.discountAmount },
-            update: { bookingId: newBooking.id, discountAmount: pricing.discountAmount, status: RedemptionStatus.APPLIED },
+          // Ghi nhận lượt dùng mã gắn với đơn (mỗi đơn 1 dòng lưu trọn lịch sử)
+          await tx.promotionRedemption.create({
+            data: {
+              promotionId: promotion.id,
+              userId,
+              bookingId: newBooking.id,
+              discountAmount: pricing.discountAmount,
+              status: RedemptionStatus.APPLIED,
+            },
           });
         }
         return newBooking.id;
@@ -469,7 +486,7 @@ export class BookingsService {
 
   // Xác định vai trò của người thao tác đối với đơn: Admin, Chủ sân sở hữu đơn, hay Khách đặt đơn.
   // Lưu ý: ID admin và ID user thuộc 2 bảng khác nhau nên phải phân biệt bằng role, không so ID chéo bảng.
-  private async resolveBookingActor(requester: AuthUser, booking: { userId: bigint; sportsPitch: { location: { partnerId: bigint } } }) {
+  private async resolveBookingActor(requester: AuthUser, booking: { userId: bigint | null; sportsPitch: { location: { partnerId: bigint } } }) {
     if (isAdminRole(requester.role)) {
       return { isAdmin: true, isOwnerPartner: false, isOwnerUser: false };
     }

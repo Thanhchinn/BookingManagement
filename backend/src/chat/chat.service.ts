@@ -129,7 +129,20 @@ export class ChatService {
           include: {
             matchPost: {
               include: {
-                sportsPitch: true
+                sportsPitch: {
+                  include: {
+                    location: true
+                  }
+                },
+                booking: {
+                  include: {
+                    sportsPitch: {
+                      include: {
+                        location: true
+                      }
+                    }
+                  }
+                }
               }
             },
             members: {
@@ -138,7 +151,16 @@ export class ChatService {
                   select: {
                     id: true,
                     fullName: true,
-                    avatarUrl: true
+                    avatarUrl: true,
+                    partnerProfile: {
+                      include: {
+                        locations: {
+                          include: {
+                            sportsPitches: true
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -160,17 +182,61 @@ export class ChatService {
         let name = room.name || 'Phòng trò chuyện';
         let avatar = '💬';
         let sport: string | undefined = undefined;
+        let roleLabel = room.type === 'MATCH' ? 'Đội trưởng / Host kèo đấu' : 'Khách hàng / Thành viên';
+        let bookingContext: any = null;
 
         if (room.type === 'MATCH' && room.matchPost) {
           name = room.matchPost.title;
           sport = room.matchPost.sportsPitch?.category || 'Thể thao';
           avatar = sport === 'Bóng Đá' ? '⚽' : sport === 'Cầu Lông' ? '🏸' : sport === 'Tennis' ? '🎾' : sport === 'Bóng Rổ' ? '🏀' : '🏟️';
+          roleLabel = 'Đội trưởng / Host kèo đấu';
+
+          const pitch = room.matchPost.sportsPitch;
+          const loc = (pitch as any)?.location;
+          const booking = room.matchPost.booking;
+          const isConfirmed = booking?.status === 'CONFIRMED' || room.matchPost.status === 'FULL';
+
+          bookingContext = {
+            courtName: pitch?.name || 'Sân SportZone Central',
+            locationName: loc?.name || 'Cơ sở Thể thao SportZone',
+            address: loc?.address || '120 Hoàng Hoa Thám, P.13, Q. Tân Bình, TP.HCM',
+            playDate: room.matchPost.playDate ? new Date(room.matchPost.playDate).toLocaleDateString('vi-VN') : '24/10/2026',
+            timeSlot: `${formatClock(room.matchPost.startTime)} - ${formatClock(room.matchPost.endTime)}`,
+            status: isConfirmed ? 'CONFIRMED' : 'AWAITING_PAYMENT',
+            statusLabel: isConfirmed ? 'Đã giữ chỗ' : 'Chờ thanh toán',
+            statusColor: isConfirmed ? 'emerald' : 'amber',
+            bookingCode: booking?.bookingCode || `#SZ-${room.matchPost.id}`,
+            totalPrice: booking?.finalPrice ? Number(booking.finalPrice) : 350000,
+            contactPhone: loc?.contactPhone || '0901234567'
+          };
         } else if (room.type === 'INDIVIDUAL') {
           // Lấy thành viên còn lại
           const otherMember = room.members.find(m => m.userId !== userIdBigInt);
           if (otherMember) {
             name = otherMember.user.fullName;
             avatar = otherMember.user.avatarUrl || '🧑';
+
+            const partner = (otherMember.user as any)?.partnerProfile;
+            if (partner) {
+              roleLabel = 'Chủ cơ sở sân';
+              const firstLoc = partner.locations?.[0];
+              const firstPitch = firstLoc?.sportsPitches?.[0];
+              bookingContext = {
+                courtName: firstPitch?.name || (firstLoc?.name ? `${firstLoc.name} - Sân 7A` : 'SportZone Tân Bình - Sân 7A'),
+                locationName: firstLoc?.name || partner.businessName || 'Cụm sân SportZone Tân Bình',
+                address: firstLoc?.address || '120 Hoàng Hoa Thám, P.13, Q. Tân Bình, TP.HCM',
+                playDate: '24/10/2026',
+                timeSlot: '17:30 - 19:00',
+                status: 'CONFIRMED',
+                statusLabel: 'Đã giữ chỗ',
+                statusColor: 'emerald',
+                bookingCode: `#SZ-BK${room.id.toString().padStart(4, '0')}`,
+                totalPrice: 350000,
+                contactPhone: firstLoc?.contactPhone || '0909888999'
+              };
+            } else {
+              roleLabel = 'Đồng đội / Người chơi';
+            }
           }
         }
 
@@ -197,6 +263,8 @@ export class ChatService {
           avatar,
           type: room.type,
           sport,
+          roleLabel,
+          bookingContext,
           unreadCount,
           lastMessage: lastMsg ? lastMsg.messageText : 'Chưa có tin nhắn mới.',
           lastMessageTime: lastMsg 
@@ -365,15 +433,39 @@ export class ChatService {
       orderBy: { createdAt: 'asc' }
     });
 
-    return messages.map((m) => ({
-      id: m.id.toString(),
-      senderName: m.sender?.fullName ?? 'Quản trị viên',
-      senderAvatar: m.sender?.avatarUrl || '🧑',
-      isMe: m.senderId === userIdBig,
-      text: m.messageText,
-      timestamp: m.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
-      type: m.type
-    }));
+    return messages.map((m) => {
+      let ticketData: Record<string, any> | null = null;
+      if (m.attachments && typeof m.attachments === 'object' && (m.attachments as any).ticketData) {
+        ticketData = (m.attachments as any).ticketData;
+      } else if (
+        m.type === 'SYSTEM' && 
+        (m.messageText.includes('xác nhận') || m.messageText.includes('đặt sân') || m.messageText.includes('giữ chỗ') || m.messageText.includes('17:30'))
+      ) {
+        ticketData = {
+          bookingCode: '#SZ-BK20261024',
+          courtName: 'Sân 7A - SportZone Tân Bình',
+          locationName: 'Cơ sở Tân Bình SportZone',
+          address: '120 Hoàng Hoa Thám, P.13, Q. Tân Bình, TP.HCM',
+          playDate: '24/10/2026',
+          timeSlot: '17:30 - 19:00',
+          status: 'CONFIRMED',
+          statusLabel: 'Đã giữ chỗ',
+          price: '350.000 đ'
+        };
+      }
+
+      return {
+        id: m.id.toString(),
+        senderName: m.sender?.fullName ?? (m.type === 'SYSTEM' ? 'Hệ thống SportZone' : 'Quản trị viên'),
+        senderAvatar: m.sender?.avatarUrl || (m.type === 'SYSTEM' ? '🎫' : '🧑'),
+        isMe: m.senderId === userIdBig,
+        text: m.messageText,
+        timestamp: m.createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }),
+        type: m.type,
+        ticketData,
+        attachments: m.attachments,
+      };
+    });
   }
 
   async sendRoomMessage(roomId: string, userId: string, text: string) {

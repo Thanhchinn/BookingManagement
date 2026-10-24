@@ -16,9 +16,10 @@ export const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [BookingStatus.PENDING, 
 const VN_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
 const MINUTES_PER_DAY = 24 * 60;
 
-// Số phút tính từ 00:00 của một giá trị TIME
-export function timeToMinutes(time: Date): number {
-  return time.getUTCHours() * 60 + time.getUTCMinutes();
+// Số phút tính từ 00:00 của một giá trị TIME (nếu là endTime 00:00 thì hiểu là 1440 = hết ngày)
+export function timeToMinutes(time: Date, isEndTime = false): number {
+  const mins = time.getUTCHours() * 60 + time.getUTCMinutes();
+  return isEndTime && mins === 0 ? MINUTES_PER_DAY : mins;
 }
 
 // Chuyển số phút thành giá trị TIME (1970-01-01T..Z) để lưu vào DB
@@ -124,7 +125,7 @@ export function evaluateSlot(
   if (!slot.isAvailable) {
     return result('Khung giờ này hiện không mở cho đặt sân.', 'hours');
   }
-  if (endMinutes >= MINUTES_PER_DAY) {
+  if (endMinutes > MINUTES_PER_DAY) {
     return result('Ca đấu không được kéo dài qua nửa đêm.', 'hours');
   }
 

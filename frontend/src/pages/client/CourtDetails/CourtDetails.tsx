@@ -17,7 +17,14 @@ import {
   CheckCircle2,
   MessageSquare,
   Trophy,
-  SlidersHorizontal
+  Sun,
+  Sunset,
+  Moon,
+  Flame,
+  Zap,
+  QrCode,
+  X,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -107,9 +114,12 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
 
   // ── Bộ lọc ca ──
   const [periodFilter, setPeriodFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
-  const [hourFilter, setHourFilter] = useState<'all' | 'even' | 'odd'>('all');
   const [selectedDuration, setSelectedDuration] = useState<number>(1.5);
-  const [timeSearch, setTimeSearch] = useState<string>('');
+
+  // ── Vé check-in QR hiển thị ngay sau khi đặt thành công ──
+  const [matchPass, setMatchPass] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [slotsRefreshKey, setSlotsRefreshKey] = useState(0);
 
   // ── Fetch thông tin cơ sở + danh sách sân ──
   useEffect(() => {
@@ -159,6 +169,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
           id: s.id,
           label: `Ca ${s.startTime} - ${s.endTime}`,
           timeRange: `${s.startTime} - ${s.endTime}`,
+          startTime: s.startTime,
+          endTime: s.endTime,
           startHour: parseInt(s.startTime.split(':')[0]),
           period: getPeriod(parseInt(s.startTime.split(':')[0])),
           priceModifier: s.priceModifier,
@@ -169,7 +181,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
       })
       .catch(console.error)
       .finally(() => setIsFetchingSlots(false));
-  }, [selectedCourtId, selectedDate, selectedDuration]);
+  }, [selectedCourtId, selectedDate, selectedDuration, slotsRefreshKey]);
 
   const handleSelectCourt = (courtId: string) => {
     setSelectedCourtId(courtId);
@@ -306,6 +318,8 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     }
 
     const chosenSlot = slots.find(s => s.id === selectedSlotId);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     try {
       toast.loading('Đang khởi tạo đơn đặt sân...', { id: 'booking-loading' });
@@ -363,10 +377,13 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
         onSetBookingSuccessData(successData);
       }
 
-      onNavigate?.('booking-success');
+      // Hiển thị vé QR check-in ngay tại chỗ; người dùng có thể mở trang chi tiết đơn sau
+      setMatchPass(successData);
     } catch (err: any) {
       toast.dismiss('booking-loading');
       toast.error(err.message || 'Lỗi đặt sân.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -413,17 +430,23 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
     }
   };
 
-  // Lọc Ca đấu (Làm gọn) theo Buổi & Giờ Chẵn/Lẻ & Từ khóa giờ tìm kiếm
-  const filteredSlots = slots.filter(s => {
-    // 1. Lọc buổi
-    if (periodFilter !== 'all' && s.period !== periodFilter) return false;
-    // 2. Lọc giờ chẵn/lẻ
-    if (hourFilter === 'even' && s.startHour % 2 !== 0) return false;
-    if (hourFilter === 'odd' && s.startHour % 2 === 0) return false;
-    // 3. Lọc theo tìm kiếm từ khóa giờ
-    if (timeSearch.trim() && !s.timeRange.includes(timeSearch.trim())) return false;
-    return true;
-  });
+  // Nhóm ca đấu theo buổi cho Ma trận chọn giờ
+  const PERIOD_GROUPS = [
+    { key: 'morning' as const, title: 'Ca Sáng', range: '06:00 - 12:00', Icon: Sun, tone: 'text-sky-300' },
+    { key: 'afternoon' as const, title: 'Ca Chiều', range: '12:00 - 18:00', Icon: Sunset, tone: 'text-orange-300' },
+    { key: 'evening' as const, title: 'Ca Tối & Giờ Vàng', range: '18:00 - 23:00', Icon: Moon, tone: 'text-violet-300' },
+  ];
+  const visibleGroups = PERIOD_GROUPS.filter(g => periodFilter === 'all' || g.key === periodFilter);
+
+  // "Khung Giờ Vàng" = ca có hệ số giá thấp hơn giá gốc (giảm giá thật từ API)
+  const getSlotPrice = (s: any) => Number(s.finalPrice ?? BASE_PRICE * s.priceModifier) || 0;
+  const getGoldenDiscount = (s: any) => {
+    const pm = Number(s.priceModifier);
+    return pm > 0 && pm < 1 ? Math.round((1 - pm) * 100) : 0;
+  };
+  const selectedSlot = slots.find(s => s.id === selectedSlotId);
+  const availableCount = slots.filter(s => !s.isBooked).length;
+  const goldenCount = slots.filter(s => !s.isBooked && getGoldenDiscount(s) > 0).length;
 
   // Tiện ích từ API location
   const amenities: any[] = location?.locationAmenities || [];
@@ -438,7 +461,7 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
       <Navbar onNavigate={onNavigate} userName={userName} onLogout={onLogout} />
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8 text-left">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8 text-left ${selectedSlotId ? 'pb-36' : ''}`}>
         
         {/* Breadcrumb & Tiêu đề Sân */}
         <div className="space-y-4">
@@ -636,129 +659,153 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
                   </div>
                 </div>
 
-                {/* 3. CHỌN CA ĐẤU (REAL-TIME TIMESLOTS MATRIX - RESPONSIVE DI ĐỘNG & TABLET) */}
-                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 pb-2 border-b border-white/10">
-                    <h3 className="text-xs sm:text-sm font-black text-white m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
-                      <Clock className="w-4.5 h-4.5 stroke-[2.5]" />
-                      3. CHỌN CA ĐẤU TRỐNG REAL-TIME
-                    </h3>
-
-                    {/* Bộ lọc làm gọn ca đấu - Tối ưu Responsive Grid trên Di động */}
-                    <div className="w-full lg:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 select-none">
-                      <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 font-extrabold bg-slate-950 px-2.5 py-1.5 rounded-xl border border-white/10 shrink-0">
-                        <SlidersHorizontal className="w-3 h-3 text-emerald-400" />
-                        Lọc ca:
-                      </div>
-
-                      {/* Thời lượng */}
-                      <select 
-                        value={selectedDuration} 
-                        onChange={(e) => {
-                          setSelectedDuration(parseFloat(e.target.value));
-                          setSelectedSlotId(null);
-                        }}
-                        className="bg-slate-950 border border-emerald-500/40 text-[11px] text-emerald-300 font-extrabold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500/20"
-                      >
-                        <option value="1">⏱️ Thuê 1.0 Giờ</option>
-                        <option value="1.5">⏱️ Thuê 1.5 Giờ</option>
-                        <option value="2">⏱️ Thuê 2.0 Giờ</option>
-                      </select>
-                      
-                      {/* Filter Buổi */}
-                      <select 
-                        value={periodFilter} 
-                        onChange={(e) => setPeriodFilter(e.target.value as any)}
-                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer"
-                      >
-                        <option value="all">Tất cả buổi</option>
-                        <option value="morning">☀️ Sáng (06h-12h)</option>
-                        <option value="afternoon">🌤️ Chiều (12h-18h)</option>
-                        <option value="evening">🌙 Tối (18h-22h)</option>
-                      </select>
-
-                      {/* Filter Chẵn Lẻ */}
-                      <select 
-                        value={hourFilter} 
-                        onChange={(e) => setHourFilter(e.target.value as any)}
-                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer"
-                      >
-                        <option value="all">Tất cả khung giờ</option>
-                        <option value="even">⏱️ Giờ chẵn (06h, 08h...)</option>
-                        <option value="odd">⏱️ Giờ lẻ (07h, 17h...)</option>
-                      </select>
-
-                      {/* Tìm giờ bằng ô input */}
-                      <input 
-                        type="text"
-                        placeholder="Tìm giờ..."
-                        value={timeSearch}
-                        onChange={(e) => setTimeSearch(e.target.value)}
-                        className="bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-[11px] text-white px-3 py-1.5 rounded-xl outline-none placeholder-slate-500 font-semibold col-span-2 sm:col-span-1 sm:w-28 focus:border-emerald-400"
-                      />
+                {/* 3. MA TRẬN CHỌN GIỜ (TIME-SLOT MATRIX) — nhóm theo Sáng / Chiều / Tối */}
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-6 space-y-5 shadow-xl">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 pb-3 border-b border-white/10">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black m-0 flex items-center gap-2.5 uppercase tracking-wider text-emerald-400">
+                        <Clock className="w-4.5 h-4.5 stroke-[2.5]" />
+                        3. Ma trận chọn giờ
+                      </h3>
+                      <p className="text-[11px] text-slate-400 m-0 mt-1 font-medium">
+                        <span className="text-emerald-300 font-bold font-mono">{availableCount}</span> ca trống
+                        {goldenCount > 0 && (
+                          <> · <span className="text-amber-300 font-bold font-mono">{goldenCount}</span> ca giờ vàng</>
+                        )}
+                        {' '}· ngày {new Date(selectedDate).toLocaleDateString('vi-VN')}
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Chú thích trạng thái ca đấu */}
-                  <div className="flex items-center gap-4 text-[11px] font-bold text-slate-400 py-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Ca trống
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-white/10 inline-block"></span> Đã được đặt
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Đang chọn
-                    </span>
-                  </div>
-
-                  {/* Hiển thị danh sách ca thu gọn theo bộ lọc MATRIX - RESPONSIVE 2 COLUMNS ON MOBILE, 3 ON TABLET */}
-                  {filteredSlots.length === 0 ? (
-                    <div className="py-10 bg-slate-950/40 border border-white/10 rounded-2xl text-center text-xs text-slate-400">
-                      Không tìm thấy ca đấu phù hợp với bộ lọc đã chọn.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {filteredSlots.map(s => {
-                        const isBooked = s.isBooked;
-                        const isSelected = selectedSlotId === s.id;
-                        return (
+                    {/* Thời lượng — segmented control thay cho dropdown */}
+                    <div className="flex flex-wrap items-center gap-2 select-none">
+                      <div className="inline-flex p-1 bg-slate-950 border border-white/10 rounded-xl">
+                        {[1, 1.5, 2].map(d => (
                           <button
-                            key={s.id}
-                            disabled={isBooked}
-                            onClick={() => setSelectedSlotId(isSelected ? null : s.id)}
-                            className={`p-3.5 rounded-2xl transition-all duration-300 border text-left cursor-pointer flex justify-between items-center relative overflow-hidden active:scale-[0.97] ${
-                              isBooked
-                                ? 'bg-slate-950/40 border-white/5 text-slate-600 cursor-not-allowed opacity-50'
-                                : isSelected
-                                ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-400 text-white shadow-lg shadow-emerald-500/15 ring-2 ring-emerald-400'
-                                : 'bg-slate-950/80 border-white/10 text-slate-200 hover:border-emerald-500/40 hover:bg-slate-900/60'
+                            key={d}
+                            type="button"
+                            onClick={() => { setSelectedDuration(d); setSelectedSlotId(null); }}
+                            className={`px-3 py-1.5 text-[11px] font-black rounded-lg transition cursor-pointer border-0 font-mono ${
+                              selectedDuration === d
+                                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                                : 'bg-transparent text-slate-400 hover:text-white'
                             }`}
                           >
-                            <div className="space-y-1">
-                              <span className="text-xs font-black flex items-center gap-1.5 leading-none">
-                                {isSelected && <span className="text-emerald-400 text-xs shrink-0">✓</span>}
-                                <span>{s.label}</span>
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] bg-slate-900 border border-white/10 text-slate-400 px-1.5 py-0.5 rounded-md font-bold uppercase">
-                                  {s.startHour % 2 === 0 ? 'Giờ chẵn' : 'Giờ lẻ'}
-                                </span>
-                                {s.isPromo && !isBooked && (
-                                  <span className="text-[8px] text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">🎁 -10%</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              {isBooked ? (
-                                <span className="text-[9px] bg-slate-900 border border-white/10 px-2 py-0.5 rounded-md text-slate-500 font-black uppercase">ĐÃ ĐẶT</span>
-                              ) : (
-                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-300' : 'text-emerald-400'}`}>
-                                  {(BASE_PRICE * s.priceModifier).toLocaleString()}đ
-                                </span>
-                              )}
-                            </div>
+                            {d.toFixed(1)}h
                           </button>
+                        ))}
+                      </div>
+                      <div className="inline-flex p-1 bg-slate-950 border border-white/10 rounded-xl">
+                        {([
+                          { key: 'all', label: 'Tất cả' },
+                          { key: 'morning', label: 'Sáng' },
+                          { key: 'afternoon', label: 'Chiều' },
+                          { key: 'evening', label: 'Tối' },
+                        ] as const).map(p => (
+                          <button
+                            key={p.key}
+                            type="button"
+                            onClick={() => setPeriodFilter(p.key)}
+                            className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg transition cursor-pointer border-0 ${
+                              periodFilter === p.key
+                                ? 'bg-slate-800 text-white'
+                                : 'bg-transparent text-slate-500 hover:text-slate-200'
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chú thích trạng thái */}
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-bold text-slate-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-slate-900 border border-emerald-500/50 inline-block" /> Giờ trống
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-amber-500/15 border border-amber-400/60 inline-block" /> Khung giờ vàng
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-slate-950 border border-white/5 inline-block opacity-60 bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" /> Đã đặt
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-emerald-400 inline-block" /> Đang chọn
+                    </span>
+                  </div>
+
+                  {slots.length === 0 ? (
+                    <div className="py-10 bg-slate-950/40 border border-white/10 rounded-2xl text-center text-xs text-slate-400">
+                      Sân chưa mở ca nào cho ngày đã chọn. Vui lòng chọn ngày khác.
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {visibleGroups.map(({ key, title, range, Icon, tone }) => {
+                        const groupSlots = slots.filter(s => s.period === key);
+                        const freeInGroup = groupSlots.filter(s => !s.isBooked).length;
+                        return (
+                          <div key={key} className="space-y-2.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <Icon className={`w-4 h-4 ${tone}`} />
+                                <span className="text-xs font-black text-white uppercase tracking-wider">{title}</span>
+                                <span className="text-[10px] text-slate-500 font-mono">{range}</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500">
+                                <span className={freeInGroup > 0 ? 'text-emerald-400' : 'text-slate-600'}>{freeInGroup}</span>/{groupSlots.length} trống
+                              </span>
+                            </div>
+
+                            {groupSlots.length === 0 ? (
+                              <div className="py-4 text-center text-[11px] text-slate-600 bg-slate-950/40 border border-dashed border-white/5 rounded-xl">
+                                Không có ca trong buổi này
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                                {groupSlots.map(s => {
+                                  const isBooked = s.isBooked;
+                                  const isSelected = selectedSlotId === s.id;
+                                  const golden = getGoldenDiscount(s);
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      disabled={isBooked}
+                                      onClick={() => setSelectedSlotId(isSelected ? null : s.id)}
+                                      title={isBooked ? 'Ca này đã có người đặt' : `${s.timeRange} · ${getSlotPrice(s).toLocaleString()}đ`}
+                                      className={`relative px-2 pt-2.5 pb-2 rounded-xl border text-left transition-all duration-200 ${
+                                        isBooked
+                                          ? 'bg-slate-950/60 border-white/5 text-slate-600 cursor-not-allowed bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(255,255,255,0.025)_6px,rgba(255,255,255,0.025)_12px)]'
+                                          : isSelected
+                                          ? 'bg-emerald-500/20 border-emerald-400 ring-2 ring-emerald-400/70 text-white cursor-pointer -translate-y-0.5 shadow-lg shadow-emerald-500/20'
+                                          : golden > 0
+                                          ? 'bg-amber-500/10 border-amber-500/40 text-amber-100 hover:border-amber-400 hover:-translate-y-0.5 cursor-pointer'
+                                          : 'bg-slate-900 border-slate-800 text-slate-200 hover:border-emerald-500/50 hover:-translate-y-0.5 cursor-pointer'
+                                      }`}
+                                    >
+                                      {golden > 0 && !isBooked && (
+                                        <span className="absolute -top-2 right-1.5 flex items-center gap-0.5 text-[8px] font-black bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-md shadow">
+                                          <Flame className="w-2.5 h-2.5" />-{golden}%
+                                        </span>
+                                      )}
+                                      <span className={`block text-xs font-black font-mono leading-none ${isBooked ? 'line-through' : ''}`}>
+                                        {s.startTime}
+                                      </span>
+                                      <span className="block text-[9px] font-mono mt-1 opacity-60 leading-none">→ {s.endTime}</span>
+                                      <span className={`block text-[10px] font-black font-mono mt-1.5 leading-none ${
+                                        isBooked ? 'text-slate-600' : isSelected ? 'text-emerald-300' : golden > 0 ? 'text-amber-300' : 'text-emerald-400'
+                                      }`}>
+                                        {isBooked ? 'Đã đặt' : `${Math.round(getSlotPrice(s) / 1000)}k`}
+                                      </span>
+                                      {isSelected && (
+                                        <CheckCircle2 className="absolute top-1.5 right-1.5 w-3.5 h-3.5 text-emerald-300" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -1200,6 +1247,119 @@ export const CourtDetails: React.FC<CourtDetailsProps> = ({
         </div>
 
       </div>
+
+      {/* FLOATING CHECKOUT BAR — cập nhật tổng tiền tức thì khi chọn ca / dịch vụ */}
+      {selectedSlot && activeTab === 'booking' && !matchPass && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur-2xl border-t border-zinc-700/80 shadow-[0_-12px_40px_rgba(0,0,0,0.5)] animate-[slideUp_0.3s_ease-out]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 sm:gap-6">
+            <div className="hidden sm:flex w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">
+                {activeCourt?.name} · {new Date(selectedDate).toLocaleDateString('vi-VN')}
+              </span>
+              <span className="block text-sm font-black text-white font-mono truncate">
+                {selectedSlot.timeRange}
+                {getProductsPrice() > 0 && (
+                  <span className="text-[11px] text-zinc-400 font-sans font-semibold"> + {products.filter(p => p.qty > 0).reduce((a, p) => a + p.qty, 0)} dịch vụ</span>
+                )}
+              </span>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="block text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                {paymentMethod === 'CASH' ? 'Trả tại sân' : paymentOption === 'PARTIAL' ? 'Cọc 30%' : 'Tổng (gồm VAT)'}
+              </span>
+              <span key={finalPrice} className="block text-lg sm:text-xl font-black text-emerald-400 font-mono animate-[pricePop_0.35s_ease-out]">
+                {(paymentOption === 'PARTIAL' && paymentMethod !== 'CASH' ? Math.round(finalPrice * 0.3) : finalPrice).toLocaleString()}đ
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={isSubmitting}
+              className="shrink-0 flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-slate-950 text-xs font-black uppercase tracking-wide border-0 cursor-pointer active:scale-[0.97] transition shadow-lg shadow-emerald-500/25"
+            >
+              <Zap className="w-4 h-4 stroke-[2.5]" />
+              <span className="hidden sm:inline">{isSubmitting ? 'Đang xử lý...' : 'Đặt nhanh'}</span>
+              <ArrowRight className="w-4 h-4 sm:hidden" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* INSTANT QR CHECK-IN MATCH PASS */}
+      {matchPass && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]">
+          <div className="relative w-full max-w-sm bg-zinc-900 border border-zinc-700/80 rounded-3xl overflow-hidden shadow-2xl animate-[passIn_0.45s_cubic-bezier(0.22,1,0.36,1)]">
+            <button
+              type="button"
+              onClick={() => { setMatchPass(null); setSelectedSlotId(null); setSlotsRefreshKey(k => k + 1); }}
+              aria-label="Đóng"
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center border-0 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="px-6 pt-6 pb-5 bg-gradient-to-br from-emerald-500/20 via-zinc-900 to-zinc-900 text-left">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                <CheckCircle2 className="w-3 h-3" /> Đặt sân thành công
+              </span>
+              <h3 className="text-lg font-black text-white m-0 mt-3 leading-tight">{matchPass.courtName}</h3>
+              <p className="text-[11px] text-zinc-400 m-0 mt-1 flex items-start gap-1"><MapPin className="w-3 h-3 mt-0.5 shrink-0" />{matchPass.location}</p>
+            </div>
+
+            {/* Đường xé vé */}
+            <div className="relative h-0 border-t border-dashed border-zinc-700">
+              <span className="absolute -left-3 -top-3 w-6 h-6 rounded-full bg-black/80" />
+              <span className="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-black/80" />
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="relative mx-auto w-48 h-48 bg-white rounded-2xl p-3 overflow-hidden">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${encodeURIComponent(`SPORTZONE-CHECKIN:${matchPass.bookingCode}`)}`}
+                  alt={`QR check-in ${matchPass.bookingCode}`}
+                  className="w-full h-full object-contain animate-[fadeIn_0.6s_ease-out]"
+                />
+                <span className="pointer-events-none absolute left-2 right-2 h-0.5 bg-emerald-400 shadow-[0_0_12px_3px_rgba(52,211,153,0.7)] animate-[qrScan_2s_ease-in-out_infinite]" />
+              </div>
+
+              <div className="text-center">
+                <span className="block text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Mã check-in</span>
+                <span className="block text-xl font-black font-mono text-white tracking-[0.2em]">{matchPass.bookingCode}</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl py-2">
+                  <span className="block text-[9px] text-zinc-500 font-bold uppercase">Ngày</span>
+                  <span className="block text-[11px] text-white font-black font-mono">{new Date(matchPass.bookingDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</span>
+                </div>
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl py-2">
+                  <span className="block text-[9px] text-zinc-500 font-bold uppercase">Giờ</span>
+                  <span className="block text-[11px] text-white font-black font-mono">{matchPass.startTime}-{matchPass.endTime}</span>
+                </div>
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl py-2">
+                  <span className="block text-[9px] text-zinc-500 font-bold uppercase">Tổng</span>
+                  <span className="block text-[11px] text-emerald-400 font-black font-mono">{Math.round(matchPass.finalPrice / 1000)}k</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-zinc-500 text-center m-0 flex items-center justify-center gap-1">
+                <QrCode className="w-3 h-3" /> Đưa mã này cho quầy lễ tân khi đến sân
+              </p>
+
+              <button
+                type="button"
+                onClick={() => onNavigate?.('booking-success')}
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wide border-0 cursor-pointer flex items-center justify-center gap-2 transition active:scale-[0.98]"
+              >
+                Xem chi tiết đơn <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />

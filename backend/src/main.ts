@@ -1,10 +1,11 @@
-import 'dotenv/config';
+import * as dotenv from 'dotenv';
+import { join } from 'path';
+dotenv.config({ path: [join(process.cwd(), '.env'), join(__dirname, '..', '.env'), join(__dirname, '..', '..', '.env')] });
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor';
 import * as express from 'express';
-import { join } from 'path';
 import * as fs from 'fs';
 import cookieParser from 'cookie-parser';
 

@@ -9,7 +9,20 @@ import { ApprovePostDto } from './dto/approve-post.dto';
 
 import { parseTimeToDate, parseDate, formatTime } from '../common/utils/date-time.util';
 
+// Tổng tiền sân: ưu tiên giá thực của đơn đặt sân đã gắn, nếu không thì ước tính = giá giờ × số giờ chơi
+function computeCourtCost(post: any): { courtCost: number; isCostEstimated: boolean } {
+  if (post.booking?.finalPrice != null) {
+    return { courtCost: Number(post.booking.finalPrice), isCostEstimated: false };
+  }
+  const hourly = Number(post.sportsPitch?.basePricePerHour ?? 0);
+  const start = post.startTime ? new Date(post.startTime).getTime() : 0;
+  const end = post.endTime ? new Date(post.endTime).getTime() : 0;
+  const hours = end > start ? (end - start) / 3_600_000 : 0;
+  return { courtCost: Math.round(hourly * hours), isCostEstimated: true };
+}
+
 function serializeMatchPost(post: any) {
+  const { courtCost, isCostEstimated } = computeCourtCost(post);
   return {
     id: post.id.toString(),
     userId: post.userId.toString(),
@@ -28,6 +41,9 @@ function serializeMatchPost(post: any) {
     currentPlayers: post.currentPlayers,
     description: post.description,
     status: post.status,
+    courtCost,
+    costPerHead: post.maxPlayers > 0 ? Math.ceil(courtCost / post.maxPlayers / 1000) * 1000 : courtCost,
+    isCostEstimated,
     participants: (post.participants || []).map((p: any) => ({
       id: p.id.toString(),
       userId: p.userId.toString(),
@@ -68,7 +84,7 @@ export class MatchmakingService {
       const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
       if (
         !booking ||
-        booking.userId.toString() !== userId.toString() ||
+        booking.userId?.toString() !== userId.toString() ||
         booking.sportsPitchId !== pitchId ||
         !['PENDING', 'CONFIRMED'].includes(booking.status)
       ) {
@@ -83,6 +99,7 @@ export class MatchmakingService {
         data: {
           userId: BigInt(userId),
           sportsPitchId: pitchId,
+          categorySlug: pitch.category,
           bookingId: bookingId,
           title: dto.title,
           description: dto.description || '',
@@ -163,6 +180,7 @@ export class MatchmakingService {
             user: { select: { fullName: true, avatarUrl: true } },
           },
         },
+        booking: { select: { finalPrice: true } },
       },
       orderBy: { playDate: 'asc' },
     });
@@ -188,6 +206,7 @@ export class MatchmakingService {
             user: { select: { fullName: true, avatarUrl: true } },
           },
         },
+        booking: { select: { finalPrice: true } },
       },
       orderBy: { id: 'desc' },
     });

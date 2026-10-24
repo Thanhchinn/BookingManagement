@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Edit3, ShoppingBag, RefreshCw, Package, Coffee, Wrench, MoreHorizontal, Tag, Check } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit3, ShoppingBag, RefreshCw, Tag, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { PartnerFilterBar } from '../components/PartnerFilterBar';
 

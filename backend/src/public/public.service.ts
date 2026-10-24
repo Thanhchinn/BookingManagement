@@ -32,6 +32,8 @@ export function serializePublicLocation(loc: any) {
     } : null,
     latitude: loc.latitude ? parseFloat(loc.latitude.toString()) : null,
     longitude: loc.longitude ? parseFloat(loc.longitude.toString()) : null,
+    ratingAvg: loc.ratingAvg !== undefined && loc.ratingAvg !== null ? parseFloat(loc.ratingAvg.toString()) : 0,
+    ratingCount: loc.ratingCount ?? 0,
     locationAmenities: loc.locationAmenities?.map((la: any) => ({
       amenityId: la.amenityId?.toString(),
       name: la.amenity?.name,
@@ -54,6 +56,8 @@ export function serializePublicService(s: any) {
     id: s.id.toString(),
     locationId: s.locationId?.toString(),
     basePricePerHour: s.basePricePerHour ? parseFloat(s.basePricePerHour.toString()) : 0,
+    ratingAvg: s.ratingAvg !== undefined && s.ratingAvg !== null ? parseFloat(s.ratingAvg.toString()) : 0,
+    ratingCount: s.ratingCount ?? 0,
     timeSlots: s.timeSlots?.map((t: any) => ({
       ...t,
       id: t.id.toString(),
@@ -246,7 +250,7 @@ export class PublicService {
       if (evaluation.unavailableKind === 'hours') continue;
 
       const isTaken = bookedSlots.some((b) =>
-        rangesOverlap(evaluation.startMinutes, evaluation.endMinutes, timeToMinutes(b.startTime), timeToMinutes(b.endTime)),
+        rangesOverlap(evaluation.startMinutes, evaluation.endMinutes, timeToMinutes(b.startTime), timeToMinutes(b.endTime, true)),
       );
       const isPast = bookingStartAt(bookingDate, ts.startTime) <= now;
       const { courtCost } = calculatePricing({
